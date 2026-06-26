@@ -1,0 +1,2073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reminders</title>
+  <meta name="description" content="A clean, minimal task and reminder app organized by day of the week.">
+  <meta name="theme-color" content="#1a1a2e">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f8f9fb;
+      --surface: #ffffff;
+      --surface-weekend: #f0f4ff;
+      --border: #e4e7ec;
+      --border-weekend: #c7d4f0;
+      --text: #1a1a2e;
+      --text-secondary: #6b7280;
+      --text-muted: #9ca3af;
+      --accent: #4f6ef7;
+      --accent-hover: #3b5de7;
+      --accent-light: rgba(79, 110, 247, 0.08);
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --high: #ef4444;
+      --medium: #f59e0b;
+      --low: #22c55e;
+      --personal: #8b5cf6;
+      --personal-bg: #f3f0ff;
+      --professional: #0ea5e9;
+      --professional-bg: #ecf8ff;
+      --weekend-accent: #6366f1;
+      --status-not-started: #9ca3af;
+      --status-not-started-bg: #f3f4f6;
+      --status-in-progress: #3b82f6;
+      --status-in-progress-bg: #eff6ff;
+      --status-on-hold: #f59e0b;
+      --status-on-hold-bg: #fffbeb;
+      --status-completed: #22c55e;
+      --status-completed-bg: #f0fdf4;
+      --radius: 10px;
+      --radius-sm: 6px;
+      --transition: 150ms ease;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100dvh;
+    }
+
+    /* Header */
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .header h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    /* View toggle */
+    .view-toggle {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+    .view-toggle button {
+      padding: 6px 14px;
+      border: none;
+      background: var(--surface);
+      color: var(--text-secondary);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .view-toggle button:not(:last-child) { border-right: 1px solid var(--border); }
+    .view-toggle button:hover { background: var(--bg); }
+    .view-toggle button.active { background: var(--accent); color: #fff; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background var(--transition), border-color var(--transition);
+      white-space: nowrap;
+    }
+    .btn:hover { background: var(--bg); }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .btn-danger { color: var(--danger); }
+    .btn-danger:hover { background: #fef2f2; border-color: var(--danger); }
+    .btn-sm { padding: 4px 10px; font-size: 0.8125rem; }
+    .btn-icon {
+      padding: 6px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: var(--text-secondary);
+      border-radius: var(--radius-sm);
+      transition: color var(--transition), background var(--transition);
+    }
+    .btn-icon:hover { color: var(--text); background: var(--bg); }
+
+    /* Filters bar */
+    .filters {
+      max-width: 960px;
+      margin: 16px auto 0;
+      padding: 0 20px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .filter-chip {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-secondary);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .filter-chip:hover { border-color: var(--accent); color: var(--accent); }
+    .filter-chip.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .filter-separator {
+      width: 1px;
+      background: var(--border);
+      margin: 0 4px;
+      align-self: stretch;
+      min-height: 24px;
+    }
+
+    /* Main content */
+    .main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* ── Calendar ── */
+    .calendar-wrapper {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .calendar-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .calendar-nav-title {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .calendar-nav-btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: all var(--transition);
+    }
+    .calendar-nav-btn:hover { background: var(--bg); color: var(--text); }
+    .calendar-nav-center {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .calendar-today-btn {
+      padding: 4px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .calendar-today-btn:hover { background: var(--accent-light); }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+    }
+    .calendar-day-label {
+      padding: 10px 4px;
+      text-align: center;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .calendar-day-label.weekend-label { color: var(--weekend-accent); }
+
+    .calendar-cell {
+      min-height: 72px;
+      padding: 6px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background var(--transition);
+      position: relative;
+    }
+    .calendar-cell:nth-child(7n) { border-right: none; }
+    .calendar-grid > .calendar-cell:nth-last-child(-n+7) { border-bottom: none; }
+    .calendar-cell:hover { background: var(--accent-light); }
+    .calendar-cell.outside { background: var(--bg); opacity: 0.5; }
+    .calendar-cell.weekend-cell { background: var(--surface-weekend); }
+    .calendar-cell.weekend-cell:hover { background: #e4ecff; }
+    .calendar-cell.today .cal-date { background: var(--accent); color: #fff; }
+    .calendar-cell.selected { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+    .cal-date {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      margin-bottom: 4px;
+    }
+    .cal-dots {
+      display: flex;
+      gap: 3px;
+      flex-wrap: wrap;
+    }
+    .cal-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    .cal-dot.high { background: var(--high); }
+    .cal-dot.medium { background: var(--medium); }
+    .cal-dot.low { background: var(--low); }
+
+    .cal-task-count {
+      font-size: 0.625rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Selected date panel */
+    .selected-date-panel {
+      margin-bottom: 24px;
+    }
+    .selected-date-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .selected-date-title {
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Day sections */
+    .day-section {
+      margin-bottom: 24px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .day-section.weekend {
+      background: var(--surface-weekend);
+      border-color: var(--border-weekend);
+    }
+    .day-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+    }
+    .day-section.weekend .day-header {
+      border-bottom-color: var(--border-weekend);
+    }
+    .day-title {
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .day-section.weekend .day-title { color: var(--weekend-accent); }
+    .weekend-badge {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--weekend-accent);
+      background: rgba(99, 102, 241, 0.1);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .day-summary {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    /* Task list */
+    .task-list { list-style: none; }
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+      transition: background var(--transition);
+    }
+    .day-section.weekend .task-item {
+      border-bottom-color: var(--border-weekend);
+    }
+    .task-item:last-child { border-bottom: none; }
+    .task-item:hover { background: rgba(0,0,0,0.015); }
+    .task-item.status-completed .task-text { text-decoration: line-through; color: var(--text-muted); }
+    .task-item.status-on-hold .task-text { color: var(--text-secondary); }
+
+    /* Status badge (replaces checkbox) */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      border: none;
+      transition: all var(--transition);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .status-badge:hover { filter: brightness(0.92); }
+    .status-badge.not_started {
+      background: var(--status-not-started-bg);
+      color: var(--status-not-started);
+    }
+    .status-badge.in_progress {
+      background: var(--status-in-progress-bg);
+      color: var(--status-in-progress);
+    }
+    .status-badge.on_hold {
+      background: var(--status-on-hold-bg);
+      color: var(--status-on-hold);
+    }
+    .status-badge.completed {
+      background: var(--status-completed-bg);
+      color: var(--status-completed);
+    }
+    .status-badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* Priority dot */
+    .priority-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .priority-dot.high { background: var(--high); }
+    .priority-dot.medium { background: var(--medium); }
+    .priority-dot.low { background: var(--low); }
+
+    /* Task body */
+    .task-body { flex: 1; min-width: 0; }
+    .task-text { font-size: 0.9375rem; word-break: break-word; }
+    .task-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    /* Category tag */
+    .tag {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .tag.personal { background: var(--personal-bg); color: var(--personal); }
+    .tag.professional { background: var(--professional-bg); color: var(--professional); }
+
+    .priority-label {
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      text-transform: capitalize;
+    }
+    .date-label {
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+    }
+
+    /* Task actions */
+    .task-actions {
+      display: flex;
+      gap: 2px;
+      flex-shrink: 0;
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+    .task-item:hover .task-actions { opacity: 1; }
+    @media (hover: none) { .task-actions { opacity: 1; } }
+
+    /* Empty state */
+    .empty-state {
+      padding: 32px 18px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+    .empty-state p { margin-bottom: 12px; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 200ms ease;
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal {
+      background: var(--surface);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+      transform: translateY(10px);
+      transition: transform 200ms ease;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-header h2 { font-size: 1.0625rem; font-weight: 700; }
+    .modal-body { padding: 20px; }
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* Form */
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+    .form-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.9375rem;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--bg);
+      transition: border-color var(--transition);
+    }
+    .form-input:focus { outline: none; border-color: var(--accent); }
+    .form-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M2.5 4.5L6 8l3.5-3.5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+
+    /* Radio group styled as segmented control */
+    .segmented {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+    .segmented label {
+      flex: 1;
+      text-align: center;
+      padding: 8px 12px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-right: 1px solid var(--border);
+      transition: all var(--transition);
+      color: var(--text-secondary);
+      margin-bottom: 0;
+    }
+    .segmented label:last-child { border-right: none; }
+    .segmented input { display: none; }
+    .segmented input:checked + span { color: #fff; }
+    .segmented label:has(input:checked) { background: var(--accent); color: #fff; }
+    .segmented label:hover:not(:has(input:checked)) { background: var(--bg); }
+
+    /* Priority segmented */
+    .segmented.priority label:has(input[value="high"]:checked) { background: var(--high); }
+    .segmented.priority label:has(input[value="medium"]:checked) { background: var(--medium); }
+    .segmented.priority label:has(input[value="low"]:checked) { background: var(--low); }
+
+    /* Category segmented */
+    .segmented.category label:has(input[value="personal"]:checked) { background: var(--personal); }
+    .segmented.category label:has(input[value="professional"]:checked) { background: var(--professional); }
+
+    /* Status segmented control */
+    .segmented.status { flex-wrap: wrap; }
+    .segmented.status label { padding: 8px 8px; font-size: 0.75rem; }
+    .segmented.status label:has(input[value="not_started"]:checked) { background: var(--status-not-started); }
+    .segmented.status label:has(input[value="in_progress"]:checked) { background: var(--status-in-progress); }
+    .segmented.status label:has(input[value="on_hold"]:checked) { background: var(--status-on-hold); }
+    .segmented.status label:has(input[value="completed"]:checked) { background: var(--status-completed); }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast {
+      background: var(--text);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      white-space: nowrap;
+      opacity: 0;
+      transform: translateY(8px);
+      animation: toast-in 200ms ease forwards;
+    }
+    @keyframes toast-in {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Confirm dialog */
+    .confirm-body { text-align: center; padding: 24px 20px; }
+    .confirm-body p { font-size: 0.9375rem; color: var(--text-secondary); margin-bottom: 20px; }
+    .confirm-actions { display: flex; gap: 8px; justify-content: center; }
+
+    /* ── All tasks view ── */
+    .all-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+    .stat-value.accent { color: var(--accent); }
+    .stat-value.high-color { color: var(--high); }
+    .stat-value.medium-color { color: var(--medium); }
+    .stat-value.low-color { color: var(--low); }
+    .stat-value.done-color { color: var(--low); }
+    .stat-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .all-section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      padding-left: 2px;
+    }
+    .all-section-label.completed-label { margin-top: 28px; }
+
+    .all-sort-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .all-sort-bar span {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .sort-chip {
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .sort-chip:hover { border-color: var(--accent); color: var(--accent); }
+    .sort-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* ── Progress / Analytics view ── */
+    .progress-week-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .progress-week-label {
+      font-size: 1rem;
+      font-weight: 700;
+      text-align: center;
+    }
+    .progress-week-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-top: 2px;
+    }
+    .progress-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .progress-section-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    /* Completion ring */
+    .ring-row {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+    .ring-wrap {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      flex-shrink: 0;
+    }
+    .ring-svg { transform: rotate(-90deg); }
+    .ring-bg {
+      fill: none;
+      stroke: var(--border);
+      stroke-width: 8;
+    }
+    .ring-fill {
+      fill: none;
+      stroke-width: 8;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.6s ease;
+    }
+    .ring-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .ring-pct {
+      font-size: 1.5rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .ring-sub {
+      font-size: 0.625rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      margin-top: 2px;
+    }
+    .ring-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+    }
+    .ring-stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.875rem;
+    }
+    .ring-stat-label { color: var(--text-secondary); }
+    .ring-stat-value { font-weight: 700; }
+
+    /* Daily bar chart */
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      height: 140px;
+      padding-top: 8px;
+    }
+    .bar-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+    .bar-stack {
+      width: 100%;
+      max-width: 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      flex: 1;
+      position: relative;
+    }
+    .bar-segment {
+      width: 100%;
+      border-radius: 4px 4px 0 0;
+      min-height: 0;
+      transition: height 0.4s ease;
+    }
+    .bar-segment.completed-bar {
+      background: var(--accent);
+      border-radius: 4px 4px 0 0;
+    }
+    .bar-segment.pending-bar {
+      background: var(--border);
+      border-radius: 4px 4px 0 0;
+    }
+    .bar-segment.completed-bar + .bar-segment.pending-bar {
+      border-radius: 0;
+    }
+    .bar-count {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+    .bar-day-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .bar-day-label.weekend-bar { color: var(--weekend-accent); }
+    .bar-col.today-col .bar-day-label {
+      color: var(--accent);
+      font-weight: 800;
+    }
+    .bar-col.today-col .bar-segment.completed-bar { background: var(--accent-hover); }
+
+    /* Breakdown bars (horizontal) */
+    .breakdown-row {
+      margin-bottom: 14px;
+    }
+    .breakdown-row:last-child { margin-bottom: 0; }
+    .breakdown-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .breakdown-label {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .breakdown-value {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+    .breakdown-track {
+      height: 8px;
+      background: var(--bg);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .breakdown-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
+    /* Week-over-week comparison */
+    .wow-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .wow-card {
+      text-align: center;
+      padding: 14px 8px;
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+    }
+    .wow-value {
+      font-size: 1.25rem;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .wow-label {
+      font-size: 0.625rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .wow-delta {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+    .wow-delta.up { color: var(--low); }
+    .wow-delta.down { color: var(--high); }
+    .wow-delta.neutral { color: var(--text-muted); }
+
+    /* Streak */
+    .streak-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .streak-number {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
+      color: var(--accent);
+    }
+    .streak-text {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+    .streak-text strong { color: var(--text); }
+    .streak-dots {
+      display: flex;
+      gap: 6px;
+      margin-top: 14px;
+    }
+    .streak-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.5625rem;
+      font-weight: 700;
+      border: 2px solid var(--border);
+      color: var(--text-muted);
+      background: var(--surface);
+    }
+    .streak-dot.done {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .streak-dot.partial {
+      background: var(--surface);
+      border-color: var(--medium);
+      color: var(--medium);
+    }
+    .streak-dot.today-dot {
+      border-color: var(--accent);
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .header { padding: 12px 16px; }
+      .header h1 { font-size: 1.1rem; }
+      .header-left { gap: 10px; }
+      .main { padding: 12px; }
+      .filters { padding: 0 12px; margin-top: 12px; }
+      .day-section { margin-bottom: 16px; }
+      .day-header { padding: 12px 14px; flex-wrap: wrap; }
+      .task-item { padding: 10px 14px; gap: 10px; }
+      .modal { max-width: 100%; }
+      .modal-body { padding: 16px; }
+      .filter-chip { font-size: 0.75rem; padding: 5px 10px; }
+      .calendar-cell { min-height: 56px; padding: 4px; }
+      .cal-date { width: 22px; height: 22px; font-size: 0.75rem; }
+      .cal-dot { width: 5px; height: 5px; }
+      .view-toggle button { padding: 5px 10px; font-size: 0.75rem; }
+      .ring-row { flex-direction: column; gap: 16px; text-align: center; }
+      .ring-stats { align-items: center; }
+      .bar-chart { height: 110px; gap: 4px; }
+      .wow-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .streak-dot { width: 24px; height: 24px; font-size: 0.5rem; }
+      .progress-section { padding: 16px; }
+      .progress-section + div[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-left">
+        <h1>Reminders</h1>
+        <div class="view-toggle" id="viewToggle">
+          <button class="active" data-view="week" onclick="switchView('week')">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 3h12M1 7h12M1 11h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Week
+          </button>
+          <button data-view="calendar" onclick="switchView('calendar')">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M1 5.5h12M4.5 1v2M9.5 1v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Calendar
+          </button>
+          <button data-view="all" onclick="switchView('all')">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 2h4v4H1zM9 2h4v4H9zM1 8h4v4H1zM9 8h4v4H9z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            All
+          </button>
+          <button data-view="progress" onclick="switchView('progress')">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 12V8M4.5 12V5M8 12V2M11.5 12V7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            Progress
+          </button>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-primary" onclick="openAddModal()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Add task
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Filters -->
+  <div class="filters" id="filters">
+    <span id="dayFilters">
+      <button class="filter-chip active" data-filter="day" data-value="all" onclick="setFilter('day','all',this)">All days</button>
+      <button class="filter-chip" data-filter="day" data-value="mon" onclick="setFilter('day','mon',this)">Mon</button>
+      <button class="filter-chip" data-filter="day" data-value="tue" onclick="setFilter('day','tue',this)">Tue</button>
+      <button class="filter-chip" data-filter="day" data-value="wed" onclick="setFilter('day','wed',this)">Wed</button>
+      <button class="filter-chip" data-filter="day" data-value="thu" onclick="setFilter('day','thu',this)">Thu</button>
+      <button class="filter-chip" data-filter="day" data-value="fri" onclick="setFilter('day','fri',this)">Fri</button>
+      <button class="filter-chip" data-filter="day" data-value="sat" onclick="setFilter('day','sat',this)">Sat</button>
+      <button class="filter-chip" data-filter="day" data-value="sun" onclick="setFilter('day','sun',this)">Sun</button>
+      <span class="filter-separator"></span>
+    </span>
+    <button class="filter-chip active" data-filter="priority" data-value="all" onclick="setFilter('priority','all',this)">Any priority</button>
+    <button class="filter-chip" data-filter="priority" data-value="high" onclick="setFilter('priority','high',this)">High</button>
+    <button class="filter-chip" data-filter="priority" data-value="medium" onclick="setFilter('priority','medium',this)">Medium</button>
+    <button class="filter-chip" data-filter="priority" data-value="low" onclick="setFilter('priority','low',this)">Low</button>
+    <div class="filter-separator"></div>
+    <button class="filter-chip active" data-filter="category" data-value="all" onclick="setFilter('category','all',this)">All tags</button>
+    <button class="filter-chip" data-filter="category" data-value="personal" onclick="setFilter('category','personal',this)">Personal</button>
+    <button class="filter-chip" data-filter="category" data-value="professional" onclick="setFilter('category','professional',this)">Professional</button>
+    <div class="filter-separator"></div>
+    <button class="filter-chip active" data-filter="status" data-value="all" onclick="setFilter('status','all',this)">Any status</button>
+    <button class="filter-chip" data-filter="status" data-value="not_started" onclick="setFilter('status','not_started',this)">Not started</button>
+    <button class="filter-chip" data-filter="status" data-value="in_progress" onclick="setFilter('status','in_progress',this)">In progress</button>
+    <button class="filter-chip" data-filter="status" data-value="on_hold" onclick="setFilter('status','on_hold',this)">On hold</button>
+    <button class="filter-chip" data-filter="status" data-value="completed" onclick="setFilter('status','completed',this)">Completed</button>
+  </div>
+
+  <!-- Main content -->
+  <main class="main" id="app"></main>
+
+  <!-- Add / Edit modal -->
+  <div class="modal-overlay" id="taskModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modalTitle">Add task</h2>
+        <button class="btn-icon" onclick="closeModal()" aria-label="Close">
+          <svg width="18" height="18" viewBox="0 0 18 18"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <form id="taskForm" onsubmit="handleSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="taskText">Task</label>
+            <input type="text" id="taskText" class="form-input" placeholder="What needs to be done?" required autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="taskDate">Date</label>
+            <input type="date" id="taskDate" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>Priority</label>
+            <div class="segmented priority">
+              <label><input type="radio" name="priority" value="high"><span>High</span></label>
+              <label><input type="radio" name="priority" value="medium" checked><span>Medium</span></label>
+              <label><input type="radio" name="priority" value="low"><span>Low</span></label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <div class="segmented category">
+              <label><input type="radio" name="category" value="personal" checked><span>Personal</span></label>
+              <label><input type="radio" name="category" value="professional"><span>Professional</span></label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <div class="segmented status">
+              <label><input type="radio" name="status" value="not_started" checked><span>Not started</span></label>
+              <label><input type="radio" name="status" value="in_progress"><span>In progress</span></label>
+              <label><input type="radio" name="status" value="on_hold"><span>On hold</span></label>
+              <label><input type="radio" name="status" value="completed"><span>Completed</span></label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="modalSubmitBtn">Add task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Confirm dialog -->
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal" style="max-width:360px">
+      <div class="confirm-body">
+        <p id="confirmMessage">Delete this task?</p>
+        <div class="confirm-actions">
+          <button class="btn" onclick="closeConfirm()">Cancel</button>
+          <button class="btn btn-danger" id="confirmBtn" onclick="confirmAction()">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toasts -->
+  <div class="toast-container" id="toasts"></div>
+
+  <script>
+    // ── Constants ──
+    const DAYS = [
+      { key: 'mon', label: 'Monday', weekend: false },
+      { key: 'tue', label: 'Tuesday', weekend: false },
+      { key: 'wed', label: 'Wednesday', weekend: false },
+      { key: 'thu', label: 'Thursday', weekend: false },
+      { key: 'fri', label: 'Friday', weekend: false },
+      { key: 'sat', label: 'Saturday', weekend: true },
+      { key: 'sun', label: 'Sunday', weekend: true },
+    ];
+    const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const DAY_LABELS_SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+    const STATUSES = [
+      { key: 'not_started', label: 'Not started' },
+      { key: 'in_progress', label: 'In progress' },
+      { key: 'on_hold', label: 'On hold' },
+      { key: 'completed', label: 'Completed' },
+    ];
+    const STATUS_LABELS = { not_started: 'Not started', in_progress: 'In progress', on_hold: 'On hold', completed: 'Completed' };
+
+    // ── State ──
+    const STORAGE_KEY = 'reminder_app_tasks';
+    let tasks = loadTasks();
+    let editingId = null;
+    let pendingConfirm = null;
+    let currentView = 'week'; // 'week', 'calendar', or 'all'
+    let calMonth = new Date().getMonth();
+    let calYear = new Date().getFullYear();
+    let selectedDate = null; // YYYY-MM-DD string when a calendar date is clicked
+    let allSort = 'date'; // 'date', 'priority', 'category'
+    let progressWeekOffset = 0; // 0 = this week, -1 = last week, etc.
+    const filters = { day: 'all', priority: 'all', category: 'all', status: 'all' };
+
+    // ── Helpers ──
+    function toDateStr(d) {
+      const yy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yy}-${mm}-${dd}`;
+    }
+    function todayStr() { return toDateStr(new Date()); }
+    function dayKeyFromDate(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      return DAY_KEYS[d.getDay()];
+    }
+    function parseDateNice(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    }
+    function formatShort(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    // ── Persistence ──
+    function loadTasks() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        // Migrate legacy tasks that used 'day' instead of 'date'
+        return raw.map(t => {
+          if (!t.date && t.day) {
+            // Assign to this week's instance of that day
+            t.date = getNextDateForDay(t.day);
+          }
+          if (!t.date) t.date = todayStr();
+          // Migrate legacy 'completed' boolean to 'status' field
+          if (!t.status) {
+            t.status = t.completed ? 'completed' : 'not_started';
+          }
+          delete t.completed;
+          return t;
+        });
+      } catch { return []; }
+    }
+
+    function getNextDateForDay(dayKey) {
+      const target = DAY_KEYS.indexOf(dayKey);
+      const now = new Date();
+      const curr = now.getDay();
+      let diff = target - curr;
+      if (diff < 0) diff += 7;
+      const d = new Date(now);
+      d.setDate(d.getDate() + diff);
+      return toDateStr(d);
+    }
+
+    function saveTasks() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    }
+
+    function genId() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    }
+
+    // ── View switching ──
+    function switchView(view) {
+      currentView = view;
+      document.querySelectorAll('#viewToggle button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+      // Day filter chips only relevant in week view
+      document.getElementById('dayFilters').style.display = view === 'week' ? '' : 'none';
+      render();
+    }
+
+    // ── Filters ──
+    function setFilter(type, value, el) {
+      filters[type] = value;
+      document.querySelectorAll(`.filter-chip[data-filter="${type}"]`).forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      render();
+    }
+
+    function matchesFilters(task) {
+      if (currentView === 'week' && filters.day !== 'all') {
+        const taskDay = dayKeyFromDate(task.date);
+        if (taskDay !== filters.day) return false;
+      }
+      if (filters.priority !== 'all' && task.priority !== filters.priority) return false;
+      if (filters.category !== 'all' && task.category !== filters.category) return false;
+      if (filters.status !== 'all' && task.status !== filters.status) return false;
+      return true;
+    }
+
+    // ── Rendering ──
+    function render() {
+      const app = document.getElementById('app');
+      if (currentView === 'week') {
+        renderWeekView(app);
+      } else if (currentView === 'calendar') {
+        renderCalendarView(app);
+      } else if (currentView === 'progress') {
+        renderProgressView(app);
+      } else {
+        renderAllView(app);
+      }
+    }
+
+    // ── Week view ──
+    function renderWeekView(app) {
+      const daysToShow = filters.day === 'all' ? DAYS : DAYS.filter(d => d.key === filters.day);
+
+      app.innerHTML = daysToShow.map(day => {
+        const allDayTasks = tasks.filter(t => dayKeyFromDate(t.date) === day.key);
+        const visibleTasks = allDayTasks.filter(matchesFilters);
+        const highCount = allDayTasks.filter(t => t.priority === 'high' && t.status !== 'completed').length;
+        const activeCount = allDayTasks.filter(t => t.status !== 'completed').length;
+
+        const summaryParts = [];
+        summaryParts.push(`${activeCount} task${activeCount !== 1 ? 's' : ''}`);
+        if (highCount > 0) summaryParts.push(`${highCount} high priority`);
+
+        const emptyMsg = `No tasks for ${day.label} yet \u2014 add one`;
+
+        const tasksHtml = visibleTasks.length === 0
+          ? `<div class="empty-state">
+               <p>${emptyMsg}</p>
+               <button class="btn btn-sm btn-primary" onclick="openAddModal('${day.key}')">Add task</button>
+             </div>`
+          : `<ul class="task-list">${visibleTasks.map(t => taskHtml(t, true)).join('')}</ul>`;
+
+        return `
+          <section class="day-section${day.weekend ? ' weekend' : ''}">
+            <div class="day-header">
+              <div class="day-title">
+                ${day.label}
+                ${day.weekend ? '<span class="weekend-badge">Weekend</span>' : ''}
+              </div>
+              <div class="day-summary">${summaryParts.join(', ')}</div>
+            </div>
+            ${tasksHtml}
+          </section>`;
+      }).join('');
+    }
+
+    // ── Calendar view ──
+    function renderCalendarView(app) {
+      const today = todayStr();
+      // Build calendar grid data
+      const firstDay = new Date(calYear, calMonth, 1);
+      const lastDay = new Date(calYear, calMonth + 1, 0);
+      // Monday = 0 in our grid. JS: Sun=0,Mon=1...Sat=6 → shift so Mon=0
+      let startDow = (firstDay.getDay() + 6) % 7; // 0=Mon
+      const daysInMonth = lastDay.getDate();
+
+      // Cells: fill leading days from prev month
+      const cells = [];
+      const prevMonthLast = new Date(calYear, calMonth, 0);
+      for (let i = startDow - 1; i >= 0; i--) {
+        const d = new Date(calYear, calMonth, 0 - i);
+        cells.push({ date: toDateStr(d), day: d.getDate(), outside: true });
+      }
+      for (let i = 1; i <= daysInMonth; i++) {
+        const d = new Date(calYear, calMonth, i);
+        cells.push({ date: toDateStr(d), day: i, outside: false });
+      }
+      // Fill trailing days
+      const remain = 7 - (cells.length % 7);
+      if (remain < 7) {
+        for (let i = 1; i <= remain; i++) {
+          const d = new Date(calYear, calMonth + 1, i);
+          cells.push({ date: toDateStr(d), day: i, outside: true });
+        }
+      }
+
+      // Task counts per date
+      const tasksByDate = {};
+      tasks.forEach(t => {
+        if (!tasksByDate[t.date]) tasksByDate[t.date] = [];
+        tasksByDate[t.date].push(t);
+      });
+
+      // Day labels row
+      const dayLabelsHtml = DAY_LABELS_SHORT.map((l, i) =>
+        `<div class="calendar-day-label${i >= 5 ? ' weekend-label' : ''}">${l}</div>`
+      ).join('');
+
+      // Cells
+      const cellsHtml = cells.map(c => {
+        const isToday = c.date === today;
+        const isSelected = c.date === selectedDate;
+        const isWeekend = [0, 6].includes(new Date(c.date + 'T00:00:00').getDay());
+        const dateTasks = tasksByDate[c.date] || [];
+        const activeTasks = dateTasks.filter(t => t.status !== 'completed');
+
+        let classes = 'calendar-cell';
+        if (c.outside) classes += ' outside';
+        if (isWeekend && !c.outside) classes += ' weekend-cell';
+        if (isToday) classes += ' today';
+        if (isSelected) classes += ' selected';
+
+        // Priority dots (max 5 shown)
+        const dots = activeTasks.slice(0, 5).map(t =>
+          `<span class="cal-dot ${t.priority}"></span>`
+        ).join('');
+
+        const countLabel = activeTasks.length > 5
+          ? `<div class="cal-task-count">+${activeTasks.length - 5} more</div>` : '';
+
+        return `<div class="${classes}" onclick="selectCalDate('${c.date}')">
+          <div class="cal-date">${c.day}</div>
+          <div class="cal-dots">${dots}</div>
+          ${countLabel}
+        </div>`;
+      }).join('');
+
+      // Selected date tasks panel
+      let panelHtml = '';
+      if (selectedDate) {
+        const selTasks = (tasksByDate[selectedDate] || []).filter(matchesFilters);
+        const dayInfo = DAYS.find(d => d.key === dayKeyFromDate(selectedDate));
+        const isWeekend = dayInfo && dayInfo.weekend;
+
+        const panelTitle = parseDateNice(selectedDate);
+        const activeCount = selTasks.filter(t => t.status !== 'completed').length;
+        const highCount = selTasks.filter(t => t.priority === 'high' && t.status !== 'completed').length;
+        const summaryParts = [`${activeCount} task${activeCount !== 1 ? 's' : ''}`];
+        if (highCount > 0) summaryParts.push(`${highCount} high priority`);
+
+        const taskListHtml = selTasks.length === 0
+          ? `<div class="empty-state">
+               <p>No tasks for ${parseDateNice(selectedDate)} yet \u2014 add one</p>
+               <button class="btn btn-sm btn-primary" onclick="openAddModal(null, '${selectedDate}')">Add task</button>
+             </div>`
+          : `<ul class="task-list">${selTasks.map(t => taskHtml(t, false)).join('')}</ul>`;
+
+        panelHtml = `
+          <div class="selected-date-panel">
+            <section class="day-section${isWeekend ? ' weekend' : ''}">
+              <div class="day-header">
+                <div class="day-title">
+                  ${panelTitle}
+                  ${isWeekend ? '<span class="weekend-badge">Weekend</span>' : ''}
+                </div>
+                <div class="day-summary">${summaryParts.join(', ')}</div>
+              </div>
+              ${taskListHtml}
+            </section>
+          </div>`;
+      }
+
+      app.innerHTML = `
+        <div class="calendar-wrapper">
+          <div class="calendar-nav">
+            <button class="calendar-nav-btn" onclick="navMonth(-1)" aria-label="Previous month">
+              <svg width="14" height="14" viewBox="0 0 14 14"><path d="M9 3L5 7l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            </button>
+            <div class="calendar-nav-center">
+              <span class="calendar-nav-title">${MONTH_NAMES[calMonth]} ${calYear}</span>
+              <button class="calendar-today-btn" onclick="goToday()">Today</button>
+            </div>
+            <button class="calendar-nav-btn" onclick="navMonth(1)" aria-label="Next month">
+              <svg width="14" height="14" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            </button>
+          </div>
+          <div class="calendar-grid">
+            ${dayLabelsHtml}
+            ${cellsHtml}
+          </div>
+        </div>
+        ${panelHtml}`;
+    }
+
+    function selectCalDate(dateStr) {
+      selectedDate = (selectedDate === dateStr) ? null : dateStr;
+      render();
+    }
+
+    function navMonth(dir) {
+      calMonth += dir;
+      if (calMonth > 11) { calMonth = 0; calYear++; }
+      if (calMonth < 0) { calMonth = 11; calYear--; }
+      selectedDate = null;
+      render();
+    }
+
+    function goToday() {
+      const now = new Date();
+      calMonth = now.getMonth();
+      calYear = now.getFullYear();
+      selectedDate = todayStr();
+      render();
+    }
+
+    // ── Progress view helpers ──
+    function getWeekDates(offset) {
+      // Returns array of 7 date strings (Mon-Sun) for the week at the given offset
+      const now = new Date();
+      const day = now.getDay(); // 0=Sun
+      const mondayOffset = day === 0 ? -6 : 1 - day;
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + mondayOffset + (offset * 7));
+      const dates = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        dates.push(toDateStr(d));
+      }
+      return dates;
+    }
+
+    function getWeekLabel(dates) {
+      const start = new Date(dates[0] + 'T00:00:00');
+      const end = new Date(dates[6] + 'T00:00:00');
+      const opts = { month: 'short', day: 'numeric' };
+      const startStr = start.toLocaleDateString('en-US', opts);
+      const endOpts = start.getMonth() === end.getMonth() ? { day: 'numeric' } : opts;
+      const endStr = end.toLocaleDateString('en-US', endOpts);
+      return `${startStr} \u2013 ${endStr}, ${end.getFullYear()}`;
+    }
+
+    function getWeekTasks(dates) {
+      const dateSet = new Set(dates);
+      return tasks.filter(t => dateSet.has(t.date));
+    }
+
+    function navProgressWeek(dir) {
+      progressWeekOffset += dir;
+      render();
+    }
+
+    function goThisWeek() {
+      progressWeekOffset = 0;
+      render();
+    }
+
+    // ── Progress view ──
+    function renderProgressView(app) {
+      const weekDates = getWeekDates(progressWeekOffset);
+      const prevWeekDates = getWeekDates(progressWeekOffset - 1);
+      const weekTasks = getWeekTasks(weekDates);
+      const prevWeekTasks = getWeekTasks(prevWeekDates);
+      const today = todayStr();
+      const isThisWeek = progressWeekOffset === 0;
+
+      // Week label
+      const weekLabel = isThisWeek ? 'This week' : (progressWeekOffset === -1 ? 'Last week' : getWeekLabel(weekDates));
+      const weekSub = getWeekLabel(weekDates);
+
+      // Core stats
+      const total = weekTasks.length;
+      const completed = weekTasks.filter(t => t.status === 'completed').length;
+      const active = total - completed;
+      const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+      const prevTotal = prevWeekTasks.length;
+      const prevCompleted = prevWeekTasks.filter(t => t.status === 'completed').length;
+      const prevPct = prevTotal > 0 ? Math.round((prevCompleted / prevTotal) * 100) : 0;
+
+      // Ring color
+      const ringColor = pct >= 75 ? 'var(--low)' : pct >= 40 ? 'var(--medium)' : pct > 0 ? 'var(--high)' : 'var(--border)';
+      const circ = 2 * Math.PI * 42;
+      const dashOffset = circ - (circ * pct / 100);
+
+      // Daily chart data
+      const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const dayData = weekDates.map((date, i) => {
+        const dayTasks = weekTasks.filter(t => t.date === date);
+        return {
+          label: dayLabels[i],
+          total: dayTasks.length,
+          completed: dayTasks.filter(t => t.status === 'completed').length,
+          pending: dayTasks.filter(t => t.status !== 'completed').length,
+          isWeekend: i >= 5,
+          isToday: date === today,
+          date
+        };
+      });
+      const maxDayTotal = Math.max(1, ...dayData.map(d => d.total));
+
+      // Bar chart HTML
+      const barsHtml = dayData.map(d => {
+        const compH = d.total > 0 ? Math.round((d.completed / maxDayTotal) * 100) : 0;
+        const pendH = d.total > 0 ? Math.round((d.pending / maxDayTotal) * 100) : 0;
+        return `<div class="bar-col${d.isToday ? ' today-col' : ''}">
+          <div class="bar-count">${d.total > 0 ? d.completed + '/' + d.total : ''}</div>
+          <div class="bar-stack">
+            ${d.pending > 0 ? `<div class="bar-segment pending-bar" style="height:${pendH}%"></div>` : ''}
+            ${d.completed > 0 ? `<div class="bar-segment completed-bar" style="height:${compH}%"></div>` : ''}
+          </div>
+          <div class="bar-day-label${d.isWeekend ? ' weekend-bar' : ''}">${d.label}</div>
+        </div>`;
+      }).join('');
+
+      // Priority breakdown
+      const priHigh = weekTasks.filter(t => t.priority === 'high').length;
+      const priMed = weekTasks.filter(t => t.priority === 'medium').length;
+      const priLow = weekTasks.filter(t => t.priority === 'low').length;
+      const priHighDone = weekTasks.filter(t => t.priority === 'high' && t.status === 'completed').length;
+      const priMedDone = weekTasks.filter(t => t.priority === 'medium' && t.status === 'completed').length;
+      const priLowDone = weekTasks.filter(t => t.priority === 'low' && t.status === 'completed').length;
+
+      function breakdownBar(label, count, doneCount, total, color) {
+        const fillPct = total > 0 ? Math.round((count / total) * 100) : 0;
+        const donePct = count > 0 ? Math.round((doneCount / count) * 100) : 0;
+        return `<div class="breakdown-row">
+          <div class="breakdown-header">
+            <span class="breakdown-label"><span class="priority-dot" style="background:${color};width:8px;height:8px"></span> ${label}</span>
+            <span class="breakdown-value">${doneCount}/${count} done</span>
+          </div>
+          <div class="breakdown-track">
+            <div class="breakdown-fill" style="width:${fillPct}%;background:${color};opacity:${donePct > 0 ? 0.3 + 0.7 * (donePct/100) : 0.3}"></div>
+          </div>
+        </div>`;
+      }
+
+      // Category breakdown
+      const catPersonal = weekTasks.filter(t => t.category === 'personal').length;
+      const catProfessional = weekTasks.filter(t => t.category === 'professional').length;
+      const catPersonalDone = weekTasks.filter(t => t.category === 'personal' && t.status === 'completed').length;
+      const catProfDone = weekTasks.filter(t => t.category === 'professional' && t.status === 'completed').length;
+
+      // Week-over-week comparison
+      const prevActive = prevTotal - prevCompleted;
+      function delta(curr, prev) {
+        const diff = curr - prev;
+        if (diff === 0) return '<span class="wow-delta neutral">No change</span>';
+        const arrow = diff > 0 ? '\u2191' : '\u2193';
+        // For completion rate and completed, up is good
+        return `<span class="wow-delta ${diff > 0 ? 'up' : 'down'}">${arrow} ${Math.abs(diff)}</span>`;
+      }
+      function deltaPct(curr, prev) {
+        const diff = curr - prev;
+        if (diff === 0) return '<span class="wow-delta neutral">No change</span>';
+        const arrow = diff > 0 ? '\u2191' : '\u2193';
+        return `<span class="wow-delta ${diff > 0 ? 'up' : 'down'}">${arrow} ${Math.abs(diff)}%</span>`;
+      }
+
+      // Streak: count consecutive days (up to today) where all tasks were completed
+      function computeStreak() {
+        let streak = 0;
+        const d = new Date();
+        // Start from yesterday if today has pending tasks (give credit for today only if all done)
+        while (true) {
+          const ds = toDateStr(d);
+          const dayT = tasks.filter(t => t.date === ds);
+          if (dayT.length === 0) {
+            // No tasks = don't count, but also don't break streak (skip)
+            d.setDate(d.getDate() - 1);
+            // Limit lookback to 60 days
+            if (streak === 0 && toDateStr(d) < toDateStr(new Date(Date.now() - 60*86400000))) break;
+            continue;
+          }
+          const allDone = dayT.every(t => t.status === 'completed');
+          if (allDone) { streak++; d.setDate(d.getDate() - 1); }
+          else break;
+        }
+        return streak;
+      }
+      const streak = computeStreak();
+
+      // Streak dots for current week
+      const streakDotsHtml = weekDates.map((date, i) => {
+        const dayT = weekTasks.filter(t => t.date === date);
+        const isToday = date === today;
+        const isFuture = date > today;
+        let cls = 'streak-dot';
+        if (isFuture) {
+          // future: plain
+        } else if (dayT.length === 0) {
+          // no tasks
+          cls += ' neutral';
+        } else if (dayT.every(t => t.status === 'completed')) {
+          cls += ' done';
+        } else if (dayT.some(t => t.status === 'completed')) {
+          cls += ' partial';
+        }
+        if (isToday) cls += ' today-dot';
+        const label = dayLabels[i].charAt(0);
+        return `<div class="${cls}">${label}</div>`;
+      }).join('');
+
+      // Busiest day
+      const busiestDay = dayData.reduce((best, d) => d.total > best.total ? d : best, dayData[0]);
+
+      app.innerHTML = `
+        <div class="progress-week-nav">
+          <button class="calendar-nav-btn" onclick="navProgressWeek(-1)" aria-label="Previous week">
+            <svg width="14" height="14" viewBox="0 0 14 14"><path d="M9 3L5 7l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+          </button>
+          <div>
+            <div class="progress-week-label">${weekLabel}</div>
+            <div class="progress-week-sub">${isThisWeek ? weekSub : ''}</div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            ${!isThisWeek ? '<button class="calendar-today-btn" onclick="goThisWeek()">This week</button>' : ''}
+            <button class="calendar-nav-btn" onclick="navProgressWeek(1)" aria-label="Next week">
+              <svg width="14" height="14" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Completion rate -->
+        <div class="progress-section">
+          <div class="progress-section-title">Completion rate</div>
+          <div class="ring-row">
+            <div class="ring-wrap">
+              <svg class="ring-svg" width="100" height="100" viewBox="0 0 100 100">
+                <circle class="ring-bg" cx="50" cy="50" r="42"/>
+                <circle class="ring-fill" cx="50" cy="50" r="42"
+                  stroke="${ringColor}"
+                  stroke-dasharray="${circ}"
+                  stroke-dashoffset="${dashOffset}"/>
+              </svg>
+              <div class="ring-label">
+                <div class="ring-pct" style="color:${ringColor}">${pct}%</div>
+                <div class="ring-sub">Done</div>
+              </div>
+            </div>
+            <div class="ring-stats">
+              <div class="ring-stat-row"><span class="ring-stat-label">Total tasks</span><span class="ring-stat-value">${total}</span></div>
+              <div class="ring-stat-row"><span class="ring-stat-label">Completed</span><span class="ring-stat-value" style="color:var(--low)">${completed}</span></div>
+              <div class="ring-stat-row"><span class="ring-stat-label">Remaining</span><span class="ring-stat-value" style="color:var(--medium)">${active}</span></div>
+              <div class="ring-stat-row"><span class="ring-stat-label">Busiest day</span><span class="ring-stat-value">${busiestDay.total > 0 ? busiestDay.label + ' (' + busiestDay.total + ')' : '\u2014'}</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Daily breakdown chart -->
+        <div class="progress-section">
+          <div class="progress-section-title">Daily breakdown</div>
+          <div class="bar-chart">${barsHtml}</div>
+        </div>
+
+        <!-- Priority & category -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="progress-section">
+            <div class="progress-section-title">By priority</div>
+            ${breakdownBar('High', priHigh, priHighDone, total, 'var(--high)')}
+            ${breakdownBar('Medium', priMed, priMedDone, total, 'var(--medium)')}
+            ${breakdownBar('Low', priLow, priLowDone, total, 'var(--low)')}
+          </div>
+          <div class="progress-section">
+            <div class="progress-section-title">By category</div>
+            ${breakdownBar('Personal', catPersonal, catPersonalDone, total, 'var(--personal)')}
+            ${breakdownBar('Professional', catProfessional, catProfDone, total, 'var(--professional)')}
+          </div>
+        </div>
+
+        <!-- Streak -->
+        <div class="progress-section">
+          <div class="progress-section-title">Completion streak</div>
+          <div class="streak-row">
+            <div class="streak-number">${streak}</div>
+            <div class="streak-text"><strong>${streak === 1 ? '1 day' : streak + ' days'}</strong> with all tasks completed</div>
+          </div>
+          <div class="streak-dots">${streakDotsHtml}</div>
+        </div>
+
+        <!-- Week-over-week -->
+        <div class="progress-section">
+          <div class="progress-section-title">Compared to previous week</div>
+          <div class="wow-grid">
+            <div class="wow-card">
+              <div class="wow-value">${total}</div>
+              <div class="wow-label">Total tasks</div>
+              ${delta(total, prevTotal)}
+            </div>
+            <div class="wow-card">
+              <div class="wow-value" style="color:var(--low)">${completed}</div>
+              <div class="wow-label">Completed</div>
+              ${delta(completed, prevCompleted)}
+            </div>
+            <div class="wow-card">
+              <div class="wow-value" style="color:${ringColor}">${pct}%</div>
+              <div class="wow-label">Completion rate</div>
+              ${deltaPct(pct, prevPct)}
+            </div>
+            <div class="wow-card">
+              <div class="wow-value" style="color:var(--medium)">${active}</div>
+              <div class="wow-label">Remaining</div>
+              ${delta(active, prevActive)}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ── All tasks view ──
+    function setAllSort(sort) {
+      allSort = sort;
+      render();
+    }
+
+    function renderAllView(app) {
+      const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
+      const filtered = tasks.filter(matchesFilters);
+      const active = filtered.filter(t => t.status !== 'completed');
+      const completed = filtered.filter(t => t.status === 'completed');
+
+      // Stats
+      const totalAll = tasks.length;
+      const totalActive = tasks.filter(t => t.status !== 'completed').length;
+      const totalCompleted = tasks.filter(t => t.status === 'completed').length;
+      const highActive = tasks.filter(t => t.status !== 'completed' && t.priority === 'high').length;
+      const personalCount = tasks.filter(t => t.status !== 'completed' && t.category === 'personal').length;
+      const professionalCount = tasks.filter(t => t.status !== 'completed' && t.category === 'professional').length;
+
+      // Sort active tasks
+      const sorted = [...active].sort((a, b) => {
+        if (allSort === 'date') return a.date.localeCompare(b.date);
+        if (allSort === 'priority') return PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
+        if (allSort === 'category') return a.category.localeCompare(b.category);
+        return 0;
+      });
+
+      const completedSorted = [...completed].sort((a, b) => a.date.localeCompare(b.date));
+
+      // Group helper for date sort: insert date dividers
+      function buildGroupedHtml(list) {
+        if (list.length === 0) return '';
+        if (allSort === 'date') {
+          let html = '';
+          let lastDate = '';
+          for (const t of list) {
+            if (t.date !== lastDate) {
+              lastDate = t.date;
+              const dayInfo = DAYS.find(d => d.key === dayKeyFromDate(t.date));
+              const isWeekend = dayInfo && dayInfo.weekend;
+              const dateLabel = parseDateNice(t.date);
+              html += `<div class="all-section-label" style="margin-top:${html ? '20px' : '0'}">${dateLabel}${isWeekend ? ' <span class="weekend-badge" style="margin-left:6px">Weekend</span>' : ''}</div>`;
+            }
+            html += taskHtml(t, false);
+          }
+          return `<div class="day-section"><ul class="task-list">${html}</ul></div>`;
+        }
+        if (allSort === 'priority') {
+          let html = '';
+          let lastPri = '';
+          for (const t of list) {
+            if (t.priority !== lastPri) {
+              lastPri = t.priority;
+              html += `<div class="all-section-label" style="margin-top:${html ? '20px' : '0'}">${lastPri} priority</div>`;
+            }
+            html += taskHtml(t, true);
+          }
+          return `<div class="day-section"><ul class="task-list">${html}</ul></div>`;
+        }
+        if (allSort === 'category') {
+          let html = '';
+          let lastCat = '';
+          for (const t of list) {
+            if (t.category !== lastCat) {
+              lastCat = t.category;
+              html += `<div class="all-section-label" style="margin-top:${html ? '20px' : '0'}">${lastCat}</div>`;
+            }
+            html += taskHtml(t, true);
+          }
+          return `<div class="day-section"><ul class="task-list">${html}</ul></div>`;
+        }
+        return `<div class="day-section"><ul class="task-list">${list.map(t => taskHtml(t, true)).join('')}</ul></div>`;
+      }
+
+      const activeHtml = sorted.length > 0
+        ? buildGroupedHtml(sorted)
+        : `<div class="day-section"><div class="empty-state"><p>No active tasks \u2014 everything is done, or add a new one</p><button class="btn btn-sm btn-primary" onclick="openAddModal()">Add task</button></div></div>`;
+
+      const completedHtml = completedSorted.length > 0
+        ? `<div class="all-section-label completed-label">Completed (${completedSorted.length})</div>
+           <div class="day-section"><ul class="task-list">${completedSorted.map(t => taskHtml(t, true)).join('')}</ul></div>`
+        : '';
+
+      app.innerHTML = `
+        <div class="all-stats">
+          <div class="stat-card">
+            <div class="stat-value accent">${totalAll}</div>
+            <div class="stat-label">Total tasks</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${totalActive}</div>
+            <div class="stat-label">Active</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value done-color">${totalCompleted}</div>
+            <div class="stat-label">Completed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value high-color">${highActive}</div>
+            <div class="stat-label">High priority</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="color:var(--personal)">${personalCount}</div>
+            <div class="stat-label">Personal</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="color:var(--professional)">${professionalCount}</div>
+            <div class="stat-label">Professional</div>
+          </div>
+        </div>
+
+        <div class="all-sort-bar">
+          <span>Sort by</span>
+          <button class="sort-chip${allSort==='date'?' active':''}" onclick="setAllSort('date')">Date</button>
+          <button class="sort-chip${allSort==='priority'?' active':''}" onclick="setAllSort('priority')">Priority</button>
+          <button class="sort-chip${allSort==='category'?' active':''}" onclick="setAllSort('category')">Category</button>
+        </div>
+
+        <div class="all-section-label">Active (${active.length})</div>
+        ${activeHtml}
+        ${completedHtml}`;
+    }
+
+    // ── Task HTML ──
+    function taskHtml(task, showDate) {
+      const dateInfo = showDate ? `<span class="date-label">${formatShort(task.date)}</span>` : '';
+      const statusLabel = STATUS_LABELS[task.status] || 'Not started';
+      return `
+        <li class="task-item status-${task.status}" data-id="${task.id}">
+          <span class="priority-dot ${task.priority}" title="${task.priority} priority"></span>
+          <button class="status-badge ${task.status}" onclick="cycleStatus('${task.id}')" title="Click to change status">
+            <span class="status-badge-dot"></span>
+            ${statusLabel}
+          </button>
+          <div class="task-body">
+            <div class="task-text">${escapeHtml(task.text)}</div>
+            <div class="task-meta">
+              <span class="tag ${task.category}">${task.category}</span>
+              <span class="priority-label">${task.priority}</span>
+              ${dateInfo}
+            </div>
+          </div>
+          <div class="task-actions">
+            <button class="btn-icon" onclick="openEditModal('${task.id}')" aria-label="Edit task" title="Edit task">
+              <svg width="16" height="16" viewBox="0 0 16 16"><path d="M11.5 1.5l3 3-9 9H2.5v-3l9-9z" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="btn-icon btn-danger" onclick="requestDelete('${task.id}')" aria-label="Delete task" title="Delete task">
+              <svg width="16" height="16" viewBox="0 0 16 16"><path d="M3 4h10M6 4V3a1 1 0 011-1h2a1 1 0 011 1v1M5 4v9a1 1 0 001 1h4a1 1 0 001-1V4" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </li>`;
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // ── Task CRUD ──
+    const STATUS_CYCLE = ['not_started', 'in_progress', 'on_hold', 'completed'];
+    function cycleStatus(id) {
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
+      const idx = STATUS_CYCLE.indexOf(task.status);
+      task.status = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
+      saveTasks();
+      render();
+      toast(`Status: ${STATUS_LABELS[task.status]}`);
+    }
+
+    function requestDelete(id) {
+      pendingConfirm = () => {
+        tasks = tasks.filter(t => t.id !== id);
+        saveTasks();
+        render();
+        toast('Task deleted');
+      };
+      document.getElementById('confirmMessage').textContent = 'Delete this task? This cannot be undone.';
+      document.getElementById('confirmBtn').textContent = 'Delete';
+      document.getElementById('confirmModal').classList.add('open');
+    }
+
+    function confirmAction() {
+      if (pendingConfirm) pendingConfirm();
+      pendingConfirm = null;
+      closeConfirm();
+    }
+
+    function closeConfirm() {
+      document.getElementById('confirmModal').classList.remove('open');
+    }
+
+    // ── Modal ──
+    function openAddModal(presetDayKey, presetDate) {
+      editingId = null;
+      document.getElementById('modalTitle').textContent = 'Add task';
+      document.getElementById('modalSubmitBtn').textContent = 'Add task';
+      document.getElementById('taskForm').reset();
+
+      // Set date
+      if (presetDate) {
+        document.getElementById('taskDate').value = presetDate;
+      } else if (presetDayKey) {
+        document.getElementById('taskDate').value = getNextDateForDay(presetDayKey);
+      } else {
+        document.getElementById('taskDate').value = todayStr();
+      }
+
+      // Reset segmented controls
+      document.querySelector('input[name="priority"][value="medium"]').checked = true;
+      document.querySelector('input[name="category"][value="personal"]').checked = true;
+      document.querySelector('input[name="status"][value="not_started"]').checked = true;
+
+      document.getElementById('taskModal').classList.add('open');
+      setTimeout(() => document.getElementById('taskText').focus(), 100);
+    }
+
+    function openEditModal(id) {
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
+      editingId = id;
+      document.getElementById('modalTitle').textContent = 'Edit task';
+      document.getElementById('modalSubmitBtn').textContent = 'Save changes';
+      document.getElementById('taskText').value = task.text;
+      document.getElementById('taskDate').value = task.date;
+      document.querySelector(`input[name="priority"][value="${task.priority}"]`).checked = true;
+      document.querySelector(`input[name="category"][value="${task.category}"]`).checked = true;
+      document.querySelector(`input[name="status"][value="${task.status || 'not_started'}"]`).checked = true;
+      document.getElementById('taskModal').classList.add('open');
+      setTimeout(() => document.getElementById('taskText').focus(), 100);
+    }
+
+    function closeModal() {
+      document.getElementById('taskModal').classList.remove('open');
+      editingId = null;
+    }
+
+    function handleSubmit(e) {
+      e.preventDefault();
+      const text = document.getElementById('taskText').value.trim();
+      if (!text) return;
+
+      const date = document.getElementById('taskDate').value || todayStr();
+      const priority = document.querySelector('input[name="priority"]:checked').value;
+      const category = document.querySelector('input[name="category"]:checked').value;
+      const status = document.querySelector('input[name="status"]:checked').value;
+
+      if (editingId) {
+        const task = tasks.find(t => t.id === editingId);
+        if (task) {
+          task.text = text;
+          task.date = date;
+          task.priority = priority;
+          task.category = category;
+          task.status = status;
+        }
+        toast('Task updated');
+      } else {
+        tasks.push({ id: genId(), text, date, priority, category, status });
+        toast('Task added');
+      }
+
+      saveTasks();
+      closeModal();
+      render();
+    }
+
+    // Close modals
+    document.getElementById('taskModal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeModal();
+    });
+    document.getElementById('confirmModal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeConfirm();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { closeModal(); closeConfirm(); }
+    });
+
+    // ── Toast ──
+    function toast(message) {
+      const container = document.getElementById('toasts');
+      const el = document.createElement('div');
+      el.className = 'toast';
+      el.textContent = message;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 200ms';
+        setTimeout(() => el.remove(), 200);
+      }, 2000);
+    }
+
+    // ── PWA ──
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').catch(() => {});
+    }
+
+    // ── Init ──
+    render();
+  </script>
+</body>
+</html>
