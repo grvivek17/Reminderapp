@@ -1979,6 +1979,9 @@
       document.getElementById('authScreen').style.display = 'none';
       document.getElementById('appWrapper').style.display = '';
       updateHeaderUser();
+      // Reset briefing dismissed state so it shows on fresh app load
+      briefingDismissedToday = false;
+      briefingError = false;
       render();
       initNotifications();
       initBriefing();
@@ -2299,8 +2302,8 @@
     // ── AI: Daily briefing ──
     async function initBriefing() {
       const today = todayStr();
-      // Fetch weather first (needed for briefing)
-      await fetchWeather();
+      // Start weather fetch in parallel (don't block briefing)
+      fetchWeather().then(() => render());
       // Check localStorage cache
       try {
         const cached = JSON.parse(localStorage.getItem(BRIEFING_CACHE_KEY) || 'null');
