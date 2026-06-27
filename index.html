@@ -987,6 +987,186 @@
     }
 
     /* Responsive */
+    /* ── Auth / Login screen ── */
+    .auth-screen {
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      padding: 20px;
+    }
+    .auth-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    .auth-card h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .auth-card .auth-sub {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+    .auth-card .form-group { margin-bottom: 14px; }
+    .auth-toggle {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+    .auth-toggle a {
+      color: var(--accent);
+      cursor: pointer;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .auth-toggle a:hover { text-decoration: underline; }
+
+    /* ── User avatar ── */
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+      text-transform: uppercase;
+    }
+    .user-avatar.sm { width: 22px; height: 22px; font-size: 0.5625rem; }
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      position: relative;
+    }
+    .user-menu-name {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .user-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+      min-width: 180px;
+      z-index: 150;
+      display: none;
+      overflow: hidden;
+    }
+    .user-dropdown.open { display: block; }
+    .user-dropdown-item {
+      padding: 10px 14px;
+      font-size: 0.8125rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+      transition: background var(--transition);
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      font-family: inherit;
+    }
+    .user-dropdown-item:hover { background: var(--bg); }
+    .user-dropdown-item.danger { color: var(--danger); }
+    .user-dropdown-sep {
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Assign chips in task items ── */
+    .task-assignees {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .assignee-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px 2px 2px;
+      border-radius: 12px;
+      font-size: 0.625rem;
+      font-weight: 600;
+      background: var(--bg);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+
+    /* ── Assign picker in modal ── */
+    .assign-picker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .assign-option {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 0.8125rem;
+      transition: all var(--transition);
+      background: var(--surface);
+      color: var(--text-secondary);
+    }
+    .assign-option:hover { border-color: var(--accent); }
+    .assign-option.selected {
+      background: var(--accent-light);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .assign-option input { display: none; }
+
+    /* ── Share modal ── */
+    .share-user-list {
+      max-height: 240px;
+      overflow-y: auto;
+    }
+    .share-user-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .share-user-row:last-child { border-bottom: none; }
+    .share-user-info { flex: 1; }
+    .share-user-name { font-size: 0.875rem; font-weight: 600; }
+    .share-user-email { font-size: 0.75rem; color: var(--text-muted); }
+
+    /* ── Owner filter ── */
+    .owner-filter-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
     @media (max-width: 600px) {
       .header { padding: 12px 16px; }
       .header h1 { font-size: 1.1rem; }
@@ -1014,6 +1194,35 @@
   </style>
 </head>
 <body>
+
+  <!-- Auth screen -->
+  <div id="authScreen" class="auth-screen" style="display:none">
+    <div class="auth-card">
+      <h2 id="authTitle">Sign up</h2>
+      <p class="auth-sub" id="authSub">Create an account to get started</p>
+      <form id="authForm" onsubmit="handleAuth(event)">
+        <div class="form-group">
+          <label for="authName">Name</label>
+          <input type="text" id="authName" class="form-input" placeholder="Your name" required autocomplete="name">
+        </div>
+        <div class="form-group">
+          <label for="authEmail">Email</label>
+          <input type="email" id="authEmail" class="form-input" placeholder="you@example.com" required autocomplete="email">
+        </div>
+        <div class="form-group" id="authPasswordGroup">
+          <label for="authPassword">Password</label>
+          <input type="password" id="authPassword" class="form-input" placeholder="Choose a password" required minlength="4" autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%" id="authSubmitBtn">Create account</button>
+      </form>
+      <div class="auth-toggle" id="authToggle">
+        Already have an account? <a onclick="toggleAuthMode()">Log in</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- App wrapper (hidden until logged in) -->
+  <div id="appWrapper" style="display:none">
 
   <!-- Header -->
   <header class="header">
@@ -1044,6 +1253,23 @@
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           Add task
         </button>
+        <div class="user-menu" id="userMenu" onclick="toggleUserDropdown(event)">
+          <div class="user-avatar" id="headerAvatar"></div>
+          <div class="user-dropdown" id="userDropdown">
+            <div class="user-dropdown-item" style="pointer-events:none;font-weight:700" id="dropdownUserName"></div>
+            <div class="user-dropdown-item" style="pointer-events:none;color:var(--text-muted);font-size:0.75rem;padding-top:0" id="dropdownUserEmail"></div>
+            <div class="user-dropdown-sep"></div>
+            <button class="user-dropdown-item" onclick="openManageUsers()">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4" r="2.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M2.5 12.5c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
+              Manage users
+            </button>
+            <div class="user-dropdown-sep"></div>
+            <button class="user-dropdown-item danger" onclick="logout()">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 2H3a1 1 0 00-1 1v8a1 1 0 001 1h2M9 10l3-3-3-3M12 7H5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+              Log out
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -1075,6 +1301,10 @@
     <button class="filter-chip" data-filter="status" data-value="in_progress" onclick="setFilter('status','in_progress',this)">In progress</button>
     <button class="filter-chip" data-filter="status" data-value="on_hold" onclick="setFilter('status','on_hold',this)">On hold</button>
     <button class="filter-chip" data-filter="status" data-value="completed" onclick="setFilter('status','completed',this)">Completed</button>
+    <div class="filter-separator"></div>
+    <button class="filter-chip active" data-filter="owner" data-value="all" onclick="setFilter('owner','all',this)">All tasks</button>
+    <button class="filter-chip" data-filter="owner" data-value="mine" onclick="setFilter('owner','mine',this)">My tasks</button>
+    <button class="filter-chip" data-filter="owner" data-value="assigned" onclick="setFilter('owner','assigned',this)">Assigned to me</button>
   </div>
 
   <!-- Main content -->
@@ -1123,6 +1353,10 @@
               <label><input type="radio" name="status" value="completed"><span>Completed</span></label>
             </div>
           </div>
+          <div class="form-group">
+            <label>Assign to</label>
+            <div class="assign-picker" id="assignPicker"></div>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn" onclick="closeModal()">Cancel</button>
@@ -1145,10 +1379,266 @@
     </div>
   </div>
 
+  <!-- Share modal -->
+  <div class="modal-overlay" id="shareModal">
+    <div class="modal" style="max-width:400px">
+      <div class="modal-header">
+        <h2>Share task</h2>
+        <button class="btn-icon" onclick="closeShareModal()" aria-label="Close">
+          <svg width="18" height="18" viewBox="0 0 18 18"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="share-user-list" id="shareUserList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage users modal -->
+  <div class="modal-overlay" id="manageUsersModal">
+    <div class="modal" style="max-width:440px">
+      <div class="modal-header">
+        <h2>Manage users</h2>
+        <button class="btn-icon" onclick="closeManageUsers()" aria-label="Close">
+          <svg width="18" height="18" viewBox="0 0 18 18"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="manageUsersBody"></div>
+    </div>
+  </div>
+
+  </div><!-- /appWrapper -->
+
   <!-- Toasts -->
   <div class="toast-container" id="toasts"></div>
 
   <script>
+    // ── User system ──
+    const USERS_KEY = 'reminder_app_users';
+    const CURRENT_USER_KEY = 'reminder_app_current_user';
+    const AVATAR_COLORS = ['#4f6ef7','#8b5cf6','#0ea5e9','#22c55e','#ef4444','#f59e0b','#ec4899','#6366f1','#14b8a6','#f97316'];
+
+    function loadUsers() {
+      try { return JSON.parse(localStorage.getItem(USERS_KEY)) || []; } catch { return []; }
+    }
+    function saveUsers() { localStorage.setItem(USERS_KEY, JSON.stringify(users)); }
+    function getCurrentUserId() { return localStorage.getItem(CURRENT_USER_KEY); }
+    function setCurrentUserId(id) { localStorage.setItem(CURRENT_USER_KEY, id); }
+
+    function getUserById(id) { return users.find(u => u.id === id) || null; }
+    function getUserInitials(user) {
+      if (!user) return '?';
+      const parts = user.name.trim().split(/\s+/);
+      return parts.length >= 2 ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase() : parts[0].slice(0,2).toUpperCase();
+    }
+    function getUserColor(user) {
+      if (!user) return AVATAR_COLORS[0];
+      return user.color || AVATAR_COLORS[0];
+    }
+
+    let users = loadUsers();
+    let currentUser = null;
+    let authMode = 'signup'; // 'signup' or 'login'
+
+    function initAuth() {
+      const uid = getCurrentUserId();
+      if (uid) {
+        currentUser = getUserById(uid);
+      }
+      if (currentUser) {
+        showApp();
+      } else {
+        showAuth();
+      }
+    }
+
+    function showAuth() {
+      document.getElementById('authScreen').style.display = '';
+      document.getElementById('appWrapper').style.display = 'none';
+      // Default to login if users exist, signup if no users
+      if (users.length > 0) {
+        authMode = 'login';
+      } else {
+        authMode = 'signup';
+      }
+      updateAuthUI();
+    }
+
+    function showApp() {
+      document.getElementById('authScreen').style.display = 'none';
+      document.getElementById('appWrapper').style.display = '';
+      updateHeaderUser();
+      tasks = loadTasks();
+      render();
+    }
+
+    function toggleAuthMode() {
+      authMode = authMode === 'signup' ? 'login' : 'signup';
+      updateAuthUI();
+    }
+
+    function updateAuthUI() {
+      const isSignup = authMode === 'signup';
+      document.getElementById('authTitle').textContent = isSignup ? 'Sign up' : 'Log in';
+      document.getElementById('authSub').textContent = isSignup ? 'Create an account to get started' : 'Welcome back';
+      document.getElementById('authSubmitBtn').textContent = isSignup ? 'Create account' : 'Log in';
+      document.getElementById('authToggle').innerHTML = isSignup
+        ? 'Already have an account? <a onclick="toggleAuthMode()">Log in</a>'
+        : 'New here? <a onclick="toggleAuthMode()">Create account</a>';
+      document.getElementById('authName').parentElement.style.display = isSignup ? '' : 'none';
+      document.getElementById('authName').required = isSignup;
+      document.getElementById('authPassword').autocomplete = isSignup ? 'new-password' : 'current-password';
+      document.getElementById('authForm').reset();
+    }
+
+    function handleAuth(e) {
+      e.preventDefault();
+      const email = document.getElementById('authEmail').value.trim().toLowerCase();
+      const password = document.getElementById('authPassword').value;
+
+      if (authMode === 'signup') {
+        const name = document.getElementById('authName').value.trim();
+        if (!name || !email || !password) return;
+        // Check if email already exists
+        if (users.find(u => u.email === email)) {
+          toast('An account with this email already exists');
+          return;
+        }
+        const newUser = {
+          id: genId(),
+          name,
+          email,
+          password, // simple - not hashed (client-side only)
+          color: AVATAR_COLORS[users.length % AVATAR_COLORS.length],
+          createdAt: new Date().toISOString()
+        };
+        users.push(newUser);
+        saveUsers();
+        currentUser = newUser;
+        setCurrentUserId(newUser.id);
+        toast('Account created');
+        showApp();
+      } else {
+        // Login
+        const user = users.find(u => u.email === email && u.password === password);
+        if (!user) {
+          toast('Invalid email or password');
+          return;
+        }
+        currentUser = user;
+        setCurrentUserId(user.id);
+        toast('Welcome back, ' + user.name);
+        showApp();
+      }
+    }
+
+    function logout() {
+      currentUser = null;
+      localStorage.removeItem(CURRENT_USER_KEY);
+      closeUserDropdown();
+      showAuth();
+    }
+
+    function updateHeaderUser() {
+      if (!currentUser) return;
+      const avatar = document.getElementById('headerAvatar');
+      avatar.textContent = getUserInitials(currentUser);
+      avatar.style.background = getUserColor(currentUser);
+      document.getElementById('dropdownUserName').textContent = currentUser.name;
+      document.getElementById('dropdownUserEmail').textContent = currentUser.email;
+    }
+
+    function toggleUserDropdown(e) {
+      e.stopPropagation();
+      document.getElementById('userDropdown').classList.toggle('open');
+    }
+    function closeUserDropdown() {
+      document.getElementById('userDropdown').classList.remove('open');
+    }
+    document.addEventListener('click', () => closeUserDropdown());
+
+    // ── Manage users modal ──
+    function openManageUsers() {
+      closeUserDropdown();
+      const body = document.getElementById('manageUsersBody');
+      body.innerHTML = users.map(u => `
+        <div class="share-user-row">
+          <div class="user-avatar" style="background:${u.color}">${getUserInitials(u)}</div>
+          <div class="share-user-info">
+            <div class="share-user-name">${escapeHtml(u.name)}${u.id === currentUser.id ? ' <span style="color:var(--accent);font-size:0.6875rem">(you)</span>' : ''}</div>
+            <div class="share-user-email">${escapeHtml(u.email)}</div>
+          </div>
+          ${u.id !== currentUser.id ? `<button class="btn btn-sm btn-danger" onclick="removeUser('${u.id}')" style="border:1px solid var(--danger)">Remove</button>` : ''}
+        </div>
+      `).join('') || '<div class="empty-state"><p>No other users</p></div>';
+      document.getElementById('manageUsersModal').classList.add('open');
+    }
+    function closeManageUsers() {
+      document.getElementById('manageUsersModal').classList.remove('open');
+    }
+    function removeUser(id) {
+      if (id === currentUser.id) return;
+      users = users.filter(u => u.id !== id);
+      saveUsers();
+      // Remove user from task assignments
+      tasks.forEach(t => {
+        t.assignedTo = (t.assignedTo || []).filter(uid => uid !== id);
+      });
+      saveTasks();
+      openManageUsers();
+      render();
+      toast('User removed');
+    }
+
+    // ── Share modal ──
+    let sharingTaskId = null;
+    function openShareModal(taskId) {
+      sharingTaskId = taskId;
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+      const assignedSet = new Set(task.assignedTo || []);
+      const otherUsers = users.filter(u => u.id !== currentUser.id);
+      const list = document.getElementById('shareUserList');
+      if (otherUsers.length === 0) {
+        list.innerHTML = '<div class="empty-state"><p>No other users to share with. Create more accounts first.</p></div>';
+      } else {
+        list.innerHTML = otherUsers.map(u => {
+          const isAssigned = assignedSet.has(u.id);
+          return `<div class="share-user-row">
+            <div class="user-avatar sm" style="background:${u.color}">${getUserInitials(u)}</div>
+            <div class="share-user-info">
+              <div class="share-user-name">${escapeHtml(u.name)}</div>
+              <div class="share-user-email">${escapeHtml(u.email)}</div>
+            </div>
+            <button class="btn btn-sm ${isAssigned ? 'btn-primary' : ''}" style="${isAssigned ? 'border-color:var(--accent)' : ''}" onclick="toggleShareUser('${u.id}')">
+              ${isAssigned ? 'Assigned' : 'Assign'}
+            </button>
+          </div>`;
+        }).join('');
+      }
+      document.getElementById('shareModal').classList.add('open');
+    }
+    function closeShareModal() {
+      document.getElementById('shareModal').classList.remove('open');
+      sharingTaskId = null;
+    }
+    function toggleShareUser(userId) {
+      const task = tasks.find(t => t.id === sharingTaskId);
+      if (!task) return;
+      if (!task.assignedTo) task.assignedTo = [];
+      const idx = task.assignedTo.indexOf(userId);
+      if (idx >= 0) {
+        task.assignedTo.splice(idx, 1);
+      } else {
+        task.assignedTo.push(userId);
+      }
+      saveTasks();
+      openShareModal(sharingTaskId); // refresh
+      render();
+      const user = getUserById(userId);
+      toast(idx >= 0 ? `Unassigned from ${user?.name}` : `Assigned to ${user?.name}`);
+    }
+
     // ── Constants ──
     const DAYS = [
       { key: 'mon', label: 'Monday', weekend: false },
@@ -1182,7 +1672,7 @@
     let selectedDate = null; // YYYY-MM-DD string when a calendar date is clicked
     let allSort = 'date'; // 'date', 'priority', 'category'
     let progressWeekOffset = 0; // 0 = this week, -1 = last week, etc.
-    const filters = { day: 'all', priority: 'all', category: 'all', status: 'all' };
+    const filters = { day: 'all', priority: 'all', category: 'all', status: 'all', owner: 'all' };
 
     // ── Helpers ──
     function toDateStr(d) {
@@ -1221,6 +1711,9 @@
             t.status = t.completed ? 'completed' : 'not_started';
           }
           delete t.completed;
+          // Ensure user fields exist
+          if (!t.createdBy) t.createdBy = currentUser?.id || null;
+          if (!t.assignedTo) t.assignedTo = [];
           return t;
         });
       } catch { return []; }
@@ -1270,6 +1763,8 @@
       if (filters.priority !== 'all' && task.priority !== filters.priority) return false;
       if (filters.category !== 'all' && task.category !== filters.category) return false;
       if (filters.status !== 'all' && task.status !== filters.status) return false;
+      if (filters.owner === 'mine' && task.createdBy !== currentUser?.id) return false;
+      if (filters.owner === 'assigned' && !(task.assignedTo || []).includes(currentUser?.id)) return false;
       return true;
     }
 
@@ -1895,6 +2390,21 @@
     function taskHtml(task, showDate) {
       const dateInfo = showDate ? `<span class="date-label">${formatShort(task.date)}</span>` : '';
       const statusLabel = STATUS_LABELS[task.status] || 'Not started';
+
+      // Assignee chips
+      const assignees = (task.assignedTo || []).map(uid => getUserById(uid)).filter(Boolean);
+      const creator = getUserById(task.createdBy);
+      let assigneeHtml = '';
+      if (assignees.length > 0) {
+        assigneeHtml = `<span class="task-assignees">${assignees.map(u =>
+          `<span class="assignee-chip"><span class="user-avatar sm" style="background:${u.color};width:16px;height:16px;font-size:0.5rem">${getUserInitials(u)}</span>${escapeHtml(u.name.split(' ')[0])}</span>`
+        ).join('')}</span>`;
+      }
+
+      // Creator label
+      const creatorLabel = creator && creator.id !== currentUser?.id
+        ? `<span class="date-label">by ${escapeHtml(creator.name.split(' ')[0])}</span>` : '';
+
       return `
         <li class="task-item status-${task.status}" data-id="${task.id}">
           <span class="priority-dot ${task.priority}" title="${task.priority} priority"></span>
@@ -1908,9 +2418,14 @@
               <span class="tag ${task.category}">${task.category}</span>
               <span class="priority-label">${task.priority}</span>
               ${dateInfo}
+              ${creatorLabel}
+              ${assigneeHtml}
             </div>
           </div>
           <div class="task-actions">
+            <button class="btn-icon" onclick="openShareModal('${task.id}')" aria-label="Share task" title="Share / Assign">
+              <svg width="16" height="16" viewBox="0 0 16 16"><path d="M4 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM12 5c.8 0 1.5-.7 1.5-1.5S12.8 2 12 2s-1.5.7-1.5 1.5S11.2 5 12 5zM12 11c-.8 0-1.5.7-1.5 1.5s.7 1.5 1.5 1.5 1.5-.7 1.5-1.5-.7-1.5-1.5-1.5zM5.7 6.8l4.6-2.6M5.7 9.2l4.6 2.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
+            </button>
             <button class="btn-icon" onclick="openEditModal('${task.id}')" aria-label="Edit task" title="Edit task">
               <svg width="16" height="16" viewBox="0 0 16 16"><path d="M11.5 1.5l3 3-9 9H2.5v-3l9-9z" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
@@ -1961,6 +2476,21 @@
       document.getElementById('confirmModal').classList.remove('open');
     }
 
+    function renderAssignPicker(selectedIds) {
+      const picker = document.getElementById('assignPicker');
+      const sel = new Set(selectedIds || []);
+      picker.innerHTML = users.map(u => {
+        const isSelected = sel.has(u.id);
+        return `<div class="assign-option${isSelected ? ' selected' : ''}" data-user-id="${u.id}" onclick="toggleAssignOption(this)">
+          <span class="user-avatar sm" style="background:${u.color};width:18px;height:18px;font-size:0.5rem">${getUserInitials(u)}</span>
+          ${escapeHtml(u.name.split(' ')[0])}
+        </div>`;
+      }).join('') || '<span style="color:var(--text-muted);font-size:0.8125rem">No users yet</span>';
+    }
+    function toggleAssignOption(el) {
+      el.classList.toggle('selected');
+    }
+
     // ── Modal ──
     function openAddModal(presetDayKey, presetDate) {
       editingId = null;
@@ -1981,6 +2511,7 @@
       document.querySelector('input[name="priority"][value="medium"]').checked = true;
       document.querySelector('input[name="category"][value="personal"]').checked = true;
       document.querySelector('input[name="status"][value="not_started"]').checked = true;
+      renderAssignPicker([]);
 
       document.getElementById('taskModal').classList.add('open');
       setTimeout(() => document.getElementById('taskText').focus(), 100);
@@ -1997,6 +2528,7 @@
       document.querySelector(`input[name="priority"][value="${task.priority}"]`).checked = true;
       document.querySelector(`input[name="category"][value="${task.category}"]`).checked = true;
       document.querySelector(`input[name="status"][value="${task.status || 'not_started'}"]`).checked = true;
+      renderAssignPicker(task.assignedTo || []);
       document.getElementById('taskModal').classList.add('open');
       setTimeout(() => document.getElementById('taskText').focus(), 100);
     }
@@ -2016,6 +2548,12 @@
       const category = document.querySelector('input[name="category"]:checked').value;
       const status = document.querySelector('input[name="status"]:checked').value;
 
+      // Collect assigned users from picker
+      const assignedTo = [];
+      document.querySelectorAll('#assignPicker .assign-option.selected').forEach(el => {
+        assignedTo.push(el.dataset.userId);
+      });
+
       if (editingId) {
         const task = tasks.find(t => t.id === editingId);
         if (task) {
@@ -2024,10 +2562,11 @@
           task.priority = priority;
           task.category = category;
           task.status = status;
+          task.assignedTo = assignedTo;
         }
         toast('Task updated');
       } else {
-        tasks.push({ id: genId(), text, date, priority, category, status });
+        tasks.push({ id: genId(), text, date, priority, category, status, createdBy: currentUser?.id || null, assignedTo });
         toast('Task added');
       }
 
@@ -2043,8 +2582,14 @@
     document.getElementById('confirmModal').addEventListener('click', (e) => {
       if (e.target === e.currentTarget) closeConfirm();
     });
+    document.getElementById('shareModal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeShareModal();
+    });
+    document.getElementById('manageUsersModal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeManageUsers();
+    });
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') { closeModal(); closeConfirm(); }
+      if (e.key === 'Escape') { closeModal(); closeConfirm(); closeShareModal(); closeManageUsers(); }
     });
 
     // ── Toast ──
@@ -2067,7 +2612,7 @@
     }
 
     // ── Init ──
-    render();
+    initAuth();
   </script>
 </body>
 </html>
