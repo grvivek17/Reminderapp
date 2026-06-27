@@ -1588,6 +1588,64 @@
       margin-left: 4px;
     }
 
+    /* Briefing marquee / running text */
+    .briefing-marquee {
+      overflow: hidden;
+      white-space: nowrap;
+      position: relative;
+    }
+    .briefing-marquee .briefing-marquee-inner {
+      display: inline-block;
+      padding-left: 100%;
+      animation: marquee-scroll 18s linear infinite;
+    }
+    .briefing-marquee:hover .briefing-marquee-inner { animation-play-state: paused; }
+    @keyframes marquee-scroll {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+
+    /* Quote of the Day */
+    .qotd-container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 20px 20px;
+    }
+    .qotd-card {
+      background: linear-gradient(135deg, #f8f9fe, #fdf5ff);
+      border: 1px solid rgba(139, 92, 246, 0.18);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      text-align: center;
+      position: relative;
+    }
+    html[data-theme="dark"] .qotd-card {
+      background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(79,110,247,0.06));
+      border-color: rgba(139,92,246,0.2);
+    }
+    .qotd-label {
+      font-size: 0.5625rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #8b5cf6;
+      margin-bottom: 6px;
+    }
+    .qotd-text {
+      font-size: 0.875rem;
+      line-height: 1.5;
+      color: var(--text);
+      font-style: italic;
+    }
+    .qotd-author {
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    @media (max-width: 600px) {
+      .qotd-container { padding: 0 12px 16px; }
+    }
+
     /* Theme group headers */
     .theme-group-header {
       display: flex;
@@ -1789,6 +1847,9 @@
 
   <!-- Main content -->
   <main class="main" id="app"></main>
+
+  <!-- Quote of the Day -->
+  <div class="qotd-container" id="qotd"></div>
 
   <!-- Add / Edit modal -->
   <div class="modal-overlay" id="taskModal">
@@ -2547,7 +2608,7 @@
           ${weatherHtml}
           <div class="briefing-label">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.8 2.8l1.4 1.4M9.8 9.8l1.4 1.4M11.2 2.8l-1.4 1.4M4.2 9.8l-1.4 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            AI Daily Briefing
+            Daily Briefing
           </div>
           <div class="briefing-loading">Generating your daily briefing...</div>
         </div>`;
@@ -2555,19 +2616,21 @@
       if (!briefingData && !weatherHtml && !briefingError) return '';
       const errorHtml = (!briefingData && briefingError) ? `<div class="briefing-label">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.8 2.8l1.4 1.4M9.8 9.8l1.4 1.4M11.2 2.8l-1.4 1.4M4.2 9.8l-1.4 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-          AI Daily Briefing
+          Daily Briefing
         </div>
         <div class="briefing-text" style="color:var(--text-muted);font-style:italic">Could not generate briefing. Tap refresh to retry.</div>` : '';
+      const briefingContent = briefingData
+        ? `<div class="briefing-label">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.8 2.8l1.4 1.4M9.8 9.8l1.4 1.4M11.2 2.8l-1.4 1.4M4.2 9.8l-1.4 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Daily Briefing
+        </div>
+        <div class="briefing-marquee"><div class="briefing-marquee-inner">${escapeHtml(briefingData)}</div></div>` : errorHtml;
       return `<div class="briefing-card">
         <button class="briefing-dismiss" onclick="dismissBriefing()" aria-label="Dismiss">
           <svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         </button>
         ${weatherHtml}
-        ${briefingData ? `<div class="briefing-label">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.8 2.8l1.4 1.4M9.8 9.8l1.4 1.4M11.2 2.8l-1.4 1.4M4.2 9.8l-1.4 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-          AI Daily Briefing
-        </div>
-        <div class="briefing-text">${escapeHtml(briefingData)}</div>` : errorHtml}
+        ${briefingContent}
         <div class="briefing-actions">
           <button class="briefing-refresh" onclick="refreshBriefing()">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6a5 5 0 019-3M11 6a5 5 0 01-9 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M10 1v3h-3M2 11V8h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -2636,6 +2699,67 @@
       return true;
     }
 
+    // ── Quote of the Day ──
+    const QUOTES = [
+      { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+      { text: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+      { text: "Do what you can, with what you have, where you are.", author: "Theodore Roosevelt" },
+      { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+      { text: "Start where you are. Use what you have. Do what you can.", author: "Arthur Ashe" },
+      { text: "Small daily improvements over time lead to stunning results.", author: "Robin Sharma" },
+      { text: "Focus on being productive instead of busy.", author: "Tim Ferriss" },
+      { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+      { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
+      { text: "The best time to plant a tree was 20 years ago. The second best time is now.", author: "Chinese Proverb" },
+      { text: "Action is the foundational key to all success.", author: "Pablo Picasso" },
+      { text: "What you do today can improve all your tomorrows.", author: "Ralph Marston" },
+      { text: "Either you run the day, or the day runs you.", author: "Jim Rohn" },
+      { text: "Productivity is never an accident. It is always the result of intelligent effort.", author: "Paul J. Meyer" },
+      { text: "The way to get started is to quit talking and begin doing.", author: "Walt Disney" },
+      { text: "Your future is created by what you do today, not tomorrow.", author: "Robert Kiyosaki" },
+      { text: "Amateurs sit and wait for inspiration, the rest of us just get up and go to work.", author: "Stephen King" },
+      { text: "Success is the sum of small efforts repeated day in and day out.", author: "Robert Collier" },
+      { text: "One task at a time. That's the secret.", author: "Gary Keller" },
+      { text: "Done is better than perfect.", author: "Sheryl Sandberg" },
+      { text: "If you want something you've never had, you must do something you've never done.", author: "Thomas Jefferson" },
+      { text: "A year from now you may wish you had started today.", author: "Karen Lamb" },
+      { text: "The harder you work for something, the greater you'll feel when you achieve it.", author: "Anonymous" },
+      { text: "Dream big. Start small. Act now.", author: "Robin Sharma" },
+      { text: "Progress, not perfection.", author: "Anonymous" },
+      { text: "You are never too old to set another goal or to dream a new dream.", author: "C.S. Lewis" },
+      { text: "Discipline is choosing between what you want now and what you want most.", author: "Abraham Lincoln" },
+      { text: "Success usually comes to those who are too busy to be looking for it.", author: "Henry David Thoreau" },
+      { text: "Don't be afraid to give up the good to go for the great.", author: "John D. Rockefeller" },
+      { text: "Be so good they can't ignore you.", author: "Steve Martin" },
+      { text: "The only limit to our realization of tomorrow will be our doubts of today.", author: "Franklin D. Roosevelt" }
+    ];
+
+    function getDailyQuote() {
+      const today = todayStr();
+      const cacheKey = 'reminder_qotd';
+      try {
+        const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+        if (cached && cached.date === today) return cached.quote;
+      } catch {}
+      // Deterministic pick based on date
+      const seed = today.split('-').join('');
+      const idx = parseInt(seed, 10) % QUOTES.length;
+      const quote = QUOTES[idx];
+      localStorage.setItem(cacheKey, JSON.stringify({ date: today, quote }));
+      return quote;
+    }
+
+    function renderQuoteOfDay() {
+      const el = document.getElementById('qotd');
+      if (!el) return;
+      const q = getDailyQuote();
+      el.innerHTML = `<div class="qotd-card">
+        <div class="qotd-label">Quote of the Day</div>
+        <div class="qotd-text">"${q.text}"</div>
+        <div class="qotd-author">&mdash; ${q.author}</div>
+      </div>`;
+    }
+
     // ── Rendering ──
     function render() {
       const app = document.getElementById('app');
@@ -2651,6 +2775,7 @@
         renderAllView(app);
       }
       updateNotificationBell();
+      renderQuoteOfDay();
     }
 
     // ── Week view ──
