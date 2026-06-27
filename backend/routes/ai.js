@@ -90,7 +90,7 @@ router.post('/daily-briefing', auth, async (req, res) => {
     const messages = [
       {
         role: 'system',
-        content: `Generate a brief, plain daily task summary. Today is ${today || 'unknown'}. Include: total active task count, how many are scheduled today, high priority count, personal/professional split, and one suggested focus area. Keep the tone practical and concise (2-3 sentences max). Do not use markdown formatting or bullet points. Just plain conversational text.${weatherContext} Example: "You have 5 tasks today \u2014 2 are high priority and both professional. Start with the client report. Light rain expected, so plan indoor tasks first."`
+        content: `Write a very short daily task note (1-2 lines max). Today: ${today || 'unknown'}. Format like a sticky note — e.g. "5 tasks, 2 high-pri. Focus: client report. Rain today, plan indoor." No markdown, no bullets, no greetings. Ultra-concise.${weatherContext}`
       },
       {
         role: 'user',
