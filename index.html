@@ -1303,6 +1303,17 @@
       z-index: 150;
       display: none;
     }
+    @media (max-width: 480px) {
+      .notif-dropdown {
+        position: fixed;
+        top: 60px;
+        right: 8px;
+        left: 8px;
+        width: auto;
+        max-height: calc(100dvh - 80px);
+        border-radius: var(--radius);
+      }
+    }
     .notif-dropdown.open { display: block; }
     .notif-header {
       padding: 14px 16px;
@@ -3687,6 +3698,135 @@
         sendBrowserNotifications();
       }
       setInterval(() => { updateNotificationBell(); sendBrowserNotifications(); }, 30 * 60 * 1000);
+      // Schedule native push notifications for mobile
+      initNativePushNotifications();
+    }
+
+    // ── Native push notifications (Capacitor) ──
+    async function initNativePushNotifications() {
+      if (!isNativeApp()) return;
+      try {
+        const { LocalNotifications } = await import('https://esm.sh/@capacitor/local-notifications@6');
+        const perm = await LocalNotifications.requestPermissions();
+        if (perm.display !== 'granted') return;
+
+        // Cancel old scheduled notifications and reschedule
+        const pending = await LocalNotifications.getPending();
+        if (pending.notifications.length > 0) {
+          await LocalNotifications.cancel(pending);
+        }
+        await scheduleTaskNotifications(LocalNotifications);
+
+        // Reschedule on app resume
+        document.addEventListener('resume', async () => {
+          const p = await LocalNotifications.getPending();
+          if (p.notifications.length > 0) await LocalNotifications.cancel(p);
+          await scheduleTaskNotifications(LocalNotifications);
+        });
+      } catch (err) {
+        console.log('Native push notifications not available:', err.message);
+      }
+    }
+
+    async function scheduleTaskNotifications(LocalNotifications) {
+      const today = todayStr();
+      const tomorrow = (() => { const d = new Date(); d.setDate(d.getDate() + 1); return toDateStr(d); })();
+      const notifications = [];
+      let id = 10000;
+
+      // Overdue tasks - immediate notification
+      const overdue = tasks.filter(t => t.status !== 'completed' && t.date && t.date < today);
+      if (overdue.length > 0) {
+        notifications.push({
+          id: id++,
+          title: 'Overdue Tasks',
+          body: `${overdue.length} overdue: ${overdue.slice(0, 2).map(t => t.text).join(', ')}${overdue.length > 2 ? ' +more' : ''}`,
+          smallIcon: 'ic_launcher',
+          largeIcon: 'ic_launcher',
+          schedule: { at: new Date(Date.now() + 2000) }
+        });
+      }
+
+      // Due today - immediate notification
+      const dueToday = tasks.filter(t => t.status !== 'completed' && t.date === today);
+      if (dueToday.length > 0) {
+        notifications.push({
+          id: id++,
+          title: 'Tasks Due Today',
+          body: `${dueToday.length} task${dueToday.length > 1 ? 's' : ''}: ${dueToday.slice(0, 2).map(t => t.text).join(', ')}${dueToday.length > 2 ? ' +more' : ''}`,
+          smallIcon: 'ic_launcher',
+          largeIcon: 'ic_launcher',
+          schedule: { at: new Date(Date.now() + 4000) }
+        });
+      }
+
+      // High priority due today - individual notifications
+      const highToday = dueToday.filter(t => t.priority === 'high');
+      for (const t of highToday.slice(0, 3)) {
+        notifications.push({
+          id: id++,
+          title: 'High Priority',
+          body: t.text,
+          smallIcon: 'ic_launcher',
+          largeIcon: 'ic_launcher',
+          schedule: { at: new Date(Date.now() + 6000) }
+        });
+      }
+
+      // Tomorrow morning reminder at 8 AM
+      const dueTomorrow = tasks.filter(t => t.status !== 'completed' && t.date === tomorrow);
+      if (dueTomorrow.length > 0) {
+        const morning = new Date();
+        morning.setDate(morning.getDate() + 1);
+        morning.setHours(8, 0, 0, 0);
+        if (morning > new Date()) {
+          notifications.push({
+            id: id++,
+            title: 'Tomorrow\'s Tasks',
+            body: `${dueTomorrow.length} task${dueTomorrow.length > 1 ? 's' : ''} tomorrow: ${dueTomorrow[0].text}${dueTomorrow.length > 1 ? ' and more' : ''}`,
+            smallIcon: 'ic_launcher',
+            largeIcon: 'ic_launcher',
+            schedule: { at: morning }
+          });
+        }
+      }
+
+      // Daily morning reminder at 8 AM today (if not past 8 AM)
+      const todayMorning = new Date();
+      todayMorning.setHours(8, 0, 0, 0);
+      if (todayMorning > new Date() && (dueToday.length > 0 || overdue.length > 0)) {
+        const total = dueToday.length + overdue.length;
+        notifications.push({
+          id: id++,
+          title: 'Good Morning! Smart Reminder',
+          body: `You have ${total} pending task${total > 1 ? 's' : ''} today${overdue.length > 0 ? ` (${overdue.length} overdue)` : ''}`,
+          smallIcon: 'ic_launcher',
+          largeIcon: 'ic_launcher',
+          schedule: { at: todayMorning }
+        });
+      }
+
+      // Evening check-in at 6 PM
+      const evening = new Date();
+      evening.setHours(18, 0, 0, 0);
+      if (evening > new Date()) {
+        const incomplete = tasks.filter(t => t.status !== 'completed' && t.date === today);
+        if (incomplete.length > 0) {
+          notifications.push({
+            id: id++,
+            title: 'Evening Check-in',
+            body: `${incomplete.length} task${incomplete.length > 1 ? 's' : ''} still pending today. Don't forget!`,
+            smallIcon: 'ic_launcher',
+            largeIcon: 'ic_launcher',
+            schedule: { at: evening }
+          });
+        }
+      }
+
+      if (notifications.length > 0) {
+        await LocalNotifications.schedule({ notifications });
+        console.log(`Scheduled ${notifications.length} push notifications`);
+      }
     }
 
     // ── Native: Location-based suggestions (Capacitor only) ──
