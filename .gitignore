@@ -1,3 +1,16 @@
 node_modules/
 .env
 *.log
+
+# Android build
+android/
+www/
+*.apk
+*.aab
+release-keystore.jks
+keystore.properties
+
+# Capacitor
+package.json
+package-lock.json
+capacitor.config.json
