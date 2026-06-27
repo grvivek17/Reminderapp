@@ -664,6 +664,40 @@
       padding: 16px;
       text-align: center;
     }
+
+    /* Left sidebar stats panel (wide screens) */
+    .stats-sidebar {
+      display: none;
+    }
+    @media (min-width: 1200px) {
+      .stats-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        position: fixed;
+        left: calc((100vw - 960px) / 2 - 180px);
+        top: 140px;
+        width: 160px;
+        z-index: 50;
+      }
+      .stats-sidebar .stat-card {
+        padding: 10px 12px;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-radius: var(--radius-sm);
+      }
+      .stats-sidebar .stat-value {
+        font-size: 1.25rem;
+        min-width: 28px;
+      }
+      .stats-sidebar .stat-label {
+        font-size: 0.6rem;
+        margin-top: 0;
+      }
+      .all-stats--inline { display: none; }
+    }
     .stat-value {
       font-size: 1.5rem;
       font-weight: 800;
@@ -1905,6 +1939,9 @@
     <button class="filter-chip" data-filter="owner" data-value="assigned" onclick="setFilter('owner','assigned',this)">Assigned to me</button>
   </div>
 
+  <!-- Stats sidebar (left, wide screens only) -->
+  <div class="stats-sidebar" id="statsSidebar"></div>
+
   <!-- Main content -->
   <main class="main" id="app"></main>
 
@@ -2866,6 +2903,25 @@
       }
       updateNotificationBell();
       renderQuoteOfDay();
+      renderStatsSidebar();
+    }
+
+    function renderStatsSidebar() {
+      const sb = document.getElementById('statsSidebar');
+      if (!sb) return;
+      const totalAll = tasks.length;
+      const totalActive = tasks.filter(t => t.status !== 'completed').length;
+      const totalCompleted = tasks.filter(t => t.status === 'completed').length;
+      const highActive = tasks.filter(t => t.status !== 'completed' && t.priority === 'high').length;
+      const personalCount = tasks.filter(t => t.status !== 'completed' && t.category === 'personal').length;
+      const professionalCount = tasks.filter(t => t.status !== 'completed' && t.category === 'professional').length;
+      sb.innerHTML = `
+        <div class="stat-card"><div class="stat-value accent">${totalAll}</div><div class="stat-label">Total</div></div>
+        <div class="stat-card"><div class="stat-value">${totalActive}</div><div class="stat-label">Active</div></div>
+        <div class="stat-card"><div class="stat-value done-color">${totalCompleted}</div><div class="stat-label">Done</div></div>
+        <div class="stat-card"><div class="stat-value high-color">${highActive}</div><div class="stat-label">High pri</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--personal)">${personalCount}</div><div class="stat-label">Personal</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--professional)">${professionalCount}</div><div class="stat-label">Work</div></div>`;
     }
 
     // ── Week view ──
@@ -3530,7 +3586,7 @@
         : '';
 
       app.innerHTML = `
-        <div class="all-stats">
+        <div class="all-stats all-stats--inline">
           <div class="stat-card">
             <div class="stat-value accent">${totalAll}</div>
             <div class="stat-label">Total tasks</div>
