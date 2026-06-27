@@ -72,23 +72,29 @@ router.post('/group-themes', auth, async (req, res) => {
 // POST /api/ai/daily-briefing
 router.post('/daily-briefing', auth, async (req, res) => {
   try {
-    const { tasks } = req.body;
+    const { tasks, today, weather } = req.body;
     if (!tasks || tasks.length === 0) {
-      return res.json({ briefing: 'No tasks scheduled for today. Enjoy your free day!' });
+      const weatherNote = weather ? ` ${weather}` : '';
+      return res.json({ briefing: `No active tasks right now. Enjoy your free day!${weatherNote}` });
     }
 
-    const taskList = tasks.map(t =>
-      `- [${t.priority}, ${t.category}] ${t.text} (${t.status.replace(/_/g, ' ')})`
-    ).join('\n');
+    const taskList = tasks.map(t => {
+      const dateLabel = t.date === today ? '(today)' : t.date ? `(${t.date})` : '(no date)';
+      return `- [${t.priority}, ${t.category}] ${t.text} ${dateLabel} (${t.status.replace(/_/g, ' ')})`;
+    }).join('\n');
+
+    const weatherContext = weather
+      ? `\n\nWeather context: ${weather}\nIf any tasks could be impacted by weather (outdoor activities, commuting, sports, errands), briefly mention the weather impact.`
+      : '';
 
     const messages = [
       {
         role: 'system',
-        content: 'Generate a brief, plain daily task summary. Include: total count, how many are high priority, the personal/professional split, and one suggested focus area. Keep the tone practical and concise (2-3 sentences max). Do not use markdown formatting or bullet points. Just plain conversational text. Example: "You have 5 tasks today \u2014 2 are high priority and both professional. Start with the client report."'
+        content: `Generate a brief, plain daily task summary. Today is ${today || 'unknown'}. Include: total active task count, how many are scheduled today, high priority count, personal/professional split, and one suggested focus area. Keep the tone practical and concise (2-3 sentences max). Do not use markdown formatting or bullet points. Just plain conversational text.${weatherContext} Example: "You have 5 tasks today \u2014 2 are high priority and both professional. Start with the client report. Light rain expected, so plan indoor tasks first."`
       },
       {
         role: 'user',
-        content: `Here are today's tasks:\n${taskList}`
+        content: `Here are the active tasks:\n${taskList}`
       }
     ];
 

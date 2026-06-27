@@ -1522,6 +1522,58 @@
       padding: 12px 0;
     }
 
+    /* Weather widget inside briefing */
+    .weather-strip {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.55);
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+    }
+    html[data-theme="dark"] .weather-strip { background: rgba(255,255,255,0.06); }
+    .weather-now {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .weather-now .weather-icon { font-size: 1.5rem; line-height: 1; }
+    .weather-details {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+    .weather-forecast {
+      display: flex;
+      gap: 10px;
+      margin-left: auto;
+    }
+    .weather-day {
+      text-align: center;
+      font-size: 0.6875rem;
+      color: var(--text-secondary);
+      line-height: 1.3;
+    }
+    .weather-day .weather-icon { font-size: 1rem; display: block; }
+    .weather-day .rain-chance { color: var(--accent); font-weight: 600; }
+    .weather-bad-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.6875rem;
+      color: #e35;
+      background: rgba(238,51,85,0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      margin-left: 4px;
+    }
+
     /* Theme group headers */
     .theme-group-header {
       display: flex;
@@ -2148,6 +2200,11 @@
     let briefingDismissedToday = localStorage.getItem('briefing_dismissed') === todayStr();
     const BRIEFING_CACHE_KEY = 'reminder_briefing_cache';
 
+    // ── Weather state ──
+    let weatherData = null;
+    let weatherLoading = false;
+    const WEATHER_CACHE_KEY = 'reminder_weather_cache';
+
     // ── Helpers ──
     function toDateStr(d) {
       const yy = d.getFullYear();
@@ -2235,12 +2292,15 @@
     // ── AI: Daily briefing ──
     async function initBriefing() {
       const today = todayStr();
+      // Fetch weather first (needed for briefing)
+      await fetchWeather();
       // Check localStorage cache
       try {
         const cached = JSON.parse(localStorage.getItem(BRIEFING_CACHE_KEY) || 'null');
         if (cached && cached.date === today && cached.taskHash === getTasksHash()) {
           briefingData = cached.briefing;
           briefingLoading = false;
+          render();
           return;
         }
       } catch {}
@@ -2248,18 +2308,118 @@
       await fetchDailyBriefing();
     }
 
+    // ── Weather ──
+    const WMO_WEATHER = {
+      0: { label: 'Clear sky', icon: '&#9728;&#65039;' },
+      1: { label: 'Mostly clear', icon: '&#127780;&#65039;' },
+      2: { label: 'Partly cloudy', icon: '&#9925;' },
+      3: { label: 'Overcast', icon: '&#9729;&#65039;' },
+      45: { label: 'Foggy', icon: '&#127787;&#65039;' },
+      48: { label: 'Fog (rime)', icon: '&#127787;&#65039;' },
+      51: { label: 'Light drizzle', icon: '&#127782;&#65039;' },
+      53: { label: 'Drizzle', icon: '&#127782;&#65039;' },
+      55: { label: 'Heavy drizzle', icon: '&#127782;&#65039;' },
+      61: { label: 'Light rain', icon: '&#127783;&#65039;' },
+      63: { label: 'Rain', icon: '&#127783;&#65039;' },
+      65: { label: 'Heavy rain', icon: '&#127783;&#65039;' },
+      66: { label: 'Freezing rain', icon: '&#127783;&#65039;' },
+      67: { label: 'Heavy freezing rain', icon: '&#127783;&#65039;' },
+      71: { label: 'Light snow', icon: '&#127784;&#65039;' },
+      73: { label: 'Snow', icon: '&#127784;&#65039;' },
+      75: { label: 'Heavy snow', icon: '&#127784;&#65039;' },
+      77: { label: 'Snow grains', icon: '&#127784;&#65039;' },
+      80: { label: 'Rain showers', icon: '&#127783;&#65039;' },
+      81: { label: 'Heavy showers', icon: '&#127783;&#65039;' },
+      82: { label: 'Violent showers', icon: '&#127783;&#65039;' },
+      85: { label: 'Snow showers', icon: '&#127784;&#65039;' },
+      86: { label: 'Heavy snow showers', icon: '&#127784;&#65039;' },
+      95: { label: 'Thunderstorm', icon: '&#9928;&#65039;' },
+      96: { label: 'Thunderstorm + hail', icon: '&#9928;&#65039;' },
+      99: { label: 'Thunderstorm + heavy hail', icon: '&#9928;&#65039;' }
+    };
+
+    function getWeatherInfo(code) {
+      return WMO_WEATHER[code] || { label: 'Unknown', icon: '&#127777;&#65039;' };
+    }
+
+    function isWeatherBad(code) {
+      return code >= 51; // drizzle, rain, snow, thunderstorm
+    }
+
+    async function fetchWeather() {
+      // Check cache (valid for 1 hour)
+      try {
+        const cached = JSON.parse(localStorage.getItem(WEATHER_CACHE_KEY) || 'null');
+        if (cached && (Date.now() - cached.ts) < 3600000) {
+          weatherData = cached.data;
+          return;
+        }
+      } catch {}
+
+      weatherLoading = true;
+      try {
+        const pos = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000, enableHighAccuracy: false });
+        });
+        const lat = pos.coords.latitude.toFixed(4);
+        const lng = pos.coords.longitude.toFixed(4);
+
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=3`;
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error('Weather API error');
+        const data = await resp.json();
+
+        weatherData = {
+          current: {
+            temp: Math.round(data.current.temperature_2m),
+            code: data.current.weather_code,
+            humidity: data.current.relative_humidity_2m,
+            wind: Math.round(data.current.wind_speed_10m),
+            unit: data.current_units?.temperature_2m || '°C'
+          },
+          daily: data.daily.time.map((date, i) => ({
+            date,
+            code: data.daily.weather_code[i],
+            high: Math.round(data.daily.temperature_2m_max[i]),
+            low: Math.round(data.daily.temperature_2m_min[i]),
+            rainChance: data.daily.precipitation_probability_max[i]
+          }))
+        };
+
+        localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: weatherData }));
+      } catch (err) {
+        console.warn('Weather fetch failed:', err.message);
+        weatherData = null;
+      }
+      weatherLoading = false;
+    }
+
+    function getWeatherSummaryForAI() {
+      if (!weatherData) return '';
+      const cur = weatherData.current;
+      const info = getWeatherInfo(cur.code);
+      let summary = `Current weather: ${info.label}, ${cur.temp}${cur.unit}, humidity ${cur.humidity}%, wind ${cur.wind} km/h.`;
+      if (weatherData.daily && weatherData.daily.length > 0) {
+        const today = weatherData.daily[0];
+        summary += ` Today: high ${today.high}${cur.unit}, low ${today.low}${cur.unit}, ${today.rainChance}% chance of rain.`;
+      }
+      return summary;
+    }
+
     async function fetchDailyBriefing() {
       const today = todayStr();
-      const todayTasks = tasks.filter(t => t.date === today && t.status !== 'completed');
+      const activeTasks = tasks.filter(t => t.status !== 'completed');
       briefingLoading = true;
       render();
       try {
-        const payload = todayTasks.map(t => ({
-          text: t.text, priority: t.priority, category: t.category, status: t.status
+        const payload = activeTasks.map(t => ({
+          text: t.text, priority: t.priority, category: t.category, status: t.status,
+          date: t.date || null
         }));
+        const weather = getWeatherSummaryForAI();
         const result = await api('/ai/daily-briefing', {
           method: 'POST',
-          body: JSON.stringify({ tasks: payload })
+          body: JSON.stringify({ tasks: payload, today, weather })
         });
         briefingData = result.briefing;
         briefingLoading = false;
@@ -2287,10 +2447,47 @@
       fetchDailyBriefing();
     }
 
+    function renderWeatherHtml() {
+      if (!weatherData) return '';
+      const cur = weatherData.current;
+      const info = getWeatherInfo(cur.code);
+      const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      let forecastHtml = '';
+      if (weatherData.daily && weatherData.daily.length > 1) {
+        forecastHtml = '<div class="weather-forecast">' +
+          weatherData.daily.slice(1).map(d => {
+            const dInfo = getWeatherInfo(d.code);
+            const dt = new Date(d.date + 'T00:00:00');
+            return `<div class="weather-day">
+              <span class="weather-icon">${dInfo.icon}</span>
+              <div>${DAYS_SHORT[dt.getDay()]}</div>
+              <div>${d.high}/${d.low}</div>
+              ${d.rainChance > 20 ? `<div class="rain-chance">${d.rainChance}%</div>` : ''}
+            </div>`;
+          }).join('') + '</div>';
+      }
+      const todayDaily = weatherData.daily?.[0];
+      const rainWarn = todayDaily && todayDaily.rainChance > 40
+        ? `<span class="weather-bad-tag">${todayDaily.rainChance}% rain</span>` : '';
+      return `<div class="weather-strip">
+        <div class="weather-now">
+          <span class="weather-icon">${info.icon}</span>
+          ${cur.temp}${cur.unit}${rainWarn}
+        </div>
+        <div class="weather-details">
+          ${info.label}<br>
+          Wind ${cur.wind} km/h &middot; Humidity ${cur.humidity}%
+        </div>
+        ${forecastHtml}
+      </div>`;
+    }
+
     function renderBriefingHtml() {
       if (briefingDismissedToday) return '';
+      const weatherHtml = renderWeatherHtml();
       if (briefingLoading) {
         return `<div class="briefing-card">
+          ${weatherHtml}
           <div class="briefing-label">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.8 2.8l1.4 1.4M9.8 9.8l1.4 1.4M11.2 2.8l-1.4 1.4M4.2 9.8l-1.4 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
             AI Daily Briefing
@@ -2298,16 +2495,17 @@
           <div class="briefing-loading">Generating your daily briefing...</div>
         </div>`;
       }
-      if (!briefingData) return '';
+      if (!briefingData && !weatherHtml) return '';
       return `<div class="briefing-card">
         <button class="briefing-dismiss" onclick="dismissBriefing()" aria-label="Dismiss">
           <svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         </button>
-        <div class="briefing-label">
+        ${weatherHtml}
+        ${briefingData ? `<div class="briefing-label">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.8 2.8l1.4 1.4M9.8 9.8l1.4 1.4M11.2 2.8l-1.4 1.4M4.2 9.8l-1.4 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
           AI Daily Briefing
         </div>
-        <div class="briefing-text">${escapeHtml(briefingData)}</div>
+        <div class="briefing-text">${escapeHtml(briefingData)}</div>` : ''}
         <div class="briefing-actions">
           <button class="briefing-refresh" onclick="refreshBriefing()">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6a5 5 0 019-3M11 6a5 5 0 01-9 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M10 1v3h-3M2 11V8h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
