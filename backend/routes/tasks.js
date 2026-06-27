@@ -22,6 +22,9 @@ function rowToTask(row, assignedTo = []) {
     createdBy: row.CREATED_BY,
     createdAt: row.CREATED_AT,
     updatedAt: row.UPDATED_AT,
+    locationText: row.LOCATION_TEXT || null,
+    locationLat: row.LOCATION_LAT != null ? Number(row.LOCATION_LAT) : null,
+    locationLng: row.LOCATION_LNG != null ? Number(row.LOCATION_LNG) : null,
     assignedTo,
   };
 }
@@ -32,7 +35,8 @@ router.get('/', auth, async (req, res) => {
     const userId = req.user.id;
     const result = await db.execute(
       `SELECT DISTINCT t.id, t.text, t.task_date, t.priority, t.category,
-              t.status, t.created_by, t.created_at, t.updated_at
+              t.status, t.created_by, t.created_at, t.updated_at,
+              t.location_text, t.location_lat, t.location_lng
        FROM reminder_tasks t
        LEFT JOIN reminder_task_assignments a ON t.id = a.task_id
        WHERE t.created_by = :userId OR a.user_id = :userId
@@ -66,14 +70,14 @@ router.get('/', auth, async (req, res) => {
 // POST /api/tasks -- create a task
 router.post('/', auth, async (req, res) => {
   try {
-    const { text, date, priority, category, status, assignedTo } = req.body;
+    const { text, date, priority, category, status, assignedTo, locationText, locationLat, locationLng } = req.body;
     if (!text || !date) {
       return res.status(400).json({ error: 'Text and date are required' });
     }
 
     const result = await db.execute(
-      `INSERT INTO reminder_tasks (text, task_date, priority, category, status, created_by)
-       VALUES (:taskText, :taskDate, :taskPriority, :taskCategory, :taskStatus, :createdBy)
+      `INSERT INTO reminder_tasks (text, task_date, priority, category, status, created_by, location_text, location_lat, location_lng)
+       VALUES (:taskText, :taskDate, :taskPriority, :taskCategory, :taskStatus, :createdBy, :locationText, :locationLat, :locationLng)
        RETURNING id INTO :id`,
       {
         taskText: text,
@@ -82,6 +86,9 @@ router.post('/', auth, async (req, res) => {
         taskCategory: category || 'personal',
         taskStatus: status || 'not_started',
         createdBy: req.user.id,
+        locationText: locationText || null,
+        locationLat: locationLat != null ? locationLat : null,
+        locationLng: locationLng != null ? locationLng : null,
         id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER },
       }
     );
@@ -113,7 +120,7 @@ router.post('/', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   try {
     const taskId = parseInt(req.params.id);
-    const { text, date, priority, category, status, assignedTo } = req.body;
+    const { text, date, priority, category, status, assignedTo, locationText, locationLat, locationLng } = req.body;
 
     // Verify ownership or assignment
     const check = await db.execute(
@@ -130,6 +137,7 @@ router.put('/:id', auth, async (req, res) => {
       `UPDATE reminder_tasks
        SET text = :taskText, task_date = :taskDate, priority = :taskPriority,
            category = :taskCategory, status = :taskStatus,
+           location_text = :locationText, location_lat = :locationLat, location_lng = :locationLng,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = :id`,
       {
@@ -138,6 +146,9 @@ router.put('/:id', auth, async (req, res) => {
         taskPriority: priority || 'medium',
         taskCategory: category || 'personal',
         taskStatus: status || 'not_started',
+        locationText: locationText || null,
+        locationLat: locationLat != null ? locationLat : null,
+        locationLng: locationLng != null ? locationLng : null,
         id: taskId,
       }
     );

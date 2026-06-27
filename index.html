@@ -1452,6 +1452,141 @@
       .view-toggle button span.view-label { display: none; }
       .all-stats { grid-template-columns: repeat(2, 1fr); }
     }
+
+    /* Daily briefing card */
+    .briefing-card {
+      background: linear-gradient(135deg, var(--accent-light), rgba(139, 92, 246, 0.06));
+      border: 1px solid rgba(79, 110, 247, 0.15);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .briefing-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+    .briefing-text {
+      font-size: 0.9375rem;
+      line-height: 1.6;
+      color: var(--text);
+    }
+    .briefing-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      align-items: center;
+    }
+    .briefing-dismiss {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+    }
+    .briefing-dismiss:hover { color: var(--text); }
+    .briefing-refresh {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .briefing-refresh:hover { border-color: var(--accent); color: var(--accent); }
+    .briefing-loading {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      font-style: italic;
+      padding: 12px 0;
+    }
+
+    /* Theme group headers */
+    .theme-group-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 20px;
+      margin-bottom: 8px;
+      padding: 8px 14px;
+      background: var(--accent-light);
+      border-radius: var(--radius-sm);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .theme-group-header:first-child { margin-top: 0; }
+    .theme-group-header .theme-count {
+      font-weight: 400;
+      color: var(--text-muted);
+      margin-left: auto;
+      font-size: 0.75rem;
+    }
+    .theme-loading {
+      text-align: center;
+      padding: 32px 16px;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+    .theme-loading .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-bottom: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Location badge & field */
+    .location-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.6875rem;
+      color: #0ea5e9;
+      background: rgba(14, 165, 233, 0.08);
+      padding: 1px 6px;
+      border-radius: 3px;
+    }
+    .location-field-wrap {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .location-field-wrap .form-input { flex: 1; }
+    .location-suggest-btn {
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--accent);
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .location-suggest-btn:hover { border-color: var(--accent); background: var(--accent-light); }
+    .location-suggest-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -1630,6 +1765,24 @@
             <label>Assign to</label>
             <div class="assign-picker" id="assignPicker"></div>
           </div>
+          <div class="form-group" id="locationGroup">
+            <label>Location <span style="font-weight:400;color:var(--text-muted);font-size:0.75rem">(optional)</span></label>
+            <div class="location-field-wrap">
+              <input type="text" id="taskLocation" class="form-input" placeholder="e.g. Pharmacy, Office, Gym" autocomplete="off">
+              <button type="button" class="location-suggest-btn" onclick="suggestLocation()" id="locationSuggestBtn">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v2M6 9v2M1 6h2M9 6h2M2.8 2.8l1.4 1.4M7.8 7.8l1.4 1.4M9.2 2.8L7.8 4.2M4.2 7.8L2.8 9.2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                AI suggest
+              </button>
+            </div>
+            <input type="hidden" id="taskLocationLat" value="">
+            <input type="hidden" id="taskLocationLng" value="">
+            <div id="locationPinWrap" style="margin-top:6px;display:none">
+              <button type="button" class="location-suggest-btn" id="locationPinBtn" onclick="pinCurrentLocation()">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1C4.3 1 3 2.3 3 4c0 2.5 3 5 3 5s3-2.5 3-5c0-1.7-1.3-3-3-3z" stroke="currentColor" stroke-width="1" fill="none"/><circle cx="6" cy="4" r="1" fill="currentColor"/></svg>
+                Pin current location
+              </button>
+            </div>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn" onclick="closeModal()">Cancel</button>
@@ -1764,6 +1917,8 @@
       updateHeaderUser();
       render();
       initNotifications();
+      initBriefing();
+      initNativeLocation();
     }
 
     function toggleAuthMode() {
@@ -1975,9 +2130,17 @@
     let calMonth = new Date().getMonth();
     let calYear = new Date().getFullYear();
     let selectedDate = null; // YYYY-MM-DD string when a calendar date is clicked
-    let allSort = 'date'; // 'date', 'priority', 'category'
+    let allSort = 'date'; // 'date', 'priority', 'category', 'themes'
     let progressWeekOffset = 0; // 0 = this week, -1 = last week, etc.
     const filters = { day: 'all', priority: 'all', category: 'all', status: 'all', owner: 'all' };
+
+    // ── AI state ──
+    let themeCache = { hash: '', groups: [], loading: false };
+    let themeFetchTimer = null;
+    let briefingData = null;
+    let briefingLoading = false;
+    let briefingDismissedToday = localStorage.getItem('briefing_dismissed') === todayStr();
+    const BRIEFING_CACHE_KEY = 'reminder_briefing_cache';
 
     // ── Helpers ──
     function toDateStr(d) {
@@ -2016,6 +2179,165 @@
       return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
     }
 
+    // ── AI: helpers ──
+    function getTasksHash() {
+      const active = tasks.filter(t => t.status !== 'completed');
+      const str = active.map(t => `${t.id}:${t.text}:${t.status}`).join('|');
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0;
+      }
+      return String(hash);
+    }
+
+    function isNativeApp() {
+      return window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+    }
+
+    // ── AI: Theme grouping ──
+    async function fetchThemeGroups() {
+      const active = tasks.filter(t => t.status !== 'completed');
+      if (active.length < 4) {
+        themeCache = { hash: getTasksHash(), groups: [], loading: false };
+        render();
+        return;
+      }
+      themeCache.loading = true;
+      render();
+      try {
+        const payload = active.map(t => ({ id: t.id, text: t.text, category: t.category, priority: t.priority }));
+        const result = await api('/ai/group-themes', {
+          method: 'POST',
+          body: JSON.stringify({ tasks: payload })
+        });
+        themeCache = { hash: getTasksHash(), groups: result.groups || [], loading: false };
+      } catch (err) {
+        console.error('Theme fetch error:', err);
+        themeCache = { hash: getTasksHash(), groups: [], loading: false };
+        toast('Could not group by theme');
+      }
+      render();
+    }
+
+    function scheduleThemeRefresh() {
+      if (allSort !== 'themes') return;
+      if (themeFetchTimer) clearTimeout(themeFetchTimer);
+      themeFetchTimer = setTimeout(() => fetchThemeGroups(), 3000);
+    }
+
+    // ── AI: Daily briefing ──
+    async function initBriefing() {
+      const today = todayStr();
+      // Check localStorage cache
+      try {
+        const cached = JSON.parse(localStorage.getItem(BRIEFING_CACHE_KEY) || 'null');
+        if (cached && cached.date === today && cached.taskHash === getTasksHash()) {
+          briefingData = cached.briefing;
+          briefingLoading = false;
+          return;
+        }
+      } catch {}
+      // Fetch new briefing
+      await fetchDailyBriefing();
+    }
+
+    async function fetchDailyBriefing() {
+      const today = todayStr();
+      const todayTasks = tasks.filter(t => t.date === today && t.status !== 'completed');
+      briefingLoading = true;
+      render();
+      try {
+        const payload = todayTasks.map(t => ({
+          text: t.text, priority: t.priority, category: t.category, status: t.status
+        }));
+        const result = await api('/ai/daily-briefing', {
+          method: 'POST',
+          body: JSON.stringify({ tasks: payload })
+        });
+        briefingData = result.briefing;
+        briefingLoading = false;
+        briefingDismissedToday = false;
+        // Cache
+        localStorage.setItem(BRIEFING_CACHE_KEY, JSON.stringify({
+          date: today, briefing: briefingData, taskHash: getTasksHash()
+        }));
+        localStorage.removeItem('briefing_dismissed');
+      } catch (err) {
+        console.error('Briefing error:', err);
+        briefingData = null;
+        briefingLoading = false;
+      }
+      render();
+    }
+
+    function dismissBriefing() {
+      briefingDismissedToday = true;
+      localStorage.setItem('briefing_dismissed', todayStr());
+      render();
+    }
+
+    function refreshBriefing() {
+      fetchDailyBriefing();
+    }
+
+    function renderBriefingHtml() {
+      if (briefingDismissedToday) return '';
+      if (briefingLoading) {
+        return `<div class="briefing-card">
+          <div class="briefing-label">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.8 2.8l1.4 1.4M9.8 9.8l1.4 1.4M11.2 2.8l-1.4 1.4M4.2 9.8l-1.4 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            AI Daily Briefing
+          </div>
+          <div class="briefing-loading">Generating your daily briefing...</div>
+        </div>`;
+      }
+      if (!briefingData) return '';
+      return `<div class="briefing-card">
+        <button class="briefing-dismiss" onclick="dismissBriefing()" aria-label="Dismiss">
+          <svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+        <div class="briefing-label">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.8 2.8l1.4 1.4M9.8 9.8l1.4 1.4M11.2 2.8l-1.4 1.4M4.2 9.8l-1.4 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          AI Daily Briefing
+        </div>
+        <div class="briefing-text">${escapeHtml(briefingData)}</div>
+        <div class="briefing-actions">
+          <button class="briefing-refresh" onclick="refreshBriefing()">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6a5 5 0 019-3M11 6a5 5 0 01-9 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M10 1v3h-3M2 11V8h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Refresh
+          </button>
+        </div>
+      </div>`;
+    }
+
+    // ── AI: Location suggest ──
+    async function suggestLocation() {
+      const textEl = document.getElementById('taskText');
+      const locEl = document.getElementById('taskLocation');
+      const btn = document.getElementById('locationSuggestBtn');
+      const text = textEl.value.trim();
+      if (!text) { toast('Enter a task description first'); return; }
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner" style="width:12px;height:12px;border-width:1.5px;margin:0"></span> Thinking...';
+      try {
+        const result = await api('/ai/infer-location', {
+          method: 'POST',
+          body: JSON.stringify({ text })
+        });
+        if (result.location) {
+          locEl.value = result.location;
+          toast('Location suggested: ' + result.location);
+        } else {
+          toast('No location inferred for this task');
+        }
+      } catch (err) {
+        toast('Could not suggest location');
+      }
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v2M6 9v2M1 6h2M9 6h2M2.8 2.8l1.4 1.4M7.8 7.8l1.4 1.4M9.2 2.8L7.8 4.2M4.2 7.8L2.8 9.2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg> AI suggest';
+    }
+
     // ── View switching ──
     function switchView(view) {
       currentView = view;
@@ -2051,6 +2373,8 @@
     // ── Rendering ──
     function render() {
       const app = document.getElementById('app');
+      // Build briefing card HTML (shown in all views except health)
+      const briefingHtml = (currentView !== 'health') ? renderBriefingHtml() : '';
       if (currentView === 'week') {
         renderWeekView(app);
       } else if (currentView === 'calendar') {
@@ -2061,6 +2385,10 @@
         renderHealthView(app);
       } else {
         renderAllView(app);
+      }
+      // Prepend briefing card
+      if (briefingHtml) {
+        app.innerHTML = briefingHtml + app.innerHTML;
       }
       updateNotificationBell();
     }
@@ -2598,6 +2926,10 @@
     // ── All tasks view ──
     function setAllSort(sort) {
       allSort = sort;
+      if (sort === 'themes' && themeCache.hash !== getTasksHash()) {
+        fetchThemeGroups();
+        return;
+      }
       render();
     }
 
@@ -2628,6 +2960,40 @@
       // Group helper for date sort: insert date dividers
       function buildGroupedHtml(list) {
         if (list.length === 0) return '';
+        if (allSort === 'themes') {
+          // Theme grouping mode
+          if (themeCache.loading) {
+            return `<div class="theme-loading"><div class="spinner"></div><br>Grouping tasks by theme...</div>`;
+          }
+          if (themeCache.groups.length === 0) {
+            // Not enough tasks or no groups - show ungrouped
+            return `<div class="day-section"><ul class="task-list">${list.map(t => taskHtml(t, true)).join('')}</ul></div>`;
+          }
+          let html = '';
+          const assigned = new Set();
+          for (const group of themeCache.groups) {
+            const groupTasks = list.filter(t => group.taskIds.includes(t.id));
+            if (groupTasks.length === 0) continue;
+            groupTasks.forEach(t => assigned.add(t.id));
+            html += `<div class="theme-group-header">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 3h3v3H2zM9 3h3v3H9zM2 8h3v3H2zM9 8h3v3H9z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/></svg>
+              ${escapeHtml(group.theme)}
+              <span class="theme-count">${groupTasks.length} task${groupTasks.length !== 1 ? 's' : ''}</span>
+            </div>`;
+            html += `<ul class="task-list">${groupTasks.map(t => taskHtml(t, true)).join('')}</ul>`;
+          }
+          // Any unassigned tasks
+          const unassigned = list.filter(t => !assigned.has(t.id));
+          if (unassigned.length > 0) {
+            html += `<div class="theme-group-header">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M7 5v4M5 7h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              Other
+              <span class="theme-count">${unassigned.length} task${unassigned.length !== 1 ? 's' : ''}</span>
+            </div>`;
+            html += `<ul class="task-list">${unassigned.map(t => taskHtml(t, true)).join('')}</ul>`;
+          }
+          return `<div class="day-section">${html}</div>`;
+        }
         if (allSort === 'date') {
           let html = '';
           let lastDate = '';
@@ -2712,6 +3078,10 @@
           <button class="sort-chip${allSort==='date'?' active':''}" onclick="setAllSort('date')">Date</button>
           <button class="sort-chip${allSort==='priority'?' active':''}" onclick="setAllSort('priority')">Priority</button>
           <button class="sort-chip${allSort==='category'?' active':''}" onclick="setAllSort('category')">Category</button>
+          <button class="sort-chip${allSort==='themes'?' active':''}" onclick="setAllSort('themes')">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="vertical-align:-1px"><path d="M1.5 2.5h3v3h-3zM7.5 2.5h3v3h-3zM1.5 6.5h3v3h-3zM7.5 6.5h3v3h-3z" stroke="currentColor" stroke-width="1" stroke-linecap="round" fill="none"/></svg>
+            Themes
+          </button>
         </div>
 
         <div class="all-section-label">Active (${active.length})</div>
@@ -2751,6 +3121,7 @@
               <span class="tag ${task.category}">${task.category}</span>
               <span class="priority-label">${task.priority}</span>
               ${dateInfo}
+              ${task.locationText ? `<span class="location-badge"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1C3.3 1 2 2.3 2 4c0 2.5 3 5 3 5s3-2.5 3-5c0-1.7-1.3-3-3-3z" stroke="currentColor" stroke-width="1" fill="none"/><circle cx="5" cy="4" r="1" fill="currentColor"/></svg>${escapeHtml(task.locationText)}</span>` : ''}
               ${creatorLabel}
               ${assigneeHtml}
             </div>
@@ -2791,6 +3162,7 @@
         task.status = newStatus;
         render();
         toast('Status: ' + STATUS_LABELS[newStatus]);
+        scheduleThemeRefresh();
       } catch (err) {
         toast(err.message || 'Failed to update status');
       }
@@ -2804,6 +3176,7 @@
           tasks = tasks.filter(t => t.id !== id);
           render();
           toast('Task deleted');
+          scheduleThemeRefresh();
         } catch (err) {
           toast(err.message || 'Failed to delete task');
         }
@@ -2859,6 +3232,10 @@
       document.querySelector('input[name="category"][value="personal"]').checked = true;
       document.querySelector('input[name="status"][value="not_started"]').checked = true;
       renderAssignPicker([]);
+      document.getElementById('taskLocation').value = '';
+      document.getElementById('taskLocationLat').value = '';
+      document.getElementById('taskLocationLng').value = '';
+      document.getElementById('locationPinWrap').style.display = isNativeApp() ? '' : 'none';
 
       document.getElementById('taskModal').classList.add('open');
       setTimeout(() => document.getElementById('taskText').focus(), 100);
@@ -2877,6 +3254,10 @@
       document.querySelector(`input[name="category"][value="${task.category}"]`).checked = true;
       document.querySelector(`input[name="status"][value="${task.status || 'not_started'}"]`).checked = true;
       renderAssignPicker(task.assignedTo || []);
+      document.getElementById('taskLocation').value = task.locationText || '';
+      document.getElementById('taskLocationLat').value = task.locationLat || '';
+      document.getElementById('taskLocationLng').value = task.locationLng || '';
+      document.getElementById('locationPinWrap').style.display = isNativeApp() ? '' : 'none';
       document.getElementById('taskModal').classList.add('open');
       setTimeout(() => document.getElementById('taskText').focus(), 100);
     }
@@ -2895,6 +3276,9 @@
       const priority = document.querySelector('input[name="priority"]:checked').value;
       const category = document.querySelector('input[name="category"]:checked').value;
       const status = document.querySelector('input[name="status"]:checked').value;
+      const locationText = document.getElementById('taskLocation').value.trim() || null;
+      const locationLat = document.getElementById('taskLocationLat').value ? parseFloat(document.getElementById('taskLocationLat').value) : null;
+      const locationLng = document.getElementById('taskLocationLng').value ? parseFloat(document.getElementById('taskLocationLng').value) : null;
 
       // Collect assigned users from picker
       const assignedTo = [];
@@ -2906,7 +3290,7 @@
         if (editingId) {
           const updated = await api('/tasks/' + editingId, {
             method: 'PUT',
-            body: JSON.stringify({ text, date, priority, category, status, assignedTo })
+            body: JSON.stringify({ text, date, priority, category, status, assignedTo, locationText, locationLat, locationLng })
           });
           const idx = tasks.findIndex(t => t.id == editingId);
           if (idx >= 0) tasks[idx] = updated;
@@ -2914,13 +3298,14 @@
         } else {
           const created = await api('/tasks', {
             method: 'POST',
-            body: JSON.stringify({ text, date, priority, category, status, assignedTo })
+            body: JSON.stringify({ text, date, priority, category, status, assignedTo, locationText, locationLat, locationLng })
           });
           tasks.push(created);
           toast('Task added');
         }
         closeModal();
         render();
+        scheduleThemeRefresh();
       } catch (err) {
         toast(err.message || 'Failed to save task');
       }
@@ -3076,6 +3461,114 @@
         sendBrowserNotifications();
       }
       setInterval(() => { updateNotificationBell(); sendBrowserNotifications(); }, 30 * 60 * 1000);
+    }
+
+    // ── Native: Location-based suggestions (Capacitor only) ──
+    const GEOFENCE_RADIUS_M = 500; // 500 meters
+    let locationCheckInterval = null;
+    let notifiedLocationTasks = new Set(); // track notified task IDs to avoid duplicates
+
+    async function initNativeLocation() {
+      if (!isNativeApp()) return;
+      try {
+        const { Geolocation } = await import('https://esm.sh/@capacitor/geolocation@6');
+        const { LocalNotifications } = await import('https://esm.sh/@capacitor/local-notifications@6');
+
+        // Request permissions
+        const locPerm = await Geolocation.requestPermissions();
+        if (locPerm.location !== 'granted' && locPerm.coarseLocation !== 'granted') return;
+
+        const notifPerm = await LocalNotifications.requestPermissions();
+        if (notifPerm.display !== 'granted') return;
+
+        // Check immediately and then every 5 minutes
+        checkNearbyTasks(Geolocation, LocalNotifications);
+        locationCheckInterval = setInterval(() => {
+          checkNearbyTasks(Geolocation, LocalNotifications);
+        }, 5 * 60 * 1000);
+
+        // Also check on app resume
+        document.addEventListener('resume', () => {
+          notifiedLocationTasks.clear(); // reset on resume
+          checkNearbyTasks(Geolocation, LocalNotifications);
+        });
+      } catch (err) {
+        console.log('Native location not available:', err.message);
+      }
+    }
+
+    async function checkNearbyTasks(Geolocation, LocalNotifications) {
+      try {
+        const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: false });
+        const userLat = pos.coords.latitude;
+        const userLng = pos.coords.longitude;
+
+        // Find tasks with location coordinates
+        const locationTasks = tasks.filter(t =>
+          t.status !== 'completed' &&
+          t.locationLat != null && t.locationLng != null &&
+          !notifiedLocationTasks.has(t.id)
+        );
+
+        // Group by location text
+        const groups = {};
+        for (const t of locationTasks) {
+          const dist = haversineDistance(userLat, userLng, t.locationLat, t.locationLng);
+          if (dist <= GEOFENCE_RADIUS_M) {
+            const key = (t.locationText || 'this location').toLowerCase();
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(t);
+            notifiedLocationTasks.add(t.id);
+          }
+        }
+
+        // Send notifications
+        let notifId = Date.now();
+        for (const [loc, locTasks] of Object.entries(groups)) {
+          await LocalNotifications.schedule({
+            notifications: [{
+              id: notifId++,
+              title: `You're near ${loc}`,
+              body: `You have ${locTasks.length} pending task${locTasks.length > 1 ? 's' : ''} here: ${locTasks[0].text}${locTasks.length > 1 ? ' and more' : ''}`,
+              smallIcon: 'ic_launcher',
+              largeIcon: 'ic_launcher'
+            }]
+          });
+        }
+      } catch (err) {
+        console.log('Location check error:', err.message);
+      }
+    }
+
+    function haversineDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; // Earth radius in meters
+      const toRad = (x) => x * Math.PI / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                Math.sin(dLon / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    async function pinCurrentLocation() {
+      if (!isNativeApp()) {
+        toast('Location pinning is available in the mobile app');
+        return;
+      }
+      const btn = document.getElementById('locationPinBtn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Getting location...'; }
+      try {
+        const { Geolocation } = await import('https://esm.sh/@capacitor/geolocation@6');
+        const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true });
+        // Store in hidden fields
+        document.getElementById('taskLocationLat').value = pos.coords.latitude;
+        document.getElementById('taskLocationLng').value = pos.coords.longitude;
+        toast('Location pinned');
+      } catch (err) {
+        toast('Could not get location: ' + err.message);
+      }
+      if (btn) { btn.disabled = false; btn.textContent = 'Pin current location'; }
     }
 
     // ── PWA ──
