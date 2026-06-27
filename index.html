@@ -1248,22 +1248,190 @@
       align-items: center;
     }
 
+    /* ── Notifications ── */
+    .notif-wrap { position: relative; }
+    .notif-btn {
+      position: relative;
+      padding: 7px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      color: var(--text-secondary);
+      border-radius: var(--radius-sm);
+      transition: color var(--transition), background var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .notif-btn:hover { color: var(--text); background: var(--bg); }
+    .notif-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      min-width: 16px;
+      height: 16px;
+      background: var(--danger);
+      color: #fff;
+      font-size: 0.5625rem;
+      font-weight: 700;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+      line-height: 1;
+      pointer-events: none;
+    }
+    .notif-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+      width: 340px;
+      max-height: 420px;
+      overflow-y: auto;
+      z-index: 150;
+      display: none;
+    }
+    .notif-dropdown.open { display: block; }
+    .notif-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.875rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: var(--surface);
+      z-index: 1;
+    }
+    .notif-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      transition: background var(--transition);
+    }
+    .notif-item:last-child { border-bottom: none; }
+    .notif-item:hover { background: var(--bg); }
+    .notif-item-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .notif-item-icon.overdue { background: rgba(239,68,68,0.1); color: var(--danger); }
+    .notif-item-icon.due-today { background: rgba(245,158,11,0.1); color: var(--medium); }
+    .notif-item-icon.upcoming { background: rgba(59,130,246,0.1); color: var(--status-in-progress); }
+    .notif-item-body { flex: 1; min-width: 0; }
+    .notif-item-text {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      word-break: break-word;
+    }
+    .notif-item-meta {
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .notif-empty {
+      padding: 32px 16px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+    .notif-empty-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 12px;
+      background: var(--bg);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .notif-enable-btn {
+      display: block;
+      width: calc(100% - 32px);
+      margin: 8px 16px 12px;
+      padding: 8px;
+      border: 1px solid var(--accent);
+      border-radius: var(--radius-sm);
+      background: var(--accent-light);
+      color: var(--accent);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: background var(--transition);
+    }
+    .notif-enable-btn:hover { background: rgba(79,110,247,0.15); }
+
+    /* ── Responsive / Mobile ── */
+    @media (max-width: 768px) {
+      .header-inner { flex-wrap: wrap; }
+      .header-left { flex: 1 1 100%; justify-content: space-between; }
+      .view-toggle {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+      }
+      .view-toggle::-webkit-scrollbar { display: none; }
+      .filters {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 8px;
+      }
+      .filters::-webkit-scrollbar { display: none; }
+      .filter-chip { flex-shrink: 0; }
+      .filter-separator { flex-shrink: 0; }
+      .notif-dropdown {
+        position: fixed;
+        top: auto;
+        right: 8px;
+        left: 8px;
+        width: auto;
+        max-height: 65vh;
+        bottom: 0;
+        border-radius: var(--radius) var(--radius) 0 0;
+        box-shadow: 0 -4px 30px rgba(0,0,0,0.15);
+      }
+    }
     @media (max-width: 600px) {
       .header { padding: 12px 16px; }
       .header h1 { font-size: 1.1rem; }
       .header-left { gap: 10px; }
+      .header-actions { gap: 6px; }
       .main { padding: 12px; }
       .filters { padding: 0 12px; margin-top: 12px; }
       .day-section { margin-bottom: 16px; }
       .day-header { padding: 12px 14px; flex-wrap: wrap; }
-      .task-item { padding: 10px 14px; gap: 10px; }
+      .task-item { padding: 10px 14px; gap: 8px; flex-wrap: wrap; }
+      .task-actions { opacity: 1; }
+      .task-body { flex: 1 1 calc(100% - 120px); min-width: 0; }
       .modal { max-width: 100%; }
       .modal-body { padding: 16px; }
       .filter-chip { font-size: 0.75rem; padding: 5px 10px; }
       .calendar-cell { min-height: 56px; padding: 4px; }
       .cal-date { width: 22px; height: 22px; font-size: 0.75rem; }
       .cal-dot { width: 5px; height: 5px; }
-      .view-toggle button { padding: 5px 10px; font-size: 0.75rem; }
+      .view-toggle button { padding: 5px 8px; font-size: 0.7rem; gap: 3px; }
+      .view-toggle button svg { width: 12px; height: 12px; }
       .ring-row { flex-direction: column; gap: 16px; text-align: center; }
       .ring-stats { align-items: center; }
       .bar-chart { height: 110px; gap: 4px; }
@@ -1272,6 +1440,17 @@
       .progress-section { padding: 16px; }
       .progress-section + div[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
       .coming-soon-features { grid-template-columns: 1fr; }
+      .all-stats { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .stat-card { padding: 12px 8px; }
+      .stat-value { font-size: 1.25rem; }
+      .stat-label { font-size: 0.6rem; }
+      .user-menu-name { display: none; }
+      .btn-primary svg + span,
+      .header-actions .btn-primary { padding: 7px 10px; font-size: 0.8rem; }
+    }
+    @media (max-width: 400px) {
+      .view-toggle button span.view-label { display: none; }
+      .all-stats { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
@@ -1312,25 +1491,25 @@
       <div class="header-left">
         <h1>Reminders</h1>
         <div class="view-toggle" id="viewToggle">
-          <button class="active" data-view="week" onclick="switchView('week')">
+          <button class="active" data-view="all" onclick="switchView('all')">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 2h4v4H1zM9 2h4v4H9zM1 8h4v4H1zM9 8h4v4H9z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            <span class="view-label">All</span>
+          </button>
+          <button data-view="week" onclick="switchView('week')">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 3h12M1 7h12M1 11h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            Week
+            <span class="view-label">Week</span>
           </button>
           <button data-view="calendar" onclick="switchView('calendar')">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M1 5.5h12M4.5 1v2M9.5 1v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            Calendar
-          </button>
-          <button data-view="all" onclick="switchView('all')">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 2h4v4H1zM9 2h4v4H9zM1 8h4v4H1zM9 8h4v4H9z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-            All
+            <span class="view-label">Calendar</span>
           </button>
           <button data-view="progress" onclick="switchView('progress')">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 12V8M4.5 12V5M8 12V2M11.5 12V7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            Progress
+            <span class="view-label">Progress</span>
           </button>
           <button data-view="health" onclick="switchView('health')" style="position:relative">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 12.5s-5.5-3.5-5.5-7A3 3 0 017 3a3 3 0 015.5 2.5c0 3.5-5.5 7-5.5 7z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-            Health
+            <span class="view-label">Health</span>
             <span class="coming-soon-badge">Soon</span>
           </button>
         </div>
@@ -1340,6 +1519,13 @@
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           Add task
         </button>
+        <div class="notif-wrap">
+          <button class="notif-btn" onclick="toggleNotificationPanel(event)" aria-label="Notifications">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M13.5 6.5a4.5 4.5 0 10-9 0c0 5-2 6.5-2 6.5h13s-2-1.5-2-6.5M10.3 15.5a1.5 1.5 0 01-2.6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+          </button>
+          <div class="notif-dropdown" id="notifDropdown"></div>
+        </div>
         <div class="user-menu" id="userMenu" onclick="toggleUserDropdown(event)">
           <div class="user-avatar" id="headerAvatar"></div>
           <div class="user-dropdown" id="userDropdown">
@@ -1363,7 +1549,7 @@
 
   <!-- Filters -->
   <div class="filters" id="filters">
-    <span id="dayFilters">
+    <span id="dayFilters" style="display:none">
       <button class="filter-chip active" data-filter="day" data-value="all" onclick="setFilter('day','all',this)">All days</button>
       <button class="filter-chip" data-filter="day" data-value="mon" onclick="setFilter('day','mon',this)">Mon</button>
       <button class="filter-chip" data-filter="day" data-value="tue" onclick="setFilter('day','tue',this)">Tue</button>
@@ -1577,6 +1763,7 @@
       document.getElementById('appWrapper').style.display = '';
       updateHeaderUser();
       render();
+      initNotifications();
     }
 
     function toggleAuthMode() {
@@ -1659,7 +1846,7 @@
     function closeUserDropdown() {
       document.getElementById('userDropdown').classList.remove('open');
     }
-    document.addEventListener('click', () => closeUserDropdown());
+    document.addEventListener('click', () => { closeUserDropdown(); closeNotificationPanel(); });
 
     // ── Manage users modal ──
     function openManageUsers() {
@@ -1784,7 +1971,7 @@
     let tasks = [];
     let editingId = null;
     let pendingConfirm = null;
-    let currentView = 'week'; // 'week', 'calendar', or 'all'
+    let currentView = 'all'; // 'all', 'week', 'calendar', 'progress', 'health'
     let calMonth = new Date().getMonth();
     let calYear = new Date().getFullYear();
     let selectedDate = null; // YYYY-MM-DD string when a calendar date is clicked
@@ -1875,6 +2062,7 @@
       } else {
         renderAllView(app);
       }
+      updateNotificationBell();
     }
 
     // ── Week view ──
@@ -2752,7 +2940,7 @@
       if (e.target === e.currentTarget) closeManageUsers();
     });
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') { closeModal(); closeConfirm(); closeShareModal(); closeManageUsers(); }
+      if (e.key === 'Escape') { closeModal(); closeConfirm(); closeShareModal(); closeManageUsers(); closeNotificationPanel(); }
     });
 
     // ── Toast ──
@@ -2767,6 +2955,127 @@
         el.style.transition = 'opacity 200ms';
         setTimeout(() => el.remove(), 200);
       }, 2000);
+    }
+
+    // ── Notifications ──
+    function getNotifications() {
+      const today = todayStr();
+      const notifs = [];
+      tasks.forEach(t => {
+        if (t.status === 'completed') return;
+        if (t.date < today) {
+          notifs.push({ type: 'overdue', task: t, label: 'Overdue' });
+        } else if (t.date === today) {
+          notifs.push({ type: 'due-today', task: t, label: 'Due today' });
+        }
+      });
+      notifs.sort((a, b) => {
+        if (a.type === 'overdue' && b.type !== 'overdue') return -1;
+        if (a.type !== 'overdue' && b.type === 'overdue') return 1;
+        return a.task.date.localeCompare(b.task.date);
+      });
+      return notifs;
+    }
+
+    function getUpcomingNotifications() {
+      const today = todayStr();
+      const d = new Date();
+      d.setDate(d.getDate() + 3);
+      const limit = toDateStr(d);
+      return tasks
+        .filter(t => t.status !== 'completed' && t.date > today && t.date <= limit)
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .map(t => ({ type: 'upcoming', task: t, label: formatShort(t.date) }));
+    }
+
+    function updateNotificationBell() {
+      const notifs = getNotifications();
+      const badge = document.getElementById('notifBadge');
+      if (!badge) return;
+      const count = notifs.length;
+      badge.textContent = count > 99 ? '99+' : count;
+      badge.style.display = count > 0 ? '' : 'none';
+    }
+
+    function toggleNotificationPanel(e) {
+      e.stopPropagation();
+      const dd = document.getElementById('notifDropdown');
+      const isOpen = dd.classList.contains('open');
+      closeUserDropdown();
+      if (isOpen) { dd.classList.remove('open'); return; }
+      renderNotificationDropdown();
+      dd.classList.add('open');
+    }
+
+    function closeNotificationPanel() {
+      const dd = document.getElementById('notifDropdown');
+      if (dd) dd.classList.remove('open');
+    }
+
+    function renderNotificationDropdown() {
+      const notifs = getNotifications();
+      const upcoming = getUpcomingNotifications();
+      const dd = document.getElementById('notifDropdown');
+      if (!dd) return;
+
+      let html = '<div class="notif-header"><span>Notifications</span><span style="font-size:0.75rem;font-weight:500;color:var(--text-muted)">' +
+        notifs.length + ' alert' + (notifs.length !== 1 ? 's' : '') + '</span></div>';
+
+      if (notifs.length === 0 && upcoming.length === 0) {
+        html += '<div class="notif-empty"><div class="notif-empty-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2l2.09 6.26L20 9.27l-5 3.89L16.18 20 11 16.77 5.82 20 7 13.16l-5-3.89 6.91-1.01L11 2z" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>All caught up! No pending alerts.</div>';
+      } else {
+        const allItems = [...notifs, ...upcoming];
+        html += allItems.map(n => {
+          const icon = n.type === 'overdue'
+            ? '<svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="7" cy="11" r="1" fill="currentColor"/></svg>'
+            : n.type === 'due-today'
+            ? '<svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M7 4v3.5l2.5 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+            : '<svg width="14" height="14" viewBox="0 0 14 14"><path d="M1 7h12M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+          const dateLabel = n.type === 'overdue' ? formatShort(n.task.date) : n.type === 'due-today' ? 'Today' : n.label;
+          const typeLabel = n.type === 'overdue' ? 'Overdue' : n.type === 'due-today' ? 'Due today' : 'Upcoming';
+          return '<div class="notif-item"><div class="notif-item-icon ' + n.type + '">' + icon + '</div>' +
+            '<div class="notif-item-body"><div class="notif-item-text">' + escapeHtml(n.task.text) + '</div>' +
+            '<div class="notif-item-meta"><span class="priority-dot ' + n.task.priority + '" style="width:6px;height:6px"></span> ' +
+            n.task.priority + ' &middot; ' + typeLabel + ' &middot; ' + dateLabel + '</div></div></div>';
+        }).join('');
+      }
+
+      if ('Notification' in window && Notification.permission === 'default') {
+        html += '<button class="notif-enable-btn" onclick="requestNotifPermission()">Enable browser notifications</button>';
+      }
+      dd.innerHTML = html;
+    }
+
+    async function requestNotifPermission() {
+      if ('Notification' in window) {
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') {
+          toast('Browser notifications enabled');
+          sendBrowserNotifications();
+        }
+        renderNotificationDropdown();
+      }
+    }
+
+    function sendBrowserNotifications() {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      const notifs = getNotifications();
+      if (notifs.length === 0) return;
+      const overdue = notifs.filter(n => n.type === 'overdue').length;
+      const dueToday = notifs.filter(n => n.type === 'due-today').length;
+      let body = '';
+      if (overdue > 0) body += overdue + ' overdue task' + (overdue > 1 ? 's' : '');
+      if (overdue > 0 && dueToday > 0) body += ', ';
+      if (dueToday > 0) body += dueToday + ' task' + (dueToday > 1 ? 's' : '') + ' due today';
+      new Notification('Reminders', { body, icon: 'icons/icon-192.png', tag: 'reminder-alerts' });
+    }
+
+    function initNotifications() {
+      updateNotificationBell();
+      if ('Notification' in window && Notification.permission === 'granted') {
+        sendBrowserNotifications();
+      }
+      setInterval(() => { updateNotificationBell(); sendBrowserNotifications(); }, 30 * 60 * 1000);
     }
 
     // ── PWA ──
