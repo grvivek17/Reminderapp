@@ -2203,6 +2203,7 @@
     let themeFetchTimer = null;
     let briefingData = null;
     let briefingLoading = false;
+    let briefingError = false;
     let briefingDismissedToday = localStorage.getItem('briefing_dismissed') === todayStr();
     const BRIEFING_CACHE_KEY = 'reminder_briefing_cache';
 
@@ -2429,6 +2430,7 @@
         });
         briefingData = result.briefing;
         briefingLoading = false;
+        briefingError = false;
         briefingDismissedToday = false;
         // Cache
         localStorage.setItem(BRIEFING_CACHE_KEY, JSON.stringify({
@@ -2439,6 +2441,7 @@
         console.error('Briefing error:', err);
         briefingData = null;
         briefingLoading = false;
+        briefingError = true;
       }
       render();
     }
@@ -2501,7 +2504,12 @@
           <div class="briefing-loading">Generating your daily briefing...</div>
         </div>`;
       }
-      if (!briefingData && !weatherHtml) return '';
+      if (!briefingData && !weatherHtml && !briefingError) return '';
+      const errorHtml = (!briefingData && briefingError) ? `<div class="briefing-label">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.8 2.8l1.4 1.4M9.8 9.8l1.4 1.4M11.2 2.8l-1.4 1.4M4.2 9.8l-1.4 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          AI Daily Briefing
+        </div>
+        <div class="briefing-text" style="color:var(--text-muted);font-style:italic">Could not generate briefing. Tap refresh to retry.</div>` : '';
       return `<div class="briefing-card">
         <button class="briefing-dismiss" onclick="dismissBriefing()" aria-label="Dismiss">
           <svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -2511,7 +2519,7 @@
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.8 2.8l1.4 1.4M9.8 9.8l1.4 1.4M11.2 2.8l-1.4 1.4M4.2 9.8l-1.4 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
           AI Daily Briefing
         </div>
-        <div class="briefing-text">${escapeHtml(briefingData)}</div>` : ''}
+        <div class="briefing-text">${escapeHtml(briefingData)}</div>` : errorHtml}
         <div class="briefing-actions">
           <button class="briefing-refresh" onclick="refreshBriefing()">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6a5 5 0 019-3M11 6a5 5 0 01-9 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M10 1v3h-3M2 11V8h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
