@@ -2444,11 +2444,32 @@
       weatherLoading = true;
       weatherError = null;
       try {
-        const pos = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 15000, enableHighAccuracy: false });
-        });
-        const lat = pos.coords.latitude.toFixed(4);
-        const lng = pos.coords.longitude.toFixed(4);
+        let lat, lng;
+        if (isNativeApp()) {
+          // Use Capacitor Geolocation plugin on mobile
+          const { Geolocation } = await import('https://esm.sh/@capacitor/geolocation@6');
+          try { await Geolocation.requestPermissions(); } catch {}
+          const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: false, timeout: 15000 });
+          lat = pos.coords.latitude.toFixed(4);
+          lng = pos.coords.longitude.toFixed(4);
+        } else if (window.isSecureContext && navigator.geolocation) {
+          // Use browser geolocation only on HTTPS
+          const pos = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 15000, enableHighAccuracy: false });
+          });
+          lat = pos.coords.latitude.toFixed(4);
+          lng = pos.coords.longitude.toFixed(4);
+        } else {
+          // HTTP fallback: use IP-based geolocation
+          const geoResp = await fetch('https://ipapi.co/json/');
+          if (geoResp.ok) {
+            const geoData = await geoResp.json();
+            lat = parseFloat(geoData.latitude).toFixed(4);
+            lng = parseFloat(geoData.longitude).toFixed(4);
+          } else {
+            throw new Error('IP geolocation failed');
+          }
+        }
 
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=3`;
         const resp = await fetch(url);
