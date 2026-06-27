@@ -73,14 +73,14 @@ router.post('/', auth, async (req, res) => {
 
     const result = await db.execute(
       `INSERT INTO reminder_tasks (text, task_date, priority, category, status, created_by)
-       VALUES (:text, :date, :priority, :category, :status, :createdBy)
+       VALUES (:taskText, :taskDate, :taskPriority, :taskCategory, :taskStatus, :createdBy)
        RETURNING id INTO :id`,
       {
-        text,
-        date,
-        priority: priority || 'medium',
-        category: category || 'personal',
-        status: status || 'not_started',
+        taskText: text,
+        taskDate: date,
+        taskPriority: priority || 'medium',
+        taskCategory: category || 'personal',
+        taskStatus: status || 'not_started',
         createdBy: req.user.id,
         id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER },
       }
@@ -128,16 +128,16 @@ router.put('/:id', auth, async (req, res) => {
 
     await db.execute(
       `UPDATE reminder_tasks
-       SET text = :text, task_date = :date, priority = :priority,
-           category = :category, status = :status,
+       SET text = :taskText, task_date = :taskDate, priority = :taskPriority,
+           category = :taskCategory, status = :taskStatus,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = :id`,
       {
-        text,
-        date,
-        priority: priority || 'medium',
-        category: category || 'personal',
-        status: status || 'not_started',
+        taskText: text,
+        taskDate: date,
+        taskPriority: priority || 'medium',
+        taskCategory: category || 'personal',
+        taskStatus: status || 'not_started',
         id: taskId,
       }
     );
@@ -200,8 +200,8 @@ router.put('/:id/status', auth, async (req, res) => {
     if (!status) return res.status(400).json({ error: 'Status is required' });
 
     await db.execute(
-      'UPDATE reminder_tasks SET status = :status, updated_at = CURRENT_TIMESTAMP WHERE id = :id',
-      { status, id: taskId }
+      'UPDATE reminder_tasks SET status = :taskStatus, updated_at = CURRENT_TIMESTAMP WHERE id = :id',
+      { taskStatus: status, id: taskId }
     );
     res.json({ success: true, status });
   } catch (err) {

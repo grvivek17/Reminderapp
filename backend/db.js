@@ -17,7 +17,11 @@ async function initialize() {
     if (walletDir) {
       poolConfig.configDir = walletDir;
       poolConfig.walletLocation = walletDir;
-      poolConfig.walletPassword = process.env.ORACLE_PASSWORD;
+      // Use ORACLE_WALLET_PASSWORD if set, otherwise omit to use auto-login wallet (cwallet.sso)
+      const walletPwd = process.env.ORACLE_WALLET_PASSWORD;
+      if (walletPwd) {
+        poolConfig.walletPassword = walletPwd;
+      }
     }
 
     pool = await oracledb.createPool(poolConfig);
