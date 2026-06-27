@@ -1461,12 +1461,13 @@
 
     /* Daily briefing card */
     .briefing-card {
-      background: linear-gradient(135deg, var(--accent-light), rgba(139, 92, 246, 0.06));
-      border: 1px solid rgba(79, 110, 247, 0.15);
+      background: linear-gradient(135deg, #eef2ff, #f0ebff);
+      border: 1px solid rgba(79, 110, 247, 0.25);
       border-radius: var(--radius);
       padding: 16px 20px;
       margin-bottom: 20px;
       position: relative;
+      box-shadow: 0 2px 8px rgba(79, 110, 247, 0.08);
     }
     .briefing-label {
       display: inline-flex;
@@ -1528,11 +1529,12 @@
       align-items: center;
       gap: 16px;
       padding: 10px 14px;
-      background: rgba(255,255,255,0.55);
+      background: rgba(255,255,255,0.7);
+      border: 1px solid rgba(79, 110, 247, 0.12);
       border-radius: var(--radius-sm);
       margin-bottom: 10px;
     }
-    html[data-theme="dark"] .weather-strip { background: rgba(255,255,255,0.06); }
+    html[data-theme="dark"] .weather-strip { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.1); }
     .weather-now {
       display: flex;
       align-items: center;
