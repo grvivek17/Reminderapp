@@ -530,33 +530,34 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 18px 20px;
+      padding: 14px 20px;
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
     .modal-header h2 { font-size: 1.0625rem; font-weight: 700; }
-    .modal-body { padding: 20px; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+    #taskForm { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: hidden; }
+    .modal-body { padding: 14px 20px; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
     .modal-footer {
       display: flex;
       justify-content: flex-end;
       gap: 8px;
-      padding: 14px 20px;
+      padding: 12px 20px;
       border-top: 1px solid var(--border);
       flex-shrink: 0;
     }
 
     /* Form */
-    .form-group { margin-bottom: 16px; }
+    .form-group { margin-bottom: 10px; }
     .form-group label {
       display: block;
       font-size: 0.8125rem;
       font-weight: 600;
       color: var(--text-secondary);
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
     .form-input {
       width: 100%;
-      padding: 10px 12px;
+      padding: 8px 12px;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       font-size: 0.9375rem;
@@ -585,7 +586,7 @@
     .segmented label {
       flex: 1;
       text-align: center;
-      padding: 8px 12px;
+      padding: 6px 10px;
       font-size: 0.8125rem;
       font-weight: 500;
       cursor: pointer;
@@ -611,7 +612,7 @@
 
     /* Status segmented control */
     .segmented.status { flex-wrap: wrap; }
-    .segmented.status label { padding: 8px 8px; font-size: 0.75rem; }
+    .segmented.status label { padding: 6px 6px; font-size: 0.75rem; }
     .segmented.status label:has(input[value="not_started"]:checked) { background: var(--status-not-started); }
     .segmented.status label:has(input[value="in_progress"]:checked) { background: var(--status-in-progress); }
     .segmented.status label:has(input[value="on_hold"]:checked) { background: var(--status-on-hold); }
@@ -1430,7 +1431,7 @@
       .task-actions { opacity: 1; }
       .task-body { flex: 1 1 calc(100% - 120px); min-width: 0; }
       .modal { max-width: 100%; }
-      .modal-body { padding: 16px; }
+      .modal-body { padding: 12px 14px; }
       .filter-chip { font-size: 0.75rem; padding: 5px 10px; }
       .calendar-cell { min-height: 56px; padding: 4px; }
       .cal-date { width: 22px; height: 22px; font-size: 0.75rem; }
