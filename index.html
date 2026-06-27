@@ -1500,19 +1500,41 @@
   <div class="toast-container" id="toasts"></div>
 
   <script>
+    // ── API layer ──
+    const API_BASE = '/api';
+    let authToken = localStorage.getItem('reminder_app_token') || null;
+
+    async function api(path, options = {}) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (authToken) headers['Authorization'] = 'Bearer ' + authToken;
+      const res = await fetch(API_BASE + path, { ...options, headers });
+      if (res.status === 401) {
+        authToken = null;
+        localStorage.removeItem('reminder_app_token');
+        localStorage.removeItem('reminder_app_user');
+        showAuth();
+        throw new Error('Session expired');
+      }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Request failed' }));
+        throw new Error(err.error || 'Request failed');
+      }
+      return res.json();
+    }
+
+    async function loadAppData() {
+      const [tasksData, usersData] = await Promise.all([
+        api('/tasks'),
+        api('/users')
+      ]);
+      tasks = tasksData;
+      users = usersData;
+    }
+
     // ── User system ──
-    const USERS_KEY = 'reminder_app_users';
-    const CURRENT_USER_KEY = 'reminder_app_current_user';
     const AVATAR_COLORS = ['#4f6ef7','#8b5cf6','#0ea5e9','#22c55e','#ef4444','#f59e0b','#ec4899','#6366f1','#14b8a6','#f97316'];
 
-    function loadUsers() {
-      try { return JSON.parse(localStorage.getItem(USERS_KEY)) || []; } catch { return []; }
-    }
-    function saveUsers() { localStorage.setItem(USERS_KEY, JSON.stringify(users)); }
-    function getCurrentUserId() { return localStorage.getItem(CURRENT_USER_KEY); }
-    function setCurrentUserId(id) { localStorage.setItem(CURRENT_USER_KEY, id); }
-
-    function getUserById(id) { return users.find(u => u.id === id) || null; }
+    function getUserById(id) { return users.find(u => u.id == id) || null; }
     function getUserInitials(user) {
       if (!user) return '?';
       const parts = user.name.trim().split(/\s+/);
@@ -1523,18 +1545,17 @@
       return user.color || AVATAR_COLORS[0];
     }
 
-    let users = loadUsers();
+    let users = [];
     let currentUser = null;
     let authMode = 'signup'; // 'signup' or 'login'
 
-    function initAuth() {
-      const uid = getCurrentUserId();
-      if (uid) {
-        currentUser = getUserById(uid);
-      }
-      if (currentUser) {
+    async function initAuth() {
+      if (!authToken) { showAuth(); return; }
+      try {
+        currentUser = await api('/auth/me');
+        await loadAppData();
         showApp();
-      } else {
+      } catch {
         showAuth();
       }
     }
@@ -1555,7 +1576,6 @@
       document.getElementById('authScreen').style.display = 'none';
       document.getElementById('appWrapper').style.display = '';
       updateHeaderUser();
-      tasks = loadTasks();
       render();
     }
 
@@ -1578,50 +1598,47 @@
       document.getElementById('authForm').reset();
     }
 
-    function handleAuth(e) {
+    async function handleAuth(e) {
       e.preventDefault();
-      const email = document.getElementById('authEmail').value.trim().toLowerCase();
+      const email = document.getElementById('authEmail').value.trim();
       const password = document.getElementById('authPassword').value;
 
-      if (authMode === 'signup') {
-        const name = document.getElementById('authName').value.trim();
-        if (!name || !email || !password) return;
-        // Check if email already exists
-        if (users.find(u => u.email === email)) {
-          toast('An account with this email already exists');
-          return;
+      try {
+        if (authMode === 'signup') {
+          const name = document.getElementById('authName').value.trim();
+          if (!name || !email || !password) return;
+          const data = await api('/auth/signup', {
+            method: 'POST',
+            body: JSON.stringify({ name, email, password })
+          });
+          authToken = data.token;
+          localStorage.setItem('reminder_app_token', data.token);
+          currentUser = data.user;
+          await loadAppData();
+          toast('Account created');
+          showApp();
+        } else {
+          if (!email || !password) return;
+          const data = await api('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password })
+          });
+          authToken = data.token;
+          localStorage.setItem('reminder_app_token', data.token);
+          currentUser = data.user;
+          await loadAppData();
+          toast('Welcome back, ' + data.user.name);
+          showApp();
         }
-        const newUser = {
-          id: genId(),
-          name,
-          email,
-          password, // simple - not hashed (client-side only)
-          color: AVATAR_COLORS[users.length % AVATAR_COLORS.length],
-          createdAt: new Date().toISOString()
-        };
-        users.push(newUser);
-        saveUsers();
-        currentUser = newUser;
-        setCurrentUserId(newUser.id);
-        toast('Account created');
-        showApp();
-      } else {
-        // Login
-        const user = users.find(u => u.email === email && u.password === password);
-        if (!user) {
-          toast('Invalid email or password');
-          return;
-        }
-        currentUser = user;
-        setCurrentUserId(user.id);
-        toast('Welcome back, ' + user.name);
-        showApp();
+      } catch (err) {
+        toast(err.message || 'Something went wrong');
       }
     }
 
     function logout() {
       currentUser = null;
-      localStorage.removeItem(CURRENT_USER_KEY);
+      authToken = null;
+      localStorage.removeItem('reminder_app_token');
       closeUserDropdown();
       showAuth();
     }
@@ -1663,25 +1680,30 @@
     function closeManageUsers() {
       document.getElementById('manageUsersModal').classList.remove('open');
     }
-    function removeUser(id) {
+    async function removeUser(id) {
+      id = Number(id);
       if (id === currentUser.id) return;
-      users = users.filter(u => u.id !== id);
-      saveUsers();
-      // Remove user from task assignments
-      tasks.forEach(t => {
-        t.assignedTo = (t.assignedTo || []).filter(uid => uid !== id);
-      });
-      saveTasks();
-      openManageUsers();
-      render();
-      toast('User removed');
+      try {
+        await api('/auth/users/' + id, { method: 'DELETE' });
+        users = users.filter(u => u.id !== id);
+        // Remove user from in-memory task assignments
+        tasks.forEach(t => {
+          t.assignedTo = (t.assignedTo || []).filter(uid => uid !== id);
+        });
+        openManageUsers();
+        render();
+        toast('User removed');
+      } catch (err) {
+        toast(err.message || 'Failed to remove user');
+      }
     }
 
     // ── Share modal ──
     let sharingTaskId = null;
     function openShareModal(taskId) {
+      taskId = Number(taskId);
       sharingTaskId = taskId;
-      const task = tasks.find(t => t.id === taskId);
+      const task = tasks.find(t => t.id == taskId);
       if (!task) return;
       const assignedSet = new Set(task.assignedTo || []);
       const otherUsers = users.filter(u => u.id !== currentUser.id);
@@ -1709,21 +1731,31 @@
       document.getElementById('shareModal').classList.remove('open');
       sharingTaskId = null;
     }
-    function toggleShareUser(userId) {
-      const task = tasks.find(t => t.id === sharingTaskId);
+    async function toggleShareUser(userId) {
+      userId = Number(userId);
+      const task = tasks.find(t => t.id == sharingTaskId);
       if (!task) return;
       if (!task.assignedTo) task.assignedTo = [];
       const idx = task.assignedTo.indexOf(userId);
+      let newAssigned;
       if (idx >= 0) {
-        task.assignedTo.splice(idx, 1);
+        newAssigned = task.assignedTo.filter(uid => uid !== userId);
       } else {
-        task.assignedTo.push(userId);
+        newAssigned = [...task.assignedTo, userId];
       }
-      saveTasks();
-      openShareModal(sharingTaskId); // refresh
-      render();
-      const user = getUserById(userId);
-      toast(idx >= 0 ? `Unassigned from ${user?.name}` : `Assigned to ${user?.name}`);
+      try {
+        await api('/tasks/' + task.id + '/assign', {
+          method: 'POST',
+          body: JSON.stringify({ assignedTo: newAssigned })
+        });
+        task.assignedTo = newAssigned;
+        openShareModal(sharingTaskId); // refresh
+        render();
+        const user = getUserById(userId);
+        toast(idx >= 0 ? 'Unassigned from ' + (user?.name) : 'Assigned to ' + (user?.name));
+      } catch (err) {
+        toast(err.message || 'Failed to update assignment');
+      }
     }
 
     // ── Constants ──
@@ -1749,8 +1781,7 @@
     const STATUS_LABELS = { not_started: 'Not started', in_progress: 'In progress', on_hold: 'On hold', completed: 'Completed' };
 
     // ── State ──
-    const STORAGE_KEY = 'reminder_app_tasks';
-    let tasks = loadTasks();
+    let tasks = [];
     let editingId = null;
     let pendingConfirm = null;
     let currentView = 'week'; // 'week', 'calendar', or 'all'
@@ -1782,30 +1813,7 @@
       return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
-    // ── Persistence ──
-    function loadTasks() {
-      try {
-        const raw = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-        // Migrate legacy tasks that used 'day' instead of 'date'
-        return raw.map(t => {
-          if (!t.date && t.day) {
-            // Assign to this week's instance of that day
-            t.date = getNextDateForDay(t.day);
-          }
-          if (!t.date) t.date = todayStr();
-          // Migrate legacy 'completed' boolean to 'status' field
-          if (!t.status) {
-            t.status = t.completed ? 'completed' : 'not_started';
-          }
-          delete t.completed;
-          // Ensure user fields exist
-          if (!t.createdBy) t.createdBy = currentUser?.id || null;
-          if (!t.assignedTo) t.assignedTo = [];
-          return t;
-        });
-      } catch { return []; }
-    }
-
+    // ── Persistence (handled by backend API) ──
     function getNextDateForDay(dayKey) {
       const target = DAY_KEYS.indexOf(dayKey);
       const now = new Date();
@@ -1815,10 +1823,6 @@
       const d = new Date(now);
       d.setDate(d.getDate() + diff);
       return toDateStr(d);
-    }
-
-    function saveTasks() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
     }
 
     function genId() {
@@ -1852,8 +1856,8 @@
       if (filters.priority !== 'all' && task.priority !== filters.priority) return false;
       if (filters.category !== 'all' && task.category !== filters.category) return false;
       if (filters.status !== 'all' && task.status !== filters.status) return false;
-      if (filters.owner === 'mine' && task.createdBy !== currentUser?.id) return false;
-      if (filters.owner === 'assigned' && !(task.assignedTo || []).includes(currentUser?.id)) return false;
+      if (filters.owner === 'mine' && task.createdBy != currentUser?.id) return false;
+      if (filters.owner === 'assigned' && !(task.assignedTo || []).some(uid => uid == currentUser?.id)) return false;
       return true;
     }
 
@@ -2585,22 +2589,36 @@
 
     // ── Task CRUD ──
     const STATUS_CYCLE = ['not_started', 'in_progress', 'on_hold', 'completed'];
-    function cycleStatus(id) {
-      const task = tasks.find(t => t.id === id);
+    async function cycleStatus(id) {
+      id = Number(id);
+      const task = tasks.find(t => t.id == id);
       if (!task) return;
       const idx = STATUS_CYCLE.indexOf(task.status);
-      task.status = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
-      saveTasks();
-      render();
-      toast(`Status: ${STATUS_LABELS[task.status]}`);
+      const newStatus = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
+      try {
+        await api('/tasks/' + task.id + '/status', {
+          method: 'PUT',
+          body: JSON.stringify({ status: newStatus })
+        });
+        task.status = newStatus;
+        render();
+        toast('Status: ' + STATUS_LABELS[newStatus]);
+      } catch (err) {
+        toast(err.message || 'Failed to update status');
+      }
     }
 
     function requestDelete(id) {
-      pendingConfirm = () => {
-        tasks = tasks.filter(t => t.id !== id);
-        saveTasks();
-        render();
-        toast('Task deleted');
+      id = Number(id);
+      pendingConfirm = async () => {
+        try {
+          await api('/tasks/' + id, { method: 'DELETE' });
+          tasks = tasks.filter(t => t.id !== id);
+          render();
+          toast('Task deleted');
+        } catch (err) {
+          toast(err.message || 'Failed to delete task');
+        }
       };
       document.getElementById('confirmMessage').textContent = 'Delete this task? This cannot be undone.';
       document.getElementById('confirmBtn').textContent = 'Delete';
@@ -2659,7 +2677,8 @@
     }
 
     function openEditModal(id) {
-      const task = tasks.find(t => t.id === id);
+      id = Number(id);
+      const task = tasks.find(t => t.id == id);
       if (!task) return;
       editingId = id;
       document.getElementById('modalTitle').textContent = 'Edit task';
@@ -2679,7 +2698,7 @@
       editingId = null;
     }
 
-    function handleSubmit(e) {
+    async function handleSubmit(e) {
       e.preventDefault();
       const text = document.getElementById('taskText').value.trim();
       if (!text) return;
@@ -2692,28 +2711,31 @@
       // Collect assigned users from picker
       const assignedTo = [];
       document.querySelectorAll('#assignPicker .assign-option.selected').forEach(el => {
-        assignedTo.push(el.dataset.userId);
+        assignedTo.push(Number(el.dataset.userId));
       });
 
-      if (editingId) {
-        const task = tasks.find(t => t.id === editingId);
-        if (task) {
-          task.text = text;
-          task.date = date;
-          task.priority = priority;
-          task.category = category;
-          task.status = status;
-          task.assignedTo = assignedTo;
+      try {
+        if (editingId) {
+          const updated = await api('/tasks/' + editingId, {
+            method: 'PUT',
+            body: JSON.stringify({ text, date, priority, category, status, assignedTo })
+          });
+          const idx = tasks.findIndex(t => t.id == editingId);
+          if (idx >= 0) tasks[idx] = updated;
+          toast('Task updated');
+        } else {
+          const created = await api('/tasks', {
+            method: 'POST',
+            body: JSON.stringify({ text, date, priority, category, status, assignedTo })
+          });
+          tasks.push(created);
+          toast('Task added');
         }
-        toast('Task updated');
-      } else {
-        tasks.push({ id: genId(), text, date, priority, category, status, createdBy: currentUser?.id || null, assignedTo });
-        toast('Task added');
+        closeModal();
+        render();
+      } catch (err) {
+        toast(err.message || 'Failed to save task');
       }
-
-      saveTasks();
-      closeModal();
-      render();
     }
 
     // Close modals
