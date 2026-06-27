@@ -1906,11 +1906,15 @@
       if (authToken) headers['Authorization'] = 'Bearer ' + authToken;
       const res = await fetch(API_BASE + path, { ...options, headers });
       if (res.status === 401) {
-        authToken = null;
-        localStorage.removeItem('reminder_app_token');
-        localStorage.removeItem('reminder_app_user');
-        showAuth();
-        throw new Error('Session expired');
+        const err = await res.json().catch(() => ({ error: 'Request failed' }));
+        // Only clear session for non-auth endpoints (expired token)
+        if (!path.startsWith('/auth/login') && !path.startsWith('/auth/signup')) {
+          authToken = null;
+          localStorage.removeItem('reminder_app_token');
+          localStorage.removeItem('reminder_app_user');
+          showAuth();
+        }
+        throw new Error(err.error || 'Invalid credentials');
       }
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: 'Request failed' }));
