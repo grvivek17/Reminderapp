@@ -1646,6 +1646,66 @@
       .qotd-container { padding: 0 12px 16px; }
     }
 
+    /* H badge with aarathi */
+    .h-badge {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      cursor: default;
+      user-select: none;
+      animation: h-badge-glow 3s ease-in-out infinite;
+    }
+    .h-badge-letter {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ff9933, #e65c00);
+      color: #fff;
+      font-size: 1.25rem;
+      font-weight: 800;
+      font-family: serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 12px rgba(230, 92, 0, 0.35);
+      position: relative;
+    }
+    .h-badge-flame {
+      position: absolute;
+      top: -14px;
+      font-size: 1rem;
+      line-height: 1;
+      animation: flame-flicker 1.2s ease-in-out infinite alternate;
+      filter: drop-shadow(0 0 4px rgba(255, 153, 0, 0.7));
+    }
+    .h-badge-diya {
+      font-size: 0.75rem;
+      line-height: 1;
+      opacity: 0.85;
+    }
+    @keyframes flame-flicker {
+      0%   { transform: scale(1) translateY(0); opacity: 1; }
+      50%  { transform: scale(1.15) translateY(-1px); opacity: 0.85; }
+      100% { transform: scale(0.95) translateY(1px); opacity: 1; }
+    }
+    @keyframes h-badge-glow {
+      0%, 100% { filter: drop-shadow(0 0 4px rgba(255, 153, 0, 0.3)); }
+      50%      { filter: drop-shadow(0 0 10px rgba(255, 153, 0, 0.6)); }
+    }
+    html[data-theme="dark"] .h-badge-letter {
+      background: linear-gradient(135deg, #ffb347, #ff6f00);
+      box-shadow: 0 2px 14px rgba(255, 111, 0, 0.45);
+    }
+    @media (max-width: 600px) {
+      .h-badge { bottom: 14px; right: 14px; }
+      .h-badge-letter { width: 34px; height: 34px; font-size: 1.1rem; }
+    }
+
     /* Theme group headers */
     .theme-group-header {
       display: flex;
@@ -1850,6 +1910,15 @@
 
   <!-- Quote of the Day -->
   <div class="qotd-container" id="qotd"></div>
+
+  <!-- H badge with aarathi -->
+  <div class="h-badge" title="Hari Om">
+    <div class="h-badge-letter">
+      <span class="h-badge-flame">&#128293;</span>
+      H
+    </div>
+    <span class="h-badge-diya">&#128367;&#65039;</span>
+  </div>
 
   <!-- Add / Edit modal -->
   <div class="modal-overlay" id="taskModal">
