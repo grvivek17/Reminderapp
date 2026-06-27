@@ -2581,8 +2581,6 @@
     // ── Rendering ──
     function render() {
       const app = document.getElementById('app');
-      // Build briefing card HTML (shown in all views except health)
-      const briefingHtml = (currentView !== 'health') ? renderBriefingHtml() : '';
       if (currentView === 'week') {
         renderWeekView(app);
       } else if (currentView === 'calendar') {
@@ -2593,10 +2591,6 @@
         renderHealthView(app);
       } else {
         renderAllView(app);
-      }
-      // Prepend briefing card
-      if (briefingHtml) {
-        app.innerHTML = briefingHtml + app.innerHTML;
       }
       updateNotificationBell();
     }
@@ -2636,6 +2630,9 @@
             ${tasksHtml}
           </section>`;
       }).join('');
+      // Prepend briefing card in week view
+      const weekBriefing = renderBriefingHtml();
+      if (weekBriefing) app.innerHTML = weekBriefing + app.innerHTML;
     }
 
     // ── Calendar view ──
@@ -2764,6 +2761,9 @@
           </div>
         </div>
         ${panelHtml}`;
+      // Prepend briefing card in calendar view
+      const calBriefing = renderBriefingHtml();
+      if (calBriefing) app.innerHTML = calBriefing + app.innerHTML;
     }
 
     function selectCalDate(dateStr) {
@@ -3079,6 +3079,9 @@
           </div>
         </div>
       `;
+      // Prepend briefing card in progress view
+      const progBriefing = renderBriefingHtml();
+      if (progBriefing) app.innerHTML = progBriefing + app.innerHTML;
     }
 
     // ── Health view (Coming Soon) ──
@@ -3280,6 +3283,8 @@
             <div class="stat-label">Professional</div>
           </div>
         </div>
+
+        ${renderBriefingHtml()}
 
         <div class="all-sort-bar">
           <span>Sort by</span>
