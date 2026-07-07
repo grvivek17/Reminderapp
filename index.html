@@ -2484,7 +2484,295 @@
       .health-chat-messages { max-height: 280px; }
       .hc-msg { max-width: 92%; }
       .health-quick-btn { font-size: 0.75rem; padding: 5px 10px; }
+      .health-input-methods { flex-wrap: wrap; }
+      .health-input-method-btn { flex: 0 0 calc(50% - 3px); font-size: 0.65rem; }
+      .health-nudge { padding: 10px 12px; gap: 8px; }
+      .health-nudge-text { font-size: 0.75rem; }
+      .health-nutrition-grid { grid-template-columns: repeat(2, 1fr); }
     }
+
+    /* ── Contextual Nudge ── */
+    .health-nudge {
+      background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(139,92,246,0.08));
+      border: 1px solid rgba(59,130,246,0.15);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 16px;
+      animation: nudgeFadeIn 0.5s ease;
+    }
+    .health-nudge-icon { font-size: 1.4rem; flex-shrink: 0; margin-top: 1px; }
+    .health-nudge-content { flex: 1; min-width: 0; }
+    .health-nudge-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .health-nudge-text { font-size: 0.82rem; color: var(--text); line-height: 1.45; }
+    @keyframes nudgeFadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Input Method Buttons (Camera / Barcode / Voice) ── */
+    .health-input-methods { display: flex; gap: 6px; margin-bottom: 8px; }
+    .health-input-method-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 8px 6px;
+      border: 1px dashed rgba(255,255,255,0.12);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.03);
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .health-input-method-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(99,102,241,0.06);
+    }
+    .health-input-method-btn:active { transform: scale(0.96); }
+    .health-input-method-btn svg { flex-shrink: 0; }
+    .health-input-method-btn.voice-active {
+      border-color: var(--high);
+      color: var(--high);
+      background: rgba(239,68,68,0.08);
+      animation: voicePulse 1.5s ease infinite;
+    }
+    @keyframes voicePulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); }
+      50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+    }
+
+    /* ── Photo / Barcode Analysis Results ── */
+    .health-analysis-card {
+      background: rgba(34,197,94,0.06);
+      border: 1px solid rgba(34,197,94,0.15);
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 10px;
+      animation: analysisSlideIn 0.3s ease;
+    }
+    @keyframes analysisSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .health-analysis-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .health-analysis-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--low);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .health-analysis-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0 4px;
+    }
+    .health-nutrition-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .health-nutrition-item {
+      text-align: center;
+      padding: 6px 4px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 6px;
+    }
+    .health-nutrition-value { font-size: 0.9rem; font-weight: 700; color: var(--text); }
+    .health-nutrition-label {
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .health-analysis-foods { margin-top: 8px; }
+    .health-analysis-food {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 0.75rem;
+    }
+    .health-analysis-food:last-child { border-bottom: none; }
+    .health-analysis-food-name { color: var(--text); }
+    .health-analysis-food-cal { color: var(--text-muted); font-size: 0.7rem; }
+    .health-analysis-advice {
+      margin-top: 10px;
+      padding: 10px;
+      background: rgba(99,102,241,0.06);
+      border-radius: 8px;
+      border-left: 3px solid var(--accent);
+    }
+    .health-analysis-advice-text { font-size: 0.75rem; color: var(--text); line-height: 1.4; }
+    .health-analysis-advice-reason {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      font-style: italic;
+    }
+    .health-analysis-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .health-analysis-btn {
+      flex: 1;
+      padding: 7px 12px;
+      border-radius: 6px;
+      border: none;
+      font-size: 0.72rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .health-analysis-btn.primary { background: var(--accent); color: #fff; }
+    .health-analysis-btn.primary:hover { opacity: 0.85; }
+    .health-analysis-btn.secondary {
+      background: rgba(255,255,255,0.06);
+      color: var(--text-muted);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .health-analysis-btn.secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Meal Advice Card ── */
+    .health-meal-advice {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: rgba(249,115,22,0.06);
+      border: 1px solid rgba(249,115,22,0.12);
+      border-radius: 8px;
+      animation: adviceFadeIn 0.4s ease;
+    }
+    @keyframes adviceFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .health-meal-advice-header {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: rgba(249,115,22,0.8);
+      font-weight: 600;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .health-meal-advice-rec { font-size: 0.78rem; color: var(--text); font-weight: 500; margin-bottom: 4px; }
+    .health-meal-advice-why { font-size: 0.7rem; color: var(--text-muted); font-style: italic; }
+    .health-meal-advice-tip {
+      font-size: 0.7rem;
+      color: var(--accent);
+      margin-top: 6px;
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    /* ── Barcode Scanner Modal ── */
+    .barcode-modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .barcode-modal-content {
+      width: 90%;
+      max-width: 400px;
+      background: var(--card);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .barcode-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .barcode-modal-header h3 { font-size: 0.9rem; font-weight: 600; color: var(--text); margin: 0; }
+    .barcode-modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 0;
+    }
+    #barcode-reader { width: 100%; min-height: 280px; }
+    #barcode-reader video { border-radius: 0 !important; }
+    .barcode-modal-footer {
+      padding: 12px 16px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+    }
+
+    /* ── Health Loading Indicator ── */
+    .health-analyzing {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 8px;
+    }
+    .health-analyzing-spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Wearable Sync Card ── */
+    .health-wearable-card {
+      background: rgba(139,92,246,0.06);
+      border: 1px solid rgba(139,92,246,0.12);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .health-wearable-icon { font-size: 1.3rem; flex-shrink: 0; }
+    .health-wearable-info { flex: 1; }
+    .health-wearable-title { font-size: 0.78rem; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+    .health-wearable-desc { font-size: 0.68rem; color: var(--text-muted); }
+    .health-wearable-btn {
+      padding: 6px 12px;
+      background: rgba(139,92,246,0.15);
+      border: 1px solid rgba(139,92,246,0.25);
+      border-radius: 6px;
+      color: #a78bfa;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .health-wearable-btn:hover { background: rgba(139,92,246,0.25); }
 
   </style>
 </head>
@@ -4325,6 +4613,12 @@
     let healthData = loadHealthData();
     let healthChatMessages = [];
     let healthChatLoading = false;
+    let healthPhotoAnalyzing = false;
+    let healthPhotoResult = null;
+    let healthVoiceActive = false;
+    let healthMealAdvice = null;
+    let healthMealAdviceLoading = false;
+    let healthBarcodeScanner = null;
 
     function loadHealthData() {
       try {
@@ -4384,6 +4678,7 @@
       healthData.meals.push(text);
       saveHealthData();
       render();
+      getMealAdvice(text);
     }
 
     function removeHealthMeal(idx) {
@@ -4530,6 +4825,298 @@
       if (val !== null) setHealthSleep(val);
     }
 
+    // ── Health: Contextual Nudge Engine ──
+    function getContextualNudge() {
+      const hour = new Date().getHours();
+      const h = healthData;
+      if (h.water > 0 && h.water < Math.floor(h.waterGoal / 2) && hour >= 14)
+        return { icon: '\u{1F4A7}', text: 'Only ' + h.water + ' glasses of water so far. Try to drink ' + (h.waterGoal - h.water) + ' more before evening to stay sharp.', label: 'Hydration Alert' };
+      if (h.meals.length === 0 && hour >= 10 && hour < 14)
+        return { icon: '\u{1F373}', text: 'No breakfast logged yet! A protein-rich breakfast stabilizes blood sugar and keeps focus high.', label: 'Nutrition Reminder' };
+      if (h.exercise.length === 0 && hour >= 15 && hour < 21)
+        return { icon: '\u{1F3C3}', text: 'No exercise yet today. Even a brisk 15-minute walk boosts mood and burns ~75 calories.', label: 'Movement Nudge' };
+      if (h.mood === 'stressed')
+        return { icon: '\u{1F9D8}', text: 'Feeling stressed? Try 4-7-8 breathing: inhale 4s, hold 7s, exhale 8s. Repeat 3 times.', label: 'Stress Relief' };
+      if (h.sleep !== null && h.sleep < 6)
+        return { icon: '\u{2615}', text: h.sleep + 'hrs of sleep is rough. Have caffeine before 2pm only, and try a 20-min power nap if possible.', label: 'Sleep Recovery' };
+      if (hour >= 6 && hour < 9) return { icon: '\u{1F305}', text: 'Good morning! Start with a glass of water to rehydrate after sleep and kickstart your metabolism.', label: 'Morning Wellness' };
+      if (hour >= 9 && hour < 11) return { icon: '\u{1F9E0}', text: 'Peak focus hours! Cortisol is naturally high now \u2014 tackle your most important task.', label: 'Focus Time' };
+      if (hour >= 11 && hour < 13) return { icon: '\u{1F957}', text: 'Lunch approaching. Aim for protein + fiber + healthy fats to avoid the afternoon crash.', label: 'Lunch Planning' };
+      if (hour >= 13 && hour < 15) return { icon: '\u{1F6B6}', text: 'Post-lunch dip? A 10-minute walk aids digestion and restores alertness better than coffee.', label: 'Afternoon Boost' };
+      if (hour >= 15 && hour < 17) return { icon: '\u{1F34E}', text: 'Afternoon energy dip is normal. Reach for fruit or nuts instead of sugary snacks.', label: 'Smart Snacking' };
+      if (hour >= 17 && hour < 20) return { icon: '\u{1F3E0}', text: 'Transition time. Light stretching or a walk helps shift from work mode to personal time.', label: 'Wind Down' };
+      if (hour >= 20 && hour < 22) return { icon: '\u{1F319}', text: 'Evening routine matters. Dim lights and avoid screens 30min before bed for better sleep.', label: 'Sleep Prep' };
+      return { icon: '\u{1F634}', text: 'Late night! Sleep is when your body repairs itself. Try to get to bed \u2014 your future self will thank you.', label: 'Rest Up' };
+    }
+
+    // ── Health: Image Resize Utility ──
+    function resizeHealthImage(file, maxDim) {
+      maxDim = maxDim || 800;
+      return new Promise(function(resolve) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var img = new Image();
+          img.onload = function() {
+            var canvas = document.createElement('canvas');
+            var w = img.width, h = img.height;
+            if (w > maxDim || h > maxDim) {
+              if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+              else { w = Math.round(w * maxDim / h); h = maxDim; }
+            }
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // ── Health: Camera / Photo Analysis ──
+    function triggerMealPhoto() {
+      var input = document.getElementById('healthPhotoInput');
+      if (!input) {
+        input = document.createElement('input');
+        input.type = 'file';
+        input.id = 'healthPhotoInput';
+        input.accept = 'image/*';
+        input.capture = 'environment';
+        input.style.display = 'none';
+        input.onchange = handleMealPhoto;
+        document.body.appendChild(input);
+      }
+      input.value = '';
+      input.click();
+    }
+
+    async function handleMealPhoto(event) {
+      var file = event.target.files[0];
+      if (!file) return;
+      healthPhotoAnalyzing = true;
+      healthPhotoResult = null;
+      healthMealAdvice = null;
+      render();
+      try {
+        var base64 = await resizeHealthImage(file);
+        var result = await api('/ai/analyze-meal-photo', {
+          method: 'POST',
+          body: JSON.stringify({ image: base64 })
+        });
+        healthPhotoResult = result;
+      } catch (err) {
+        healthPhotoResult = { error: 'Failed to analyze photo. Try again or log manually.' };
+      }
+      healthPhotoAnalyzing = false;
+      render();
+    }
+
+    function addPhotoMeals() {
+      if (!healthPhotoResult || !healthPhotoResult.foods) return;
+      healthPhotoResult.foods.forEach(function(f) { if (f.name) healthData.meals.push(f.name); });
+      saveHealthData();
+      healthPhotoResult = null;
+      render();
+    }
+
+    function dismissPhotoResult() {
+      healthPhotoResult = null;
+      render();
+    }
+
+    // ── Health: Barcode Scanner ──
+    function loadExternalScript(src) {
+      return new Promise(function(resolve, reject) {
+        if (document.querySelector('script[src="' + src + '"]')) { resolve(); return; }
+        var s = document.createElement('script');
+        s.src = src;
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+
+    async function startBarcodeScan() {
+      try {
+        await loadExternalScript('https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js');
+      } catch (e) {
+        alert('Failed to load barcode scanner. Check your internet connection.');
+        return;
+      }
+      var overlay = document.createElement('div');
+      overlay.className = 'barcode-modal-overlay';
+      overlay.id = 'barcodeOverlay';
+      overlay.innerHTML = '<div class="barcode-modal-content">' +
+        '<div class="barcode-modal-header"><h3>Scan Barcode</h3><button class="barcode-modal-close" onclick="stopBarcodeScan()">&times;</button></div>' +
+        '<div id="barcode-reader"></div>' +
+        '<div class="barcode-modal-footer">Point your camera at a food product barcode</div></div>';
+      document.body.appendChild(overlay);
+
+      try {
+        healthBarcodeScanner = new Html5Qrcode('barcode-reader');
+        await healthBarcodeScanner.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 250, height: 150 } },
+          async function(decodedText) {
+            await stopBarcodeScan();
+            await lookupBarcode(decodedText);
+          },
+          function() {}
+        );
+      } catch (err) {
+        stopBarcodeScan();
+        alert('Could not access camera. Please allow camera permissions.');
+      }
+    }
+
+    async function stopBarcodeScan() {
+      if (healthBarcodeScanner) {
+        try { await healthBarcodeScanner.stop(); } catch (e) {}
+        healthBarcodeScanner = null;
+      }
+      var overlay = document.getElementById('barcodeOverlay');
+      if (overlay) overlay.remove();
+    }
+
+    async function lookupBarcode(code) {
+      healthPhotoAnalyzing = true;
+      healthPhotoResult = null;
+      healthMealAdvice = null;
+      render();
+      try {
+        var resp = await fetch('https://world.openfoodfacts.org/api/v0/product/' + code + '.json');
+        var data = await resp.json();
+        if (data.status === 1 && data.product) {
+          var p = data.product;
+          var nut = p.nutriments || {};
+          healthPhotoResult = {
+            barcode: code,
+            productName: p.product_name || 'Unknown product',
+            brands: p.brands || '',
+            foods: [{
+              name: p.product_name || 'Scanned product',
+              portion: p.serving_size || p.quantity || 'per 100g',
+              calories: Math.round(nut['energy-kcal_100g'] || nut['energy-kcal'] || 0),
+              protein: Math.round(nut.proteins_100g || nut.proteins || 0),
+              carbs: Math.round(nut.carbohydrates_100g || nut.carbohydrates || 0),
+              fat: Math.round(nut.fat_100g || nut.fat || 0)
+            }],
+            totalCalories: Math.round(nut['energy-kcal_100g'] || nut['energy-kcal'] || 0),
+            summary: (p.product_name || 'Product') + (p.brands ? ' by ' + p.brands : ''),
+            ingredients: p.ingredients_text || '',
+            nutriscore: p.nutriscore_grade || null
+          };
+        } else {
+          healthPhotoResult = { error: 'Product not found in database. Try scanning again or log manually.' };
+        }
+      } catch (e) {
+        healthPhotoResult = { error: 'Failed to look up product. Check your connection.' };
+      }
+      healthPhotoAnalyzing = false;
+      render();
+    }
+
+    // ── Health: Voice Input (Web Speech API) ──
+    function startVoiceMealInput() {
+      var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert('Voice input is not supported in this browser. Try Chrome or Edge.');
+        return;
+      }
+      if (healthVoiceActive) { stopVoiceMealInput(); return; }
+
+      healthVoiceActive = true;
+      render();
+
+      var recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      window._healthVoiceRecognition = recognition;
+
+      recognition.onresult = async function(event) {
+        var text = event.results[0][0].transcript;
+        healthVoiceActive = false;
+        window._healthVoiceRecognition = null;
+
+        healthPhotoAnalyzing = true;
+        healthMealAdvice = null;
+        render();
+        try {
+          var result = await api('/ai/parse-voice-meal', {
+            method: 'POST',
+            body: JSON.stringify({ text: text })
+          });
+          if (result.meals && result.meals.length > 0) {
+            healthPhotoResult = {
+              voiceText: text,
+              foods: result.meals.map(function(m) {
+                return { name: m.name, portion: 'estimated', calories: m.calories, protein: m.protein, carbs: m.carbs, fat: m.fat };
+              }),
+              totalCalories: result.totalCalories || 0,
+              summary: 'Voice: "' + text + '"',
+              advice: result.advice || '',
+              reasoning: result.reasoning || ''
+            };
+          } else {
+            var input = document.getElementById('healthMealInput');
+            if (input) input.value = text;
+          }
+        } catch (e) {
+          var input2 = document.getElementById('healthMealInput');
+          if (input2) input2.value = text;
+        }
+        healthPhotoAnalyzing = false;
+        render();
+      };
+
+      recognition.onerror = function() {
+        healthVoiceActive = false;
+        window._healthVoiceRecognition = null;
+        render();
+      };
+
+      recognition.onend = function() {
+        if (healthVoiceActive) {
+          healthVoiceActive = false;
+          window._healthVoiceRecognition = null;
+          render();
+        }
+      };
+
+      recognition.start();
+    }
+
+    function stopVoiceMealInput() {
+      if (window._healthVoiceRecognition) {
+        try { window._healthVoiceRecognition.stop(); } catch (e) {}
+        window._healthVoiceRecognition = null;
+      }
+      healthVoiceActive = false;
+      render();
+    }
+
+    // ── Health: Auto-Advice After Meal Logging ──
+    async function getMealAdvice(mealText) {
+      healthMealAdviceLoading = true;
+      healthMealAdvice = null;
+      render();
+      try {
+        var hour = new Date().getHours();
+        var timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+        var result = await api('/ai/meal-advice', {
+          method: 'POST',
+          body: JSON.stringify({ meal: mealText, trackers: healthData, timeOfDay: timeOfDay })
+        });
+        healthMealAdvice = result;
+      } catch (e) {
+        healthMealAdvice = null;
+      }
+      healthMealAdviceLoading = false;
+      render();
+    }
+
     function renderHealthView(app) {
       resetHealthIfNewDay();
       const h = healthData;
@@ -4580,6 +5167,60 @@
           </div>`).join('')}
         </div>` : '';
 
+      // Contextual nudge
+      const nudge = getContextualNudge();
+      const nudgeHtml = `
+        <div class="health-nudge">
+          <div class="health-nudge-icon">${nudge.icon}</div>
+          <div class="health-nudge-content">
+            <div class="health-nudge-label">${nudge.label}</div>
+            <div class="health-nudge-text">${nudge.text}</div>
+          </div>
+        </div>`;
+
+      // Analysis result card builder
+      function buildAnalysisHtml() {
+        if (healthPhotoAnalyzing) return '<div class="health-analyzing"><div class="health-analyzing-spinner"></div>Analyzing...</div>';
+        if (!healthPhotoResult) return '';
+        if (healthPhotoResult.error) return '<div class="health-analysis-card" style="border-color:rgba(239,68,68,0.2);background:rgba(239,68,68,0.06)"><div style="font-size:0.78rem;color:var(--high)">' + escapeHtml(healthPhotoResult.error) + '</div><button class="health-analysis-btn secondary" style="margin-top:8px;width:100%" onclick="dismissPhotoResult()">Dismiss</button></div>';
+        var r = healthPhotoResult;
+        var titleIcon = r.barcode ? '&#128179; Product Found' : r.voiceText ? '&#127908; Voice Parsed' : '&#128248; Photo Analysis';
+        var foodsHtml = (r.foods || []).map(function(f) {
+          return '<div class="health-analysis-food"><span class="health-analysis-food-name">' + escapeHtml(f.name) + (f.portion ? ' <span style="color:var(--text-muted)">(' + escapeHtml(f.portion) + ')</span>' : '') + '</span><span class="health-analysis-food-cal">' + f.calories + ' kcal</span></div>';
+        }).join('');
+        var totalP = (r.foods || []).reduce(function(s,f) { return s + (f.protein||0); }, 0);
+        var totalC = (r.foods || []).reduce(function(s,f) { return s + (f.carbs||0); }, 0);
+        var totalF = (r.foods || []).reduce(function(s,f) { return s + (f.fat||0); }, 0);
+        var adviceHtml = r.advice ? '<div class="health-analysis-advice"><div class="health-analysis-advice-text">' + escapeHtml(r.advice) + '</div>' + (r.reasoning ? '<div class="health-analysis-advice-reason">' + escapeHtml(r.reasoning) + '</div>' : '') + '</div>' : '';
+        var nutriscoreHtml = r.nutriscore ? '<div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:6px">Nutri-Score: <strong style="text-transform:uppercase;color:var(--accent)">' + escapeHtml(r.nutriscore) + '</strong></div>' : '';
+        return '<div class="health-analysis-card">' +
+          '<div class="health-analysis-header"><div class="health-analysis-title">' + titleIcon + '</div><button class="health-analysis-close" onclick="dismissPhotoResult()">&times;</button></div>' +
+          '<div style="font-size:0.78rem;color:var(--text);margin-bottom:6px">' + escapeHtml(r.summary || '') + '</div>' +
+          nutriscoreHtml +
+          '<div class="health-analysis-foods">' + foodsHtml + '</div>' +
+          '<div class="health-nutrition-grid">' +
+            '<div class="health-nutrition-item"><div class="health-nutrition-value">' + (r.totalCalories||0) + '</div><div class="health-nutrition-label">Calories</div></div>' +
+            '<div class="health-nutrition-item"><div class="health-nutrition-value">' + totalP + 'g</div><div class="health-nutrition-label">Protein</div></div>' +
+            '<div class="health-nutrition-item"><div class="health-nutrition-value">' + totalC + 'g</div><div class="health-nutrition-label">Carbs</div></div>' +
+            '<div class="health-nutrition-item"><div class="health-nutrition-value">' + totalF + 'g</div><div class="health-nutrition-label">Fat</div></div>' +
+          '</div>' +
+          adviceHtml +
+          '<div class="health-analysis-actions"><button class="health-analysis-btn primary" onclick="addPhotoMeals()">Add to Meal Log</button><button class="health-analysis-btn secondary" onclick="dismissPhotoResult()">Dismiss</button></div>' +
+        '</div>';
+      }
+
+      // Meal advice card builder
+      function buildMealAdviceHtml() {
+        if (healthMealAdviceLoading) return '<div class="health-analyzing" style="margin-top:8px"><div class="health-analyzing-spinner"></div>Getting coaching advice...</div>';
+        if (!healthMealAdvice || !healthMealAdvice.recommendation) return '';
+        return '<div class="health-meal-advice">' +
+          '<div class="health-meal-advice-header">&#9889; Coach Says</div>' +
+          '<div class="health-meal-advice-rec">' + escapeHtml(healthMealAdvice.recommendation) + '</div>' +
+          (healthMealAdvice.reasoning ? '<div class="health-meal-advice-why">' + escapeHtml(healthMealAdvice.reasoning) + '</div>' : '') +
+          (healthMealAdvice.tip ? '<div class="health-meal-advice-tip">&#128161; ' + escapeHtml(healthMealAdvice.tip) + '</div>' : '') +
+        '</div>';
+      }
+
       // Chat messages
       let chatHtml = '';
       for (const msg of healthChatMessages) {
@@ -4617,6 +5258,9 @@
               <p>Your personal wellness companion</p>
             </div>
           </div>
+
+          <!-- Contextual Nudge -->
+          ${nudgeHtml}
 
           <!-- Trackers Grid -->
           <div class="health-trackers">
@@ -4670,11 +5314,27 @@
               <div class="ht-icon" style="background:rgba(249,115,22,0.1)">&#127860;</div>
               <div class="ht-label">Meals</div>
               <div class="ht-value">${h.meals.length}<span style="font-size:0.75rem;font-weight:500;color:var(--text-muted)"> logged</span></div>
+              <div class="health-input-methods">
+                <button class="health-input-method-btn" onclick="triggerMealPhoto()" title="Take a photo of your meal">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2v11z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="2"/></svg>
+                  Camera
+                </button>
+                <button class="health-input-method-btn" onclick="startBarcodeScan()" title="Scan food barcode">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M2 4h3M2 20h3M19 4h3M19 20h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M7 4v16M11 4v16M15 4v16" stroke="currentColor" stroke-width="2"/></svg>
+                  Barcode
+                </button>
+                <button class="health-input-method-btn${healthVoiceActive ? ' voice-active' : ''}" onclick="startVoiceMealInput()" title="${healthVoiceActive ? 'Listening...' : 'Voice input'}">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" stroke="currentColor" stroke-width="2"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  ${healthVoiceActive ? 'Listening...' : 'Voice'}
+                </button>
+              </div>
               ${mealsHtml ? `<div class="health-log-tags">${mealsHtml}</div>` : '<div class="ht-sub">Log what you eat today</div>'}
               <div class="health-log-input">
                 <input type="text" id="healthMealInput" placeholder="e.g. Oatmeal, Chicken salad" onkeydown="healthLogKeydown(event,'meal')" autocomplete="off">
                 <button onclick="healthLogBtn('meal')">Add</button>
               </div>
+              ${buildAnalysisHtml()}
+              ${buildMealAdviceHtml()}
             </div>
 
             <!-- Exercise -->
@@ -4692,6 +5352,16 @@
 
           <!-- Patterns / Insights -->
           ${patternsHtml}
+
+          <!-- Wearable Sync -->
+          <div class="health-wearable-card">
+            <div class="health-wearable-icon">&#9201;</div>
+            <div class="health-wearable-info">
+              <div class="health-wearable-title">Wearable Sync</div>
+              <div class="health-wearable-desc">Connect Fitbit, Apple Watch, or Garmin for auto-tracking heart rate, steps, sleep &amp; hydration</div>
+            </div>
+            <button class="health-wearable-btn" onclick="alert('Wearable sync requires the mobile app. Coming soon!')">Connect</button>
+          </div>
 
           <!-- Quick action chips -->
           <div class="health-quick-actions">

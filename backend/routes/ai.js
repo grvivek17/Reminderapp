@@ -281,4 +281,156 @@ Respond ONLY with valid JSON in this exact format, no markdown, no extra text:
   }
 });
 
+// POST /api/ai/analyze-meal-photo
+router.post('/analyze-meal-photo', auth, async (req, res) => {
+  try {
+    const { image } = req.body;
+    if (!image) return res.status(400).json({ error: 'Image is required' });
+
+    const token = process.env.HUGGINGFACE_TOKEN;
+    if (!token) throw new Error('HUGGINGFACE_TOKEN must be set');
+
+    // Step 1: Caption the image using HuggingFace vision model
+    const imageBuffer = Buffer.from(image, 'base64');
+    const captionResp = await fetch(
+      'https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-large',
+      {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: imageBuffer
+      }
+    );
+
+    if (!captionResp.ok) throw new Error(`Image captioning failed: ${captionResp.status}`);
+    const captionData = await captionResp.json();
+    const caption = captionData[0]?.generated_text || 'unidentified food';
+
+    // Step 2: Use LLM to analyze nutrition based on caption
+    const messages = [
+      {
+        role: 'system',
+        content: `You are a nutrition analysis AI. Given a description of a meal from a photo, identify foods, estimate portions, and calculate nutritional values. Be practical and estimate reasonable serving sizes.
+
+Respond ONLY with valid JSON:
+{"foods":[{"name":"food name","portion":"estimated portion","calories":number,"protein":number,"carbs":number,"fat":number}],"totalCalories":number,"summary":"brief meal summary","advice":"one actionable health tip about this meal","reasoning":"why this advice matters"}`
+      },
+      {
+        role: 'user',
+        content: `Analyze this meal from the photo description: "${caption}". Identify foods, estimate portions, and provide nutritional breakdown.`
+      }
+    ];
+
+    const result = await callLLM(messages, 800);
+    const jsonMatch = result.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return res.json({
+          caption,
+          foods: Array.isArray(parsed.foods) ? parsed.foods : [],
+          totalCalories: parsed.totalCalories || 0,
+          summary: parsed.summary || caption,
+          advice: parsed.advice || '',
+          reasoning: parsed.reasoning || ''
+        });
+      } catch {}
+    }
+    res.json({ caption, foods: [], totalCalories: 0, summary: caption, advice: '', reasoning: '' });
+  } catch (err) {
+    console.error('Meal photo analysis error:', err);
+    res.status(500).json({ error: 'Failed to analyze meal photo' });
+  }
+});
+
+// POST /api/ai/parse-voice-meal
+router.post('/parse-voice-meal', auth, async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text) return res.status(400).json({ error: 'Text is required' });
+
+    const messages = [
+      {
+        role: 'system',
+        content: `You are a nutrition parser. Given a natural language description of what someone ate, extract individual food items with estimated nutritional values per typical serving.
+
+Respond ONLY with valid JSON:
+{"meals":[{"name":"food name","calories":number,"protein":number,"carbs":number,"fat":number}],"totalCalories":number,"advice":"brief actionable health tip","reasoning":"why this matters"}`
+      },
+      {
+        role: 'user',
+        content: `Parse this meal description and estimate nutrition: "${text}"`
+      }
+    ];
+
+    const result = await callLLM(messages, 600);
+    const jsonMatch = result.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return res.json({
+          meals: Array.isArray(parsed.meals) ? parsed.meals : [],
+          totalCalories: parsed.totalCalories || 0,
+          advice: parsed.advice || '',
+          reasoning: parsed.reasoning || ''
+        });
+      } catch {}
+    }
+    res.json({ meals: [{ name: text, calories: 0, protein: 0, carbs: 0, fat: 0 }], totalCalories: 0, advice: '', reasoning: '' });
+  } catch (err) {
+    console.error('Voice meal parse error:', err);
+    res.status(500).json({ error: 'Failed to parse meal' });
+  }
+});
+
+// POST /api/ai/meal-advice
+router.post('/meal-advice', auth, async (req, res) => {
+  try {
+    const { meal, trackers, timeOfDay } = req.body;
+    if (!meal) return res.status(400).json({ error: 'Meal is required' });
+
+    let context = `Time: ${timeOfDay || 'unknown'}`;
+    if (trackers) {
+      if (trackers.water != null) context += `\nWater: ${trackers.water}/${trackers.waterGoal || 8} glasses`;
+      if (trackers.meals) context += `\nMeals today: ${trackers.meals.length} (${trackers.meals.join(', ')})`;
+      if (trackers.exercise) context += `\nExercise: ${trackers.exercise.length} activities`;
+      if (trackers.mood) context += `\nMood: ${trackers.mood}`;
+      if (trackers.sleep != null) context += `\nSleep: ${trackers.sleep} hrs`;
+    }
+
+    const messages = [
+      {
+        role: 'system',
+        content: `You are a supportive health coach providing immediate advice after a meal is logged. Always explain WHY your advice matters. Be concise, motivational, and practical.
+
+User context:
+${context}
+
+Respond ONLY with valid JSON:
+{"recommendation":"short actionable step","reasoning":"why this matters right now","tip":"bonus tip or alternative strategy"}`
+      },
+      {
+        role: 'user',
+        content: `I just ate: ${meal}. Give me quick coaching advice.`
+      }
+    ];
+
+    const result = await callLLM(messages, 400);
+    const jsonMatch = result.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return res.json({
+          recommendation: parsed.recommendation || '',
+          reasoning: parsed.reasoning || '',
+          tip: parsed.tip || ''
+        });
+      } catch {}
+    }
+    res.json({ recommendation: '', reasoning: '', tip: '' });
+  } catch (err) {
+    console.error('Meal advice error:', err);
+    res.status(500).json({ error: 'Failed to generate advice' });
+  }
+});
+
 module.exports = router;
