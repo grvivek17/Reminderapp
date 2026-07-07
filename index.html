@@ -5785,7 +5785,7 @@
       document.getElementById('taskLocation').value = '';
       document.getElementById('taskLocationLat').value = '';
       document.getElementById('taskLocationLng').value = '';
-      document.getElementById('locationPinWrap').style.display = isNativeApp() ? '' : 'none';
+      document.getElementById('locationPinWrap').style.display = (isNativeApp() || navigator.geolocation) ? '' : 'none';
 
       document.getElementById('taskModal').classList.add('open');
       setTimeout(() => document.getElementById('taskText').focus(), 100);
@@ -5807,7 +5807,7 @@
       document.getElementById('taskLocation').value = task.locationText || '';
       document.getElementById('taskLocationLat').value = task.locationLat || '';
       document.getElementById('taskLocationLng').value = task.locationLng || '';
-      document.getElementById('locationPinWrap').style.display = isNativeApp() ? '' : 'none';
+      document.getElementById('locationPinWrap').style.display = (isNativeApp() || navigator.geolocation) ? '' : 'none';
       document.getElementById('taskModal').classList.add('open');
       setTimeout(() => document.getElementById('taskText').focus(), 100);
     }
@@ -5827,8 +5827,19 @@
       const category = document.querySelector('input[name="category"]:checked').value;
       const status = document.querySelector('input[name="status"]:checked').value;
       const locationText = document.getElementById('taskLocation').value.trim() || null;
-      const locationLat = document.getElementById('taskLocationLat').value ? parseFloat(document.getElementById('taskLocationLat').value) : null;
-      const locationLng = document.getElementById('taskLocationLng').value ? parseFloat(document.getElementById('taskLocationLng').value) : null;
+      let locationLat = document.getElementById('taskLocationLat').value ? parseFloat(document.getElementById('taskLocationLat').value) : null;
+      let locationLng = document.getElementById('taskLocationLng').value ? parseFloat(document.getElementById('taskLocationLng').value) : null;
+
+      // Auto-geocode if location text exists but no coordinates
+      if (locationText && locationLat == null && locationLng == null) {
+        try {
+          const coords = await geocodeLocationText(locationText);
+          if (coords) {
+            locationLat = coords.lat;
+            locationLng = coords.lng;
+          }
+        } catch (e) {}
+      }
 
       // Collect assigned users from picker
       const assignedTo = [];
@@ -6142,64 +6153,214 @@
       }
     }
 
-    // ── Native: Location-based suggestions (Capacitor only) ──
+    // ── Location-based geofence alerts (Native + Web) ──
     const GEOFENCE_RADIUS_M = 500; // 500 meters
     let locationCheckInterval = null;
     let notifiedLocationTasks = new Set(); // track notified task IDs to avoid duplicates
     let bgLocationWatcherId = null;
     let bgLocationRunning = false;
     const BG_LOC_PREF_KEY = 'bgLocationEnabled';
+    let webLocationWatchId = null;
 
     function isBgLocationEnabled() {
       return localStorage.getItem(BG_LOC_PREF_KEY) === 'true';
     }
 
     async function initNativeLocation() {
-      if (!isNativeApp()) return;
+      if (isNativeApp()) {
+        // ── Native app: use Capacitor plugins ──
+        document.getElementById('bgLocSep').style.display = '';
+        document.getElementById('bgLocToggleWrap').style.display = '';
 
-      // Show the toggle in the user dropdown
+        try {
+          const Geolocation = getCapPlugin('Geolocation');
+          const LocalNotifications = getCapPlugin('LocalNotifications');
+
+          const locPerm = await Geolocation.requestPermissions();
+          if (locPerm.location !== 'granted' && locPerm.coarseLocation !== 'granted') return;
+
+          const notifPerm = await LocalNotifications.requestPermissions();
+          if (notifPerm.display !== 'granted') return;
+
+          checkNearbyTasks(Geolocation, LocalNotifications);
+          locationCheckInterval = setInterval(() => {
+            checkNearbyTasks(Geolocation, LocalNotifications);
+          }, 5 * 60 * 1000);
+
+          document.addEventListener('resume', () => {
+            notifiedLocationTasks.clear();
+            checkNearbyTasks(Geolocation, LocalNotifications);
+          });
+
+          if (isBgLocationEnabled()) {
+            await startBackgroundLocation();
+          }
+          updateBgLocUI();
+        } catch (err) {
+          console.log('Native location not available:', err.message);
+        }
+      } else {
+        // ── Web browser: use navigator.geolocation + Notification API ──
+        initWebLocation();
+      }
+    }
+
+    async function initWebLocation() {
+      if (!navigator.geolocation) {
+        console.log('Web geolocation not available');
+        return;
+      }
+
+      // Request notification permission if not already granted
+      if ('Notification' in window && Notification.permission === 'default') {
+        try { await Notification.requestPermission(); } catch (e) {}
+      }
+
+      // Show the background location toggle for web too
       document.getElementById('bgLocSep').style.display = '';
       document.getElementById('bgLocToggleWrap').style.display = '';
 
-      try {
-        const Geolocation = getCapPlugin('Geolocation');
-        const LocalNotifications = getCapPlugin('LocalNotifications');
+      // Start periodic location checking (every 2 minutes)
+      checkNearbyTasksWeb();
+      locationCheckInterval = setInterval(function() {
+        checkNearbyTasksWeb();
+      }, 2 * 60 * 1000);
 
-        // Request foreground permissions
-        const locPerm = await Geolocation.requestPermissions();
-        if (locPerm.location !== 'granted' && locPerm.coarseLocation !== 'granted') return;
-
-        const notifPerm = await LocalNotifications.requestPermissions();
-        if (notifPerm.display !== 'granted') return;
-
-        // Foreground polling (lightweight, same as before)
-        checkNearbyTasks(Geolocation, LocalNotifications);
-        locationCheckInterval = setInterval(() => {
-          checkNearbyTasks(Geolocation, LocalNotifications);
-        }, 5 * 60 * 1000);
-
-        document.addEventListener('resume', () => {
-          notifiedLocationTasks.clear();
-          checkNearbyTasks(Geolocation, LocalNotifications);
-        });
-
-        // Auto-start background tracking if previously enabled
-        if (isBgLocationEnabled()) {
-          await startBackgroundLocation();
+      // Also check on visibility change (user returns to tab)
+      document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+          checkNearbyTasksWeb();
         }
-        updateBgLocUI();
-      } catch (err) {
-        console.log('Native location not available:', err.message);
+      });
+
+      // Start continuous watching if previously enabled
+      if (isBgLocationEnabled()) {
+        startWebLocationWatch();
       }
+      updateBgLocUI();
+    }
+
+    function checkNearbyTasksWeb() {
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(
+        function(pos) {
+          var userLat = pos.coords.latitude;
+          var userLng = pos.coords.longitude;
+
+          var locationTasks = tasks.filter(function(t) {
+            return t.status !== 'completed' &&
+              t.locationLat != null && t.locationLng != null &&
+              !notifiedLocationTasks.has(t.id);
+          });
+
+          var groups = {};
+          for (var i = 0; i < locationTasks.length; i++) {
+            var t = locationTasks[i];
+            var dist = haversineDistance(userLat, userLng, t.locationLat, t.locationLng);
+            if (dist <= GEOFENCE_RADIUS_M) {
+              var key = (t.locationText || 'this location').toLowerCase();
+              if (!groups[key]) groups[key] = [];
+              groups[key].push(t);
+              notifiedLocationTasks.add(t.id);
+            }
+          }
+
+          // Send browser notifications
+          for (var loc in groups) {
+            var locTasks = groups[loc];
+            sendWebProximityNotification(loc, locTasks);
+          }
+        },
+        function(err) {
+          console.log('Web location check error:', err.message);
+        },
+        { timeout: 15000, enableHighAccuracy: false, maximumAge: 60000 }
+      );
+    }
+
+    function sendWebProximityNotification(location, locTasks) {
+      // Show in-app toast
+      toast('You\'re near ' + location + ' - ' + locTasks.length + ' pending task' + (locTasks.length > 1 ? 's' : '') + ' here!');
+
+      // Show browser notification if permitted
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          new Notification('You\'re near ' + location, {
+            body: 'You have ' + locTasks.length + ' pending task' + (locTasks.length > 1 ? 's' : '') + ' here: ' + locTasks[0].text + (locTasks.length > 1 ? ' and more' : ''),
+            icon: 'icons/icon-192.png',
+            tag: 'geofence-' + location.replace(/\s+/g, '-'),
+            requireInteraction: true
+          });
+        } catch (e) {
+          console.log('Web notification error:', e.message);
+        }
+      }
+    }
+
+    function startWebLocationWatch() {
+      if (webLocationWatchId != null) return;
+      if (!navigator.geolocation) return;
+
+      webLocationWatchId = navigator.geolocation.watchPosition(
+        function(pos) {
+          var userLat = pos.coords.latitude;
+          var userLng = pos.coords.longitude;
+
+          var locationTasks = tasks.filter(function(t) {
+            return t.status !== 'completed' &&
+              t.locationLat != null && t.locationLng != null &&
+              !notifiedLocationTasks.has(t.id);
+          });
+
+          var groups = {};
+          for (var i = 0; i < locationTasks.length; i++) {
+            var t = locationTasks[i];
+            var dist = haversineDistance(userLat, userLng, t.locationLat, t.locationLng);
+            if (dist <= GEOFENCE_RADIUS_M) {
+              var key = (t.locationText || 'this location').toLowerCase();
+              if (!groups[key]) groups[key] = [];
+              groups[key].push(t);
+              notifiedLocationTasks.add(t.id);
+            }
+          }
+
+          for (var loc in groups) {
+            sendWebProximityNotification(loc, groups[loc]);
+          }
+        },
+        function(err) {
+          console.log('Web location watch error:', err.message);
+        },
+        { enableHighAccuracy: false, maximumAge: 30000, timeout: 30000 }
+      );
+      bgLocationRunning = true;
+      updateBgLocUI();
+    }
+
+    function stopWebLocationWatch() {
+      if (webLocationWatchId != null) {
+        navigator.geolocation.clearWatch(webLocationWatchId);
+        webLocationWatchId = null;
+      }
+      bgLocationRunning = false;
+      updateBgLocUI();
     }
 
     async function toggleBackgroundLocation(enabled) {
       if (enabled) {
         localStorage.setItem(BG_LOC_PREF_KEY, 'true');
-        await startBackgroundLocation();
+        if (isNativeApp()) {
+          await startBackgroundLocation();
+        } else {
+          startWebLocationWatch();
+        }
       } else {
         localStorage.setItem(BG_LOC_PREF_KEY, 'false');
-        await stopBackgroundLocation();
+        if (isNativeApp()) {
+          await stopBackgroundLocation();
+        } else {
+          stopWebLocationWatch();
+        }
       }
       updateBgLocUI();
     }
@@ -6361,23 +6522,47 @@
     }
 
     async function pinCurrentLocation() {
-      if (!isNativeApp()) {
-        toast('Location pinning is available in the mobile app');
-        return;
-      }
       const btn = document.getElementById('locationPinBtn');
       if (btn) { btn.disabled = true; btn.textContent = 'Getting location...'; }
       try {
-        const Geolocation = getCapPlugin('Geolocation');
-        const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true });
-        // Store in hidden fields
-        document.getElementById('taskLocationLat').value = pos.coords.latitude;
-        document.getElementById('taskLocationLng').value = pos.coords.longitude;
-        toast('Location pinned');
+        if (isNativeApp()) {
+          const Geolocation = getCapPlugin('Geolocation');
+          const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true });
+          document.getElementById('taskLocationLat').value = pos.coords.latitude;
+          document.getElementById('taskLocationLng').value = pos.coords.longitude;
+          toast('Location pinned');
+        } else if (navigator.geolocation) {
+          const pos = await new Promise(function(resolve, reject) {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 15000 });
+          });
+          document.getElementById('taskLocationLat').value = pos.coords.latitude;
+          document.getElementById('taskLocationLng').value = pos.coords.longitude;
+          toast('Location pinned');
+        } else {
+          toast('Geolocation not available in this browser');
+        }
       } catch (err) {
-        toast('Could not get location: ' + err.message);
+        toast('Could not get location: ' + (err.message || 'Permission denied'));
       }
       if (btn) { btn.disabled = false; btn.textContent = 'Pin current location'; }
+    }
+
+    // Auto-geocode location text to lat/lng using Nominatim
+    async function geocodeLocationText(text) {
+      if (!text || text.length < 2) return null;
+      try {
+        var resp = await fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(text) + '&format=json&limit=1', {
+          headers: { 'Accept': 'application/json' }
+        });
+        if (!resp.ok) return null;
+        var data = await resp.json();
+        if (data && data.length > 0) {
+          return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+        }
+      } catch (e) {
+        console.log('Geocoding error:', e.message);
+      }
+      return null;
     }
 
     // ── PWA ──
