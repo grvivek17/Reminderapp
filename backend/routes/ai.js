@@ -3,7 +3,7 @@ const auth = require('../middleware/auth');
 
 const router = express.Router();
 
-async function callLLM(messages) {
+async function callLLM(messages, maxTokens = 1024) {
   const url = process.env.AI_GATEWAY_URL;
   const token = process.env.HUGGINGFACE_TOKEN;
   const model = process.env.AI_MODEL || 'Meta-Llama-3.3-70B-Instruct';
@@ -22,7 +22,7 @@ async function callLLM(messages) {
       model,
       messages,
       temperature: 0.3,
-      max_tokens: 1024
+      max_tokens: maxTokens
     })
   });
 
@@ -72,34 +72,113 @@ router.post('/group-themes', auth, async (req, res) => {
 // POST /api/ai/daily-briefing
 router.post('/daily-briefing', auth, async (req, res) => {
   try {
-    const { tasks, today, weather } = req.body;
-    if (!tasks || tasks.length === 0) {
+    const { tasks, today, weather, overdueTasks, completedCount, totalCount, weekTasks, isWeekend, isHoliday, holidayName, dayOfWeek } = req.body;
+
+    if ((!tasks || tasks.length === 0) && (!overdueTasks || overdueTasks.length === 0)) {
       const weatherNote = weather ? ` ${weather}` : '';
-      return res.json({ briefing: `No active tasks right now. Enjoy your free day!${weatherNote}` });
+      return res.json({
+        summary: `No active tasks right now. Enjoy your free day!${weatherNote}`,
+        workPlan: [],
+        alerts: [],
+        recommendations: []
+      });
     }
 
-    const taskList = tasks.map(t => {
-      const dateLabel = t.date === today ? '(today)' : t.date ? `(${t.date})` : '(no date)';
-      return `- [${t.priority}, ${t.category}] ${t.text} ${dateLabel} (${t.status.replace(/_/g, ' ')})`;
-    }).join('\n');
+    // Build rich task context
+    const todayTasks = (tasks || []).filter(t => t.date === today);
+    const futureTasks = (tasks || []).filter(t => t.date && t.date > today);
+    const overdueList = overdueTasks || [];
 
-    const weatherContext = weather
-      ? `\n\nWeather context: ${weather}\nIf any tasks could be impacted by weather (outdoor activities, commuting, sports, errands), briefly mention the weather impact.`
+    let taskContext = '';
+
+    if (overdueList.length > 0) {
+      taskContext += `OVERDUE TASKS (${overdueList.length}):\n`;
+      taskContext += overdueList.map(t => {
+        const loc = t.location ? ` [Location: ${t.location}]` : '';
+        return `- [${t.priority}] ${t.text} (due: ${t.date})${loc}`;
+      }).join('\n');
+      taskContext += '\n\n';
+    }
+
+    if (todayTasks.length > 0) {
+      taskContext += `TODAY'S TASKS (${todayTasks.length}):\n`;
+      taskContext += todayTasks.map(t => {
+        const loc = t.location ? ` [Location: ${t.location}]` : '';
+        return `- [${t.priority}, ${t.status.replace(/_/g, ' ')}] ${t.text}${loc}`;
+      }).join('\n');
+      taskContext += '\n\n';
+    }
+
+    if (futureTasks.length > 0) {
+      taskContext += `UPCOMING TASKS (${futureTasks.length}):\n`;
+      taskContext += futureTasks.slice(0, 10).map(t => {
+        const loc = t.location ? ` [Location: ${t.location}]` : '';
+        return `- [${t.priority}] ${t.text} (${t.date})${loc}`;
+      }).join('\n');
+      taskContext += '\n\n';
+    }
+
+    // Week workload context
+    if (weekTasks) {
+      taskContext += `WEEK WORKLOAD:\n`;
+      for (const [day, count] of Object.entries(weekTasks)) {
+        taskContext += `  ${day}: ${count} tasks\n`;
+      }
+      taskContext += '\n';
+    }
+
+    const completionContext = totalCount > 0
+      ? `Completion rate: ${completedCount}/${totalCount} tasks done (${Math.round(completedCount / totalCount * 100)}%).`
       : '';
 
+    const dayContext = [
+      `Today: ${today} (${dayOfWeek || 'unknown'})`,
+      isWeekend ? 'It is a WEEKEND.' : '',
+      isHoliday ? `It is a HOLIDAY: ${holidayName}.` : '',
+      completionContext
+    ].filter(Boolean).join(' ');
+
+    const weatherContext = weather
+      ? `Weather: ${weather}`
+      : '';
+
+    const systemPrompt = `You are a smart personal productivity assistant for a task/reminder app. Generate a structured daily briefing as a JSON object.
+
+Context:
+${dayContext}
+${weatherContext}
+
+Rules:
+1. "summary": A concise 1-2 sentence overview of the day (what to focus on, mood-setting).
+2. "workPlan": An ordered array of 2-5 action items for the day. Each item: {"task": "description", "why": "brief reason", "timeHint": "suggested time like Morning/Afternoon/Evening"}. Prioritize: overdue first, then high-priority today tasks, then quick wins. If weekend/holiday, suggest lighter work and personal tasks. Group tasks at the same location together.
+3. "alerts": Array of 0-3 short warning strings. Include if: tasks are overdue, a day this week is overloaded (5+ tasks), weather impacts outdoor tasks, high-priority deadlines approaching.
+4. "recommendations": Array of 1-3 smart suggestions. Examples: reschedule overloaded days, batch errands at same location, take a break if productivity is high, tackle a specific overdue task, balance personal vs professional, suggest weekend catch-up for overdue items.
+
+${isWeekend || isHoliday ? 'Since it is a weekend/holiday: recommend rest, light personal tasks only, suggest catching up on overdue items if any, and defer professional tasks to weekdays unless urgent.' : 'It is a workday: prioritize professional tasks during work hours, suggest personal tasks for evening.'}
+
+Respond ONLY with valid JSON, no markdown, no extra text. Format:
+{"summary":"...","workPlan":[{"task":"...","why":"...","timeHint":"..."}],"alerts":["..."],"recommendations":["..."]}`;
+
     const messages = [
-      {
-        role: 'system',
-        content: `Write a very short daily task note (1-2 lines max). Today: ${today || 'unknown'}. Format like a sticky note — e.g. "5 tasks, 2 high-pri. Focus: client report. Rain today, plan indoor." No markdown, no bullets, no greetings. Ultra-concise.${weatherContext}`
-      },
-      {
-        role: 'user',
-        content: `Here are the active tasks:\n${taskList}`
-      }
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: taskContext }
     ];
 
-    const result = await callLLM(messages);
-    res.json({ briefing: result.trim() });
+    const result = await callLLM(messages, 1500);
+    const jsonMatch = result.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return res.json({
+          summary: parsed.summary || '',
+          workPlan: Array.isArray(parsed.workPlan) ? parsed.workPlan : [],
+          alerts: Array.isArray(parsed.alerts) ? parsed.alerts : [],
+          recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : []
+        });
+      } catch {}
+    }
+    // Fallback: return raw text as summary
+    res.json({ summary: result.trim(), workPlan: [], alerts: [], recommendations: [] });
   } catch (err) {
     console.error('Daily briefing error:', err);
     res.status(500).json({ error: 'Failed to generate briefing' });
@@ -129,6 +208,76 @@ router.post('/infer-location', auth, async (req, res) => {
   } catch (err) {
     console.error('Location inference error:', err);
     res.json({ location: null });
+  }
+});
+
+// POST /api/ai/health-coach
+router.post('/health-coach', auth, async (req, res) => {
+  try {
+    const { message, history, trackers, weather } = req.body;
+    if (!message) return res.status(400).json({ error: 'Message is required' });
+
+    // Build tracker context
+    let trackerContext = '';
+    if (trackers) {
+      const parts = [];
+      if (trackers.water != null) parts.push(`Water intake today: ${trackers.water} glasses (goal: ${trackers.waterGoal || 8})`);
+      if (trackers.sleep != null) parts.push(`Sleep last night: ${trackers.sleep} hours`);
+      if (trackers.steps != null) parts.push(`Steps today: ${trackers.steps} (goal: ${trackers.stepsGoal || 10000})`);
+      if (trackers.meals && trackers.meals.length > 0) parts.push(`Meals logged today: ${trackers.meals.join(', ')}`);
+      if (trackers.mood) parts.push(`Current mood: ${trackers.mood}`);
+      if (trackers.exercise && trackers.exercise.length > 0) parts.push(`Exercise today: ${trackers.exercise.join(', ')}`);
+      if (parts.length > 0) trackerContext = '\n\nUser\'s health data today:\n' + parts.join('\n');
+    }
+
+    const weatherContext = weather ? `\nCurrent weather: ${weather}` : '';
+
+    const systemPrompt = `You are a real-time personal health coach designed to remove the guesswork from staying healthy in everyday life.
+Your role is to provide clear, actionable, and personalized guidance across nutrition, fitness, sleep, hydration, and mental well-being.
+
+Core objectives:
+- Offer real-time nutritional advice based on user inputs (meals, cravings, allergies, goals).
+- Suggest fitness routines adapted to user's current energy, environment, and available time.
+- Provide hydration and sleep reminders tuned to lifestyle and activity levels.
+- Deliver mental wellness nudges (breathing exercises, mindfulness, stress relief tips).
+- Track progress and highlight patterns (e.g., skipped meals, late nights, hydration gaps).
+- Encourage sustainable habits rather than quick fixes.
+
+Guidelines:
+- Always explain the *why* behind recommendations to build trust and understanding.
+- Keep advice practical, simple, and tailored to real-life scenarios.
+- Avoid medical diagnoses; focus on preventive, everyday wellness coaching.
+- Use motivational, supportive language that feels like a coach, not a textbook.
+- Adapt tone: concise for quick nudges, detailed for deeper guidance.
+${trackerContext}${weatherContext}
+
+Respond ONLY with valid JSON in this exact format, no markdown, no extra text:
+{"recommendation":"short actionable step","reasoning":"why this matters right now","tips":["optional extra tip 1","optional extra tip 2"],"trackerNudge":"optional nudge about their tracked data or null"}`;
+
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      ...(history || []).slice(-6),
+      { role: 'user', content: message }
+    ];
+
+    const result = await callLLM(messages, 1200);
+    const jsonMatch = result.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return res.json({
+          recommendation: parsed.recommendation || '',
+          reasoning: parsed.reasoning || '',
+          tips: Array.isArray(parsed.tips) ? parsed.tips : [],
+          trackerNudge: parsed.trackerNudge || null
+        });
+      } catch {}
+    }
+    // Fallback: return raw text
+    res.json({ recommendation: result.trim(), reasoning: '', tips: [], trackerNudge: null });
+  } catch (err) {
+    console.error('Health coach error:', err);
+    res.status(500).json({ error: 'Failed to get health advice' });
   }
 });
 

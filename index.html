@@ -1524,7 +1524,7 @@
       background: linear-gradient(135deg, #eef2ff, #f0ebff);
       border: 1px solid rgba(79, 110, 247, 0.25);
       border-radius: var(--radius);
-      padding: 10px 14px;
+      padding: 14px 16px;
       margin-bottom: 12px;
       position: relative;
       box-shadow: 0 1px 4px rgba(79, 110, 247, 0.06);
@@ -1545,10 +1545,37 @@
       line-height: 1.4;
       color: var(--text);
     }
+    .briefing-summary {
+      font-size: 0.875rem;
+      font-weight: 500;
+      line-height: 1.5;
+      color: var(--text);
+      margin-bottom: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+    .briefing-marquee {
+      display: inline-block;
+      white-space: nowrap;
+      animation: briefingScroll 12s linear infinite;
+    }
+    .briefing-marquee:hover,
+    .briefing-marquee:active {
+      animation-play-state: paused;
+    }
+    @keyframes briefingScroll {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    /* If summary is short enough, don't scroll */
+    .briefing-summary--static .briefing-marquee {
+      animation: none;
+      white-space: normal;
+    }
     .briefing-actions {
       display: flex;
       gap: 8px;
-      margin-top: 6px;
+      margin-top: 8px;
       align-items: center;
     }
     .briefing-dismiss {
@@ -1582,6 +1609,133 @@
       font-style: italic;
       padding: 4px 0;
     }
+
+    /* Briefing sections */
+    .briefing-section {
+      margin-top: 10px;
+    }
+    .briefing-section-title {
+      font-size: 0.625rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Work plan items */
+    .briefing-plan-item {
+      display: flex;
+      gap: 8px;
+      padding: 6px 8px;
+      background: rgba(255,255,255,0.6);
+      border: 1px solid rgba(79, 110, 247, 0.1);
+      border-radius: var(--radius-sm);
+      margin-bottom: 4px;
+      align-items: flex-start;
+    }
+    html[data-theme="dark"] .briefing-plan-item { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); }
+    .briefing-plan-num {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.625rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .briefing-plan-body { flex: 1; min-width: 0; }
+    .briefing-plan-task {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.3;
+    }
+    .briefing-plan-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 2px;
+    }
+    .briefing-plan-why {
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      line-height: 1.3;
+    }
+    .briefing-plan-time {
+      font-size: 0.5625rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+      background: rgba(79, 110, 247, 0.08);
+      padding: 1px 5px;
+      border-radius: 3px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* Alert items */
+    .briefing-alert {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      padding: 4px 8px;
+      background: rgba(239, 68, 68, 0.06);
+      border: 1px solid rgba(239, 68, 68, 0.15);
+      border-radius: var(--radius-sm);
+      margin-bottom: 4px;
+      font-size: 0.75rem;
+      color: var(--danger);
+      line-height: 1.4;
+    }
+    .briefing-alert-icon {
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Recommendation items */
+    .briefing-rec {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      padding: 4px 8px;
+      background: rgba(34, 197, 94, 0.06);
+      border: 1px solid rgba(34, 197, 94, 0.15);
+      border-radius: var(--radius-sm);
+      margin-bottom: 4px;
+      font-size: 0.75rem;
+      color: #15803d;
+      line-height: 1.4;
+    }
+    html[data-theme="dark"] .briefing-rec { color: var(--low); }
+    .briefing-rec-icon {
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Collapsed state */
+    .briefing-expand-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.6875rem;
+      color: var(--accent);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px 0;
+      font-weight: 600;
+    }
+    .briefing-expand-btn:hover { text-decoration: underline; }
 
     /* Weather widget inside briefing */
     .weather-strip {
@@ -1635,24 +1789,6 @@
       border-radius: 4px;
       font-weight: 600;
       margin-left: 4px;
-    }
-
-    /* Briefing marquee / running text */
-    .briefing-marquee {
-      overflow: hidden;
-      white-space: nowrap;
-      position: relative;
-    }
-    .briefing-marquee .briefing-marquee-inner {
-      display: inline-block;
-      padding-left: 100%;
-      animation: marquee-scroll 18s linear infinite;
-      font-size: 0.7rem;
-    }
-    .briefing-marquee:hover .briefing-marquee-inner { animation-play-state: paused; }
-    @keyframes marquee-scroll {
-      0%   { transform: translateX(0); }
-      100% { transform: translateX(-100%); }
     }
 
     /* Quote of the Day */
@@ -1827,6 +1963,529 @@
     }
     .location-suggest-btn:hover { border-color: var(--accent); background: var(--accent-light); }
     .location-suggest-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Background location toggle */
+    .bg-loc-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+    .bg-loc-toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8125rem;
+    }
+    .bg-loc-toggle-label .bg-loc-sub {
+      display: block;
+      font-size: 0.625rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      line-height: 1.2;
+      margin-top: 1px;
+    }
+    .toggle-switch {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      left: 2px;
+      top: 2px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+    .toggle-switch input:checked + .toggle-slider { background: var(--accent); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+    /* Background location status indicator */
+    .bg-loc-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.625rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .bg-loc-status.active {
+      background: rgba(34, 197, 94, 0.1);
+      color: var(--status-completed);
+    }
+    .bg-loc-status.inactive {
+      background: var(--status-not-started-bg);
+      color: var(--status-not-started);
+    }
+    .bg-loc-pulse {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .bg-loc-status.active .bg-loc-pulse {
+      animation: bg-pulse 2s ease-in-out infinite;
+    }
+    @keyframes bg-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    /* ── Health Coach View ── */
+    .health-dashboard {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .health-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+    .health-header-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #ef4444, #f97316);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 2px 10px rgba(239,68,68,0.25);
+    }
+    .health-header h2 {
+      font-size: 1.125rem;
+      font-weight: 700;
+    }
+    .health-header p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    /* Tracker cards grid */
+    .health-trackers {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+      gap: 10px;
+    }
+    .health-tracker-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      position: relative;
+      transition: box-shadow var(--transition), border-color var(--transition);
+    }
+    .health-tracker-card:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .health-tracker-card.interactive {
+      cursor: pointer;
+    }
+    .health-tracker-card.interactive:hover {
+      border-color: var(--accent);
+    }
+    .ht-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 8px;
+      font-size: 1.1rem;
+    }
+    .ht-label {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .ht-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .ht-sub {
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .ht-progress {
+      height: 4px;
+      background: var(--bg);
+      border-radius: 2px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    .ht-progress-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+    .ht-actions {
+      display: flex;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    .ht-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: 700;
+      transition: all var(--transition);
+    }
+    .ht-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    /* Mood selector */
+    .mood-selector {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .mood-option {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition);
+    }
+    .mood-option:hover {
+      border-color: var(--accent);
+      transform: scale(1.1);
+    }
+    .mood-option.active {
+      border-color: var(--accent);
+      background: var(--accent-light);
+      transform: scale(1.15);
+    }
+
+    /* Quick actions */
+    .health-quick-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .health-quick-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-secondary);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .health-quick-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    /* Health chat */
+    .health-chat-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .health-chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .health-chat-header-title {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .health-chat-messages {
+      max-height: 360px;
+      min-height: 120px;
+      overflow-y: auto;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .health-chat-messages:empty::before {
+      content: 'Ask your health coach anything...';
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      text-align: center;
+      padding: 24px 0;
+      display: block;
+    }
+    .hc-msg {
+      max-width: 85%;
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      animation: hc-msg-in 0.2s ease;
+    }
+    @keyframes hc-msg-in {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .hc-msg.user {
+      align-self: flex-end;
+      background: var(--accent);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .hc-msg.coach {
+      align-self: flex-start;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+    .hc-msg.coach .hc-recommendation {
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .hc-msg.coach .hc-reasoning {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+    .hc-msg.coach .hc-tips {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .hc-msg.coach .hc-tips li {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      padding: 2px 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
+    }
+    .hc-msg.coach .hc-tips li::before {
+      content: '\2022';
+      color: var(--accent);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .hc-msg.coach .hc-nudge {
+      margin-top: 6px;
+      padding: 6px 8px;
+      background: rgba(245,158,11,0.08);
+      border: 1px solid rgba(245,158,11,0.15);
+      border-radius: var(--radius-sm);
+      font-size: 0.6875rem;
+      color: var(--medium);
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
+    }
+    .hc-msg.loading {
+      align-self: flex-start;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-style: italic;
+    }
+    .health-chat-input-wrap {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .health-chat-input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--surface);
+      outline: none;
+      transition: border-color var(--transition);
+    }
+    .health-chat-input:focus {
+      border-color: var(--accent);
+    }
+    .health-chat-send {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background var(--transition);
+    }
+    .health-chat-send:hover {
+      background: var(--accent-hover);
+    }
+    .health-chat-send:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Meal / exercise log input */
+    .health-log-input {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .health-log-input input {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--surface);
+      outline: none;
+    }
+    .health-log-input input:focus { border-color: var(--accent); }
+    .health-log-input button {
+      padding: 6px 10px;
+      border: 1px solid var(--accent);
+      border-radius: var(--radius-sm);
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .health-log-tags {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    .health-log-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.625rem;
+      font-weight: 600;
+      background: var(--accent-light);
+      color: var(--accent);
+      border: 1px solid rgba(79,110,247,0.15);
+    }
+    .health-log-tag button {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.75rem;
+      line-height: 1;
+      padding: 0 0 0 2px;
+    }
+    .health-log-tag button:hover { color: var(--danger); }
+
+    /* Health patterns card */
+    .health-patterns {
+      background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+    }
+    html[data-theme="dark"] .health-patterns {
+      background: linear-gradient(135deg, rgba(34,197,94,0.06), rgba(34,197,94,0.03));
+      border-color: rgba(34,197,94,0.15);
+    }
+    .health-patterns-title {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #15803d;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    html[data-theme="dark"] .health-patterns-title { color: var(--low); }
+    .health-pattern-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      padding: 4px 0;
+      font-size: 0.8125rem;
+      color: var(--text);
+      line-height: 1.4;
+    }
+    .health-pattern-icon {
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    @media (max-width: 600px) {
+      .health-trackers {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      .health-tracker-card { padding: 10px; }
+      .ht-value { font-size: 1.25rem; }
+      .health-chat-messages { max-height: 280px; }
+      .hc-msg { max-width: 92%; }
+      .health-quick-btn { font-size: 0.75rem; padding: 5px 10px; }
+    }
+
   </style>
 </head>
 <body>
@@ -1882,10 +2541,9 @@
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 12V8M4.5 12V5M8 12V2M11.5 12V7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
             <span class="view-label">Progress</span>
           </button>
-          <button data-view="health" onclick="switchView('health')" style="position:relative">
+          <button data-view="health" onclick="switchView('health')">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 12.5s-5.5-3.5-5.5-7A3 3 0 017 3a3 3 0 015.5 2.5c0 3.5-5.5 7-5.5 7z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
             <span class="view-label">Health</span>
-            <span class="coming-soon-badge">Soon</span>
           </button>
           <button data-view="expense" onclick="switchView('expense')" style="position:relative">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M4 4.5C4 3.1 5.3 2 7 2s3 1.1 3 2.5S8.7 7 7 7 4 8.1 4 9.5 5.3 12 7 12s3-1.1 3-2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
@@ -1916,6 +2574,22 @@
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4" r="2.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M2.5 12.5c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
               Manage users
             </button>
+            <div class="user-dropdown-sep" id="bgLocSep" style="display:none"></div>
+            <div class="user-dropdown-item" id="bgLocToggleWrap" style="display:none;pointer-events:auto" onclick="event.stopPropagation()">
+              <div class="bg-loc-toggle">
+                <div class="bg-loc-toggle-label">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1C4.8 1 3 2.8 3 5c0 3 4 8 4 8s4-5 4-8c0-2.2-1.8-4-4-4z" stroke="currentColor" stroke-width="1.3" fill="none"/><circle cx="7" cy="5" r="1.5" fill="currentColor"/></svg>
+                  <div>
+                    Background location
+                    <span class="bg-loc-sub" id="bgLocStatusText">Alerts when near tasks</span>
+                  </div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="bgLocToggle" onchange="toggleBackgroundLocation(this.checked)">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
             <div class="user-dropdown-sep"></div>
             <button class="user-dropdown-item danger" onclick="logout()">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 2H3a1 1 0 00-1 1v8a1 1 0 001 1h2M9 10l3-3-3-3M12 7H5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
@@ -2151,6 +2825,8 @@
     let users = [];
     let currentUser = null;
     let authMode = 'signup'; // 'signup' or 'login'
+    const ADMIN_EMAIL = 'grvivek17@gmail.com';
+    function isAdmin() { return currentUser && currentUser.email && currentUser.email.toLowerCase() === ADMIN_EMAIL; }
 
     async function initAuth() {
       if (!authToken) { showAuth(); return; }
@@ -2281,7 +2957,7 @@
             <div class="share-user-name">${escapeHtml(u.name)}${u.id === currentUser.id ? ' <span style="color:var(--accent);font-size:0.6875rem">(you)</span>' : ''}</div>
             <div class="share-user-email">${escapeHtml(u.email)}</div>
           </div>
-          ${u.id !== currentUser.id ? `<button class="btn btn-sm btn-danger" onclick="removeUser('${u.id}')" style="border:1px solid var(--danger)">Remove</button>` : ''}
+          ${u.id !== currentUser.id && isAdmin() ? `<button class="btn btn-sm btn-danger" onclick="removeUser('${u.id}')" style="border:1px solid var(--danger)">Remove</button>` : ''}
         </div>
       `).join('') || '<div class="empty-state"><p>No other users</p></div>';
       document.getElementById('manageUsersModal').classList.add('open');
@@ -2404,11 +3080,15 @@
     // ── AI state ──
     let themeCache = { hash: '', groups: [], loading: false };
     let themeFetchTimer = null;
-    let briefingData = null;
+    let briefingData = null; // { summary, workPlan, alerts, recommendations }
     let briefingLoading = false;
     let briefingError = false;
     let briefingDismissedToday = localStorage.getItem('briefing_dismissed') === todayStr();
     const BRIEFING_CACHE_KEY = 'reminder_briefing_cache';
+
+    // ── Holiday cache ──
+    let holidayCache = null;
+    const HOLIDAY_CACHE_KEY = 'reminder_holiday_cache';
 
     // ── Weather state ──
     let weatherData = null;
@@ -2467,6 +3147,17 @@
 
     function isNativeApp() {
       return window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+    }
+
+    // Get Capacitor plugin - use native bridge in APK, esm.sh fallback for web
+    function getCapPlugin(name) {
+      if (window.Capacitor && window.Capacitor.registerPlugin) {
+        return window.Capacitor.registerPlugin(name);
+      }
+      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins[name]) {
+        return window.Capacitor.Plugins[name];
+      }
+      return null;
     }
 
     // ── AI: Theme grouping ──
@@ -2574,7 +3265,7 @@
         let lat, lng;
         if (isNativeApp()) {
           // Use Capacitor Geolocation plugin on mobile
-          const { Geolocation } = await import('https://esm.sh/@capacitor/geolocation@6');
+          const Geolocation = getCapPlugin('Geolocation');
           try { await Geolocation.requestPermissions(); } catch {}
           const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: false, timeout: 15000 });
           lat = pos.coords.latitude.toFixed(4);
@@ -2649,22 +3340,101 @@
       return summary;
     }
 
+    async function fetchHolidayInfo(dateStr) {
+      const year = dateStr.slice(0, 4);
+      const cacheKey = HOLIDAY_CACHE_KEY + '_' + year;
+      try {
+        const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+        if (cached && cached.year === year) {
+          holidayCache = cached.holidays;
+          const match = holidayCache.find(h => h.date === dateStr);
+          return match ? { isHoliday: true, name: match.localName || match.name } : { isHoliday: false, name: null };
+        }
+      } catch {}
+      try {
+        const resp = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/IN`);
+        if (resp.ok) {
+          const holidays = await resp.json();
+          holidayCache = holidays;
+          localStorage.setItem(cacheKey, JSON.stringify({ year, holidays }));
+          const match = holidays.find(h => h.date === dateStr);
+          return match ? { isHoliday: true, name: match.localName || match.name } : { isHoliday: false, name: null };
+        }
+      } catch (err) {
+        console.log('Holiday API error:', err.message);
+      }
+      return { isHoliday: false, name: null };
+    }
+
+    function getWeekTaskCounts(today) {
+      const d = new Date(today + 'T00:00:00');
+      const dayOfWeek = d.getDay();
+      const monday = new Date(d);
+      monday.setDate(d.getDate() - ((dayOfWeek + 6) % 7));
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const counts = {};
+      for (let i = 0; i < 7; i++) {
+        const day = new Date(monday);
+        day.setDate(monday.getDate() + i);
+        const dateStr = day.toISOString().slice(0, 10);
+        const count = tasks.filter(t => t.date === dateStr && t.status !== 'completed').length;
+        counts[`${days[i]} (${dateStr})`] = count;
+      }
+      return counts;
+    }
+
     async function fetchDailyBriefing() {
       const today = todayStr();
       const activeTasks = tasks.filter(t => t.status !== 'completed');
+      const completedTasks = tasks.filter(t => t.status === 'completed');
       briefingLoading = true;
       render();
       try {
+        // Gather rich context
+        const overdueTasks = activeTasks
+          .filter(t => t.date && t.date < today)
+          .map(t => ({ text: t.text, priority: t.priority, category: t.category, date: t.date, location: t.locationText || null }));
+
         const payload = activeTasks.map(t => ({
           text: t.text, priority: t.priority, category: t.category, status: t.status,
-          date: t.date || null
+          date: t.date || null, location: t.locationText || null
         }));
+
+        const d = new Date(today + 'T00:00:00');
+        const dayNum = d.getDay();
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const isWeekend = dayNum === 0 || dayNum === 6;
+
+        // Fetch holiday info (non-blocking, with fallback)
+        let holidayInfo = { isHoliday: false, name: null };
+        try { holidayInfo = await fetchHolidayInfo(today); } catch {}
+
+        const weekTasks = getWeekTaskCounts(today);
         const weather = getWeatherSummaryForAI();
+
         const result = await api('/ai/daily-briefing', {
           method: 'POST',
-          body: JSON.stringify({ tasks: payload, today, weather })
+          body: JSON.stringify({
+            tasks: payload,
+            today,
+            weather,
+            overdueTasks,
+            completedCount: completedTasks.length,
+            totalCount: tasks.length,
+            weekTasks,
+            isWeekend,
+            isHoliday: holidayInfo.isHoliday,
+            holidayName: holidayInfo.name,
+            dayOfWeek: dayNames[dayNum]
+          })
         });
-        briefingData = result.briefing;
+
+        briefingData = {
+          summary: result.summary || '',
+          workPlan: result.workPlan || [],
+          alerts: result.alerts || [],
+          recommendations: result.recommendations || []
+        };
         briefingLoading = false;
         briefingError = false;
         briefingDismissedToday = false;
@@ -2748,44 +3518,158 @@
       fetchWeather().then(() => render());
     }
 
+    let briefingExpanded = true;
+
     function renderBriefingHtml() {
+      try {
       if (briefingDismissedToday) return '';
       const weatherHtml = renderWeatherHtml();
+      const labelSvg = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.8 2.8l1.4 1.4M9.8 9.8l1.4 1.4M11.2 2.8l-1.4 1.4M4.2 9.8l-1.4 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
+
       if (briefingLoading) {
         return `<div class="briefing-card">
           ${weatherHtml}
-          <div class="briefing-label">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.8 2.8l1.4 1.4M9.8 9.8l1.4 1.4M11.2 2.8l-1.4 1.4M4.2 9.8l-1.4 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            Daily Briefing
-          </div>
-          <div class="briefing-loading">Generating your daily briefing...</div>
+          <div class="briefing-label">${labelSvg} Smart Briefing</div>
+          <div class="briefing-loading">Analyzing tasks, calendar & weather...</div>
         </div>`;
       }
+
       if (!briefingData && !weatherHtml && !briefingError) return '';
-      const errorHtml = (!briefingData && briefingError) ? `<div class="briefing-label">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.8 2.8l1.4 1.4M9.8 9.8l1.4 1.4M11.2 2.8l-1.4 1.4M4.2 9.8l-1.4 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-          Daily Briefing
-        </div>
-        <div class="briefing-text" style="color:var(--text-muted);font-style:italic">Could not generate briefing. Tap refresh to retry.</div>` : '';
-      const briefingContent = briefingData
-        ? `<div class="briefing-label">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.8 2.8l1.4 1.4M9.8 9.8l1.4 1.4M11.2 2.8l-1.4 1.4M4.2 9.8l-1.4 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-          Daily Briefing
-        </div>
-        <div class="briefing-marquee"><div class="briefing-marquee-inner">${escapeHtml(briefingData)}</div></div>` : errorHtml;
-      return `<div class="briefing-card">
+
+      if (!briefingData && briefingError) {
+        return `<div class="briefing-card">
+          <button class="briefing-dismiss" onclick="dismissBriefing()" aria-label="Dismiss">
+            <svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+          ${weatherHtml}
+          <div class="briefing-label">${labelSvg} Smart Briefing</div>
+          <div class="briefing-text" style="color:var(--text-muted);font-style:italic">Could not generate briefing. Tap refresh to retry.</div>
+          <div class="briefing-actions">
+            <button class="briefing-refresh" onclick="refreshBriefing()">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6a5 5 0 019-3M11 6a5 5 0 01-9 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M10 1v3h-3M2 11V8h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Refresh
+            </button>
+          </div>
+        </div>`;
+      }
+
+      if (!briefingData) {
+        if (weatherHtml) {
+          return `<div class="briefing-card">
+            <button class="briefing-dismiss" onclick="dismissBriefing()" aria-label="Dismiss">
+              <svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </button>
+            ${weatherHtml}
+          </div>`;
+        }
+        return '';
+      }
+
+      // Build structured briefing
+      const b = briefingData;
+      let html = `<div class="briefing-card">
         <button class="briefing-dismiss" onclick="dismissBriefing()" aria-label="Dismiss">
           <svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         </button>
         ${weatherHtml}
-        ${briefingContent}
-        <div class="briefing-actions">
+        <div class="briefing-label">${labelSvg} Smart Briefing</div>`;
+
+      // Summary with marquee
+      if (b.summary) {
+        const isLong = b.summary.length > 60;
+        const sep = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+        const scrollText = isLong
+          ? `${escapeHtml(b.summary)}${sep}${escapeHtml(b.summary)}${sep}`
+          : escapeHtml(b.summary);
+        html += `<div class="briefing-summary${isLong ? '' : ' briefing-summary--static'}">
+          <span class="briefing-marquee">${scrollText}</span>
+        </div>`;
+      }
+
+      // Alerts
+      if (b.alerts && b.alerts.length > 0) {
+        html += `<div class="briefing-section">
+          <div class="briefing-section-title">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1L1 9h8L5 1z" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M5 4v2M5 7.5v.01" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
+            Alerts
+          </div>`;
+        for (const alert of b.alerts) {
+          html += `<div class="briefing-alert">
+            <span class="briefing-alert-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M5 3v2.5M5 7v.01" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg></span>
+            ${escapeHtml(alert)}
+          </div>`;
+        }
+        html += '</div>';
+      }
+
+      // Collapsible detail sections
+      const hasDetails = (b.workPlan && b.workPlan.length > 0) || (b.recommendations && b.recommendations.length > 0);
+      if (hasDetails) {
+        html += `<button class="briefing-expand-btn" onclick="toggleBriefingExpand()">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="transform:rotate(${briefingExpanded ? '90' : '0'}deg);transition:transform 0.2s"><path d="M3 1l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          ${briefingExpanded ? 'Hide details' : 'Show work plan & tips'}
+        </button>`;
+      }
+
+      if (hasDetails && briefingExpanded) {
+        // Work Plan
+        if (b.workPlan && b.workPlan.length > 0) {
+          html += `<div class="briefing-section">
+            <div class="briefing-section-title">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="1" y="1" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M3 5l1.5 1.5L7 4" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Today's Plan
+            </div>`;
+          b.workPlan.forEach((item, i) => {
+            html += `<div class="briefing-plan-item">
+              <div class="briefing-plan-num">${i + 1}</div>
+              <div class="briefing-plan-body">
+                <div class="briefing-plan-task">${escapeHtml(item.task || '')}</div>
+                <div class="briefing-plan-meta">
+                  ${item.timeHint ? `<span class="briefing-plan-time">${escapeHtml(item.timeHint)}</span>` : ''}
+                  ${item.why ? `<span class="briefing-plan-why">${escapeHtml(item.why)}</span>` : ''}
+                </div>
+              </div>
+            </div>`;
+          });
+          html += '</div>';
+        }
+
+        // Recommendations
+        if (b.recommendations && b.recommendations.length > 0) {
+          html += `<div class="briefing-section">
+            <div class="briefing-section-title">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="4" r="3" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M4 7v1.5a1 1 0 002 0V7" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
+              Smart Tips
+            </div>`;
+          for (const rec of b.recommendations) {
+            html += `<div class="briefing-rec">
+              <span class="briefing-rec-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 5l3 3 5-6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              ${escapeHtml(rec)}
+            </div>`;
+          }
+          html += '</div>';
+        }
+      }
+
+      // Actions
+      html += `<div class="briefing-actions">
           <button class="briefing-refresh" onclick="refreshBriefing()">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6a5 5 0 019-3M11 6a5 5 0 01-9 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M10 1v3h-3M2 11V8h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Refresh
           </button>
         </div>
       </div>`;
+
+      return html;
+      } catch (e) {
+        console.error('Briefing render error:', e);
+        return `<div class="briefing-card"><div class="briefing-label">Smart Briefing</div><div class="briefing-text" style="color:var(--danger)">Render error: ${e.message}</div></div>`;
+      }
+    }
+
+    function toggleBriefingExpand() {
+      briefingExpanded = !briefingExpanded;
+      render();
     }
 
     // ── AI: Location suggest ──
@@ -2821,8 +3705,8 @@
       document.querySelectorAll('#viewToggle button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
       // Day filter chips only relevant in week view
       document.getElementById('dayFilters').style.display = view === 'week' ? '' : 'none';
-      // Hide filters entirely on health view
-      document.getElementById('filters').style.display = view === 'health' ? 'none' : '';
+      // Hide filters entirely on health/expense views
+      document.getElementById('filters').style.display = (view === 'health' || view === 'expense') ? 'none' : '';
       render();
     }
 
@@ -3436,52 +4320,407 @@
       if (progBriefing) app.innerHTML = progBriefing + app.innerHTML;
     }
 
-    // ── Health view (Coming Soon) ──
+    // ── Health Coach View ──
+    const HEALTH_STORAGE_KEY = 'reminder_health_data';
+    let healthData = loadHealthData();
+    let healthChatMessages = [];
+    let healthChatLoading = false;
+
+    function loadHealthData() {
+      try {
+        const stored = JSON.parse(localStorage.getItem(HEALTH_STORAGE_KEY) || 'null');
+        if (stored && stored.date === todayStr()) return stored;
+      } catch {}
+      return { date: todayStr(), water: 0, waterGoal: 8, sleep: null, steps: 0, stepsGoal: 10000, meals: [], exercise: [], mood: null };
+    }
+
+    function saveHealthData() {
+      healthData.date = todayStr();
+      localStorage.setItem(HEALTH_STORAGE_KEY, JSON.stringify(healthData));
+    }
+
+    function resetHealthIfNewDay() {
+      if (healthData.date !== todayStr()) {
+        healthData = { date: todayStr(), water: 0, waterGoal: 8, sleep: null, steps: 0, stepsGoal: 10000, meals: [], exercise: [], mood: null };
+        saveHealthData();
+      }
+    }
+
+    function adjustWater(delta) {
+      resetHealthIfNewDay();
+      healthData.water = Math.max(0, (healthData.water || 0) + delta);
+      saveHealthData();
+      render();
+    }
+
+    function adjustSteps(delta) {
+      resetHealthIfNewDay();
+      healthData.steps = Math.max(0, (healthData.steps || 0) + delta);
+      saveHealthData();
+      render();
+    }
+
+    function setHealthSleep(hours) {
+      resetHealthIfNewDay();
+      const val = parseFloat(hours);
+      if (!isNaN(val) && val >= 0 && val <= 24) {
+        healthData.sleep = val;
+        saveHealthData();
+        render();
+      }
+    }
+
+    function setHealthMood(mood) {
+      resetHealthIfNewDay();
+      healthData.mood = mood;
+      saveHealthData();
+      render();
+    }
+
+    function addHealthMeal(mealText) {
+      resetHealthIfNewDay();
+      const text = mealText.trim();
+      if (!text) return;
+      healthData.meals.push(text);
+      saveHealthData();
+      render();
+    }
+
+    function removeHealthMeal(idx) {
+      resetHealthIfNewDay();
+      healthData.meals.splice(idx, 1);
+      saveHealthData();
+      render();
+    }
+
+    function addHealthExercise(exerciseText) {
+      resetHealthIfNewDay();
+      const text = exerciseText.trim();
+      if (!text) return;
+      healthData.exercise.push(text);
+      saveHealthData();
+      render();
+    }
+
+    function removeHealthExercise(idx) {
+      resetHealthIfNewDay();
+      healthData.exercise.splice(idx, 1);
+      saveHealthData();
+      render();
+    }
+
+    function healthLogKeydown(e, type) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (type === 'meal') { addHealthMeal(e.target.value); e.target.value = ''; }
+        else if (type === 'exercise') { addHealthExercise(e.target.value); e.target.value = ''; }
+      }
+    }
+
+    function healthLogBtn(type) {
+      const input = document.getElementById(type === 'meal' ? 'healthMealInput' : 'healthExerciseInput');
+      if (!input) return;
+      if (type === 'meal') addHealthMeal(input.value);
+      else addHealthExercise(input.value);
+      input.value = '';
+      input.focus();
+    }
+
+    function getHealthPatterns() {
+      const patterns = [];
+      const h = healthData;
+      if (h.water >= h.waterGoal) patterns.push({ icon: '&#10003;', text: 'Great job! You hit your hydration goal today.' });
+      else if (h.water > 0 && h.water < h.waterGoal / 2) patterns.push({ icon: '&#128167;', text: `Only ${h.water} glasses so far. Try to drink ${h.waterGoal - h.water} more before bedtime.` });
+      if (h.sleep !== null && h.sleep < 6) patterns.push({ icon: '&#9888;', text: `${h.sleep} hours of sleep is below recommended. Aim for 7-9 hours tonight.` });
+      if (h.sleep !== null && h.sleep >= 7 && h.sleep <= 9) patterns.push({ icon: '&#10003;', text: `${h.sleep} hours of sleep - right in the sweet spot!` });
+      if (h.meals.length === 0) {
+        const hour = new Date().getHours();
+        if (hour >= 10) patterns.push({ icon: '&#127860;', text: 'No meals logged yet today. Remember to eat regularly for sustained energy.' });
+      }
+      if (h.exercise.length === 0) {
+        const hour = new Date().getHours();
+        if (hour >= 14) patterns.push({ icon: '&#127939;', text: 'No exercise logged today. Even a 10-minute walk makes a difference!' });
+      }
+      if (h.mood === 'stressed' || h.mood === 'sad') patterns.push({ icon: '&#128161;', text: 'Feeling down? Try a 5-minute breathing exercise: breathe in 4s, hold 4s, out 4s.' });
+      if (h.steps >= h.stepsGoal) patterns.push({ icon: '&#127942;', text: `Amazing! You reached your ${h.stepsGoal.toLocaleString()} step goal!` });
+      return patterns;
+    }
+
+    async function sendHealthMessage(messageText) {
+      const text = messageText || '';
+      if (!text.trim() || healthChatLoading) return;
+
+      healthChatMessages.push({ role: 'user', text: text.trim() });
+      healthChatLoading = true;
+      render();
+
+      // Scroll chat to bottom
+      setTimeout(() => {
+        const chatEl = document.getElementById('healthChatMessages');
+        if (chatEl) chatEl.scrollTop = chatEl.scrollHeight;
+      }, 50);
+
+      try {
+        resetHealthIfNewDay();
+        const history = healthChatMessages
+          .filter(m => m.role === 'user' || m.role === 'assistant')
+          .map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.role === 'user' ? m.text : (m.recommendation || '') }));
+
+        const result = await api('/ai/health-coach', {
+          method: 'POST',
+          body: JSON.stringify({
+            message: text.trim(),
+            history,
+            trackers: healthData,
+            weather: getWeatherSummaryForAI() || null
+          })
+        });
+
+        healthChatMessages.push({
+          role: 'assistant',
+          recommendation: result.recommendation || '',
+          reasoning: result.reasoning || '',
+          tips: result.tips || [],
+          trackerNudge: result.trackerNudge || null
+        });
+      } catch (err) {
+        healthChatMessages.push({
+          role: 'assistant',
+          recommendation: 'Sorry, I couldn\'t process that right now. Please try again.',
+          reasoning: '',
+          tips: [],
+          trackerNudge: null
+        });
+      }
+
+      healthChatLoading = false;
+      render();
+
+      setTimeout(() => {
+        const chatEl = document.getElementById('healthChatMessages');
+        if (chatEl) chatEl.scrollTop = chatEl.scrollHeight;
+      }, 50);
+    }
+
+    function healthChatKeydown(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const input = document.getElementById('healthChatInput');
+        if (input && input.value.trim()) {
+          sendHealthMessage(input.value);
+          input.value = '';
+        }
+      }
+    }
+
+    function healthChatSendBtn() {
+      const input = document.getElementById('healthChatInput');
+      if (input && input.value.trim()) {
+        sendHealthMessage(input.value);
+        input.value = '';
+      }
+    }
+
+    function sendHealthQuick(text) {
+      sendHealthMessage(text);
+    }
+
+    function promptSleepHours() {
+      const val = prompt('How many hours did you sleep last night?', healthData.sleep || '7');
+      if (val !== null) setHealthSleep(val);
+    }
+
     function renderHealthView(app) {
+      resetHealthIfNewDay();
+      const h = healthData;
+
+      // Water progress
+      const waterPct = Math.min(100, Math.round((h.water / h.waterGoal) * 100));
+      const waterColor = waterPct >= 100 ? 'var(--low)' : waterPct >= 50 ? 'var(--accent)' : 'var(--medium)';
+
+      // Steps progress
+      const stepsPct = Math.min(100, Math.round((h.steps / h.stepsGoal) * 100));
+      const stepsColor = stepsPct >= 100 ? 'var(--low)' : stepsPct >= 50 ? 'var(--accent)' : 'var(--medium)';
+
+      // Mood emoji map
+      const MOODS = [
+        { key: 'great', emoji: '&#128513;', label: 'Great' },
+        { key: 'good', emoji: '&#128578;', label: 'Good' },
+        { key: 'okay', emoji: '&#128528;', label: 'Okay' },
+        { key: 'tired', emoji: '&#128564;', label: 'Tired' },
+        { key: 'stressed', emoji: '&#128556;', label: 'Stressed' },
+        { key: 'sad', emoji: '&#128546;', label: 'Sad' }
+      ];
+
+      const moodHtml = MOODS.map(m =>
+        `<div class="mood-option${h.mood === m.key ? ' active' : ''}" onclick="setHealthMood('${m.key}')" title="${m.label}">${m.emoji}</div>`
+      ).join('');
+
+      // Meals tags
+      const mealsHtml = h.meals.map((m, i) =>
+        `<span class="health-log-tag">${escapeHtml(m)}<button onclick="removeHealthMeal(${i})">&times;</button></span>`
+      ).join('');
+
+      // Exercise tags
+      const exerciseHtml = h.exercise.map((e, i) =>
+        `<span class="health-log-tag">${escapeHtml(e)}<button onclick="removeHealthExercise(${i})">&times;</button></span>`
+      ).join('');
+
+      // Patterns
+      const patterns = getHealthPatterns();
+      const patternsHtml = patterns.length > 0 ? `
+        <div class="health-patterns">
+          <div class="health-patterns-title">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v2M6 9v2M1 6h2M9 6h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            Insights & Patterns
+          </div>
+          ${patterns.map(p => `<div class="health-pattern-item">
+            <span class="health-pattern-icon">${p.icon}</span>
+            <span>${p.text}</span>
+          </div>`).join('')}
+        </div>` : '';
+
+      // Chat messages
+      let chatHtml = '';
+      for (const msg of healthChatMessages) {
+        if (msg.role === 'user') {
+          chatHtml += `<div class="hc-msg user">${escapeHtml(msg.text)}</div>`;
+        } else {
+          let coachContent = '';
+          if (msg.recommendation) coachContent += `<div class="hc-recommendation">${escapeHtml(msg.recommendation)}</div>`;
+          if (msg.reasoning) coachContent += `<div class="hc-reasoning">${escapeHtml(msg.reasoning)}</div>`;
+          if (msg.tips && msg.tips.length > 0) {
+            coachContent += `<ul class="hc-tips">${msg.tips.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>`;
+          }
+          if (msg.trackerNudge) {
+            coachContent += `<div class="hc-nudge">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1L1 9h8L5 1z" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M5 4v2M5 7.5v.01" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
+              ${escapeHtml(msg.trackerNudge)}
+            </div>`;
+          }
+          chatHtml += `<div class="hc-msg coach">${coachContent}</div>`;
+        }
+      }
+      if (healthChatLoading) {
+        chatHtml += `<div class="hc-msg loading">Thinking...</div>`;
+      }
+
       app.innerHTML = `
-        <div class="coming-soon-page">
-          <div class="coming-soon-icon">
-            <svg viewBox="0 0 36 36" fill="none">
-              <path d="M18 32s-12-7.5-12-16A6.5 6.5 0 0118 10a6.5 6.5 0 0112 6c0 8.5-12 16-12 16z" stroke="var(--high)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="rgba(239,68,68,0.1)"/>
-              <path d="M14 18h8M18 14v8" stroke="var(--high)" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <h2>Health Tracking</h2>
-          <p>Track your daily wellness, set health goals, and build healthy habits - all in one place.</p>
-
-          <div class="coming-soon-features">
-            <div class="cs-feature">
-              <div class="cs-feature-icon" style="background:rgba(239,68,68,0.08)">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 16s-6-4-6-9a4 4 0 018 0 4 4 0 014 3c0 5-6 6-6 6z" stroke="var(--high)" stroke-width="1.5" fill="none"/></svg>
-              </div>
-              <h4>Heart rate log</h4>
-              <p>Record and track your resting heart rate over time</p>
+        <div class="health-dashboard">
+          <!-- Header -->
+          <div class="health-header">
+            <div class="health-header-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 21s-8-5-8-11a5 5 0 0110 0 5 5 0 0110 0c0 6-8 11-8 11z" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="rgba(255,255,255,0.2)"/></svg>
             </div>
-            <div class="cs-feature">
-              <div class="cs-feature-icon" style="background:rgba(34,197,94,0.08)">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 14l3-4 3 2 4-6 4 5" stroke="var(--low)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
-              <h4>Step counter</h4>
-              <p>Set daily step goals and track your progress</p>
-            </div>
-            <div class="cs-feature">
-              <div class="cs-feature-icon" style="background:rgba(59,130,246,0.08)">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6" stroke="var(--status-in-progress)" stroke-width="1.5" fill="none"/><path d="M9 6v4l2.5 1.5" stroke="var(--status-in-progress)" stroke-width="1.5" stroke-linecap="round"/></svg>
-              </div>
-              <h4>Sleep tracker</h4>
-              <p>Log sleep hours and analyse your sleep patterns</p>
-            </div>
-            <div class="cs-feature">
-              <div class="cs-feature-icon" style="background:rgba(245,158,11,0.08)">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2v2M9 14v2M16 9h-2M4 9H2M13.5 4.5l-1.4 1.4M5.9 12.1l-1.4 1.4M13.5 13.5l-1.4-1.4M5.9 5.9L4.5 4.5" stroke="var(--medium)" stroke-width="1.5" stroke-linecap="round"/></svg>
-              </div>
-              <h4>Water intake</h4>
-              <p>Stay hydrated with daily water intake reminders</p>
+            <div>
+              <h2>Health Coach</h2>
+              <p>Your personal wellness companion</p>
             </div>
           </div>
 
-          <div style="margin-top:28px;padding:14px 20px;background:var(--accent-light);border-radius:var(--radius-sm);font-size:0.8125rem;color:var(--accent);font-weight:600">
-            We're working on this feature. Stay tuned!
+          <!-- Trackers Grid -->
+          <div class="health-trackers">
+            <!-- Water -->
+            <div class="health-tracker-card">
+              <div class="ht-icon" style="background:rgba(59,130,246,0.1)">&#128167;</div>
+              <div class="ht-label">Hydration</div>
+              <div class="ht-value" style="color:${waterColor}">${h.water}<span style="font-size:0.75rem;font-weight:500;color:var(--text-muted)">/${h.waterGoal}</span></div>
+              <div class="ht-sub">glasses of water</div>
+              <div class="ht-progress"><div class="ht-progress-fill" style="width:${waterPct}%;background:${waterColor}"></div></div>
+              <div class="ht-actions">
+                <button class="ht-btn" onclick="adjustWater(-1)" title="Remove glass">-</button>
+                <button class="ht-btn" onclick="adjustWater(1)" title="Add glass">+</button>
+              </div>
+            </div>
+
+            <!-- Sleep -->
+            <div class="health-tracker-card interactive" onclick="promptSleepHours()">
+              <div class="ht-icon" style="background:rgba(139,92,246,0.1)">&#128564;</div>
+              <div class="ht-label">Sleep</div>
+              <div class="ht-value" style="color:${h.sleep !== null ? (h.sleep >= 7 ? 'var(--low)' : h.sleep >= 5 ? 'var(--medium)' : 'var(--high)') : 'var(--text-muted)'}">${h.sleep !== null ? h.sleep : '--'}<span style="font-size:0.75rem;font-weight:500;color:var(--text-muted)"> hrs</span></div>
+              <div class="ht-sub">${h.sleep !== null ? (h.sleep >= 7 ? 'Well rested' : h.sleep >= 5 ? 'Could be better' : 'Sleep deprived') : 'Tap to log'}</div>
+              ${h.sleep !== null ? `<div class="ht-progress"><div class="ht-progress-fill" style="width:${Math.min(100, Math.round(h.sleep / 9 * 100))}%;background:${h.sleep >= 7 ? 'var(--low)' : h.sleep >= 5 ? 'var(--medium)' : 'var(--high)'}"></div></div>` : ''}
+            </div>
+
+            <!-- Steps -->
+            <div class="health-tracker-card">
+              <div class="ht-icon" style="background:rgba(34,197,94,0.1)">&#128694;</div>
+              <div class="ht-label">Steps</div>
+              <div class="ht-value" style="color:${stepsColor}">${h.steps.toLocaleString()}</div>
+              <div class="ht-sub">goal: ${h.stepsGoal.toLocaleString()}</div>
+              <div class="ht-progress"><div class="ht-progress-fill" style="width:${stepsPct}%;background:${stepsColor}"></div></div>
+              <div class="ht-actions">
+                <button class="ht-btn" onclick="adjustSteps(-500)" title="-500 steps">-</button>
+                <button class="ht-btn" onclick="adjustSteps(500)" title="+500 steps">+</button>
+                <button class="ht-btn" onclick="adjustSteps(1000)" title="+1000 steps" style="font-size:0.6rem">1K</button>
+              </div>
+            </div>
+
+            <!-- Mood -->
+            <div class="health-tracker-card">
+              <div class="ht-icon" style="background:rgba(245,158,11,0.1)">&#128522;</div>
+              <div class="ht-label">Mood</div>
+              <div class="ht-value">${h.mood ? MOODS.find(m => m.key === h.mood)?.emoji || '--' : '--'}</div>
+              <div class="ht-sub">${h.mood ? MOODS.find(m => m.key === h.mood)?.label || 'Set mood' : 'How are you feeling?'}</div>
+              <div class="mood-selector">${moodHtml}</div>
+            </div>
+
+            <!-- Meals -->
+            <div class="health-tracker-card" style="grid-column: span 2">
+              <div class="ht-icon" style="background:rgba(249,115,22,0.1)">&#127860;</div>
+              <div class="ht-label">Meals</div>
+              <div class="ht-value">${h.meals.length}<span style="font-size:0.75rem;font-weight:500;color:var(--text-muted)"> logged</span></div>
+              ${mealsHtml ? `<div class="health-log-tags">${mealsHtml}</div>` : '<div class="ht-sub">Log what you eat today</div>'}
+              <div class="health-log-input">
+                <input type="text" id="healthMealInput" placeholder="e.g. Oatmeal, Chicken salad" onkeydown="healthLogKeydown(event,'meal')" autocomplete="off">
+                <button onclick="healthLogBtn('meal')">Add</button>
+              </div>
+            </div>
+
+            <!-- Exercise -->
+            <div class="health-tracker-card" style="grid-column: span 2">
+              <div class="ht-icon" style="background:rgba(239,68,68,0.1)">&#127939;</div>
+              <div class="ht-label">Exercise</div>
+              <div class="ht-value">${h.exercise.length}<span style="font-size:0.75rem;font-weight:500;color:var(--text-muted)"> activities</span></div>
+              ${exerciseHtml ? `<div class="health-log-tags">${exerciseHtml}</div>` : '<div class="ht-sub">Log your workouts</div>'}
+              <div class="health-log-input">
+                <input type="text" id="healthExerciseInput" placeholder="e.g. 30min walk, Yoga, Push-ups" onkeydown="healthLogKeydown(event,'exercise')" autocomplete="off">
+                <button onclick="healthLogBtn('exercise')">Add</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Patterns / Insights -->
+          ${patternsHtml}
+
+          <!-- Quick action chips -->
+          <div class="health-quick-actions">
+            <button class="health-quick-btn" onclick="sendHealthQuick('What should I eat for a healthy lunch?')">&#127869; Lunch ideas</button>
+            <button class="health-quick-btn" onclick="sendHealthQuick('Give me a quick 10-minute workout I can do at home')">&#128170; Quick workout</button>
+            <button class="health-quick-btn" onclick="sendHealthQuick('I\\'m feeling stressed. Help me relax.')">&#129526; Stress relief</button>
+            <button class="health-quick-btn" onclick="sendHealthQuick('How can I sleep better tonight?')">&#128164; Sleep tips</button>
+            <button class="health-quick-btn" onclick="sendHealthQuick('Am I drinking enough water today?')">&#128167; Hydration check</button>
+            <button class="health-quick-btn" onclick="sendHealthQuick('Suggest a healthy snack for 4pm energy boost')">&#127822; Snack ideas</button>
+          </div>
+
+          <!-- Chat with Health Coach -->
+          <div class="health-chat-section">
+            <div class="health-chat-header">
+              <div class="health-chat-header-title">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 13s-5.5-3-5.5-7A3 3 0 017 3.5 3 3 0 0112.5 6c0 4-5.5 7-5.5 7z" stroke="var(--high)" stroke-width="1.3" fill="rgba(239,68,68,0.1)"/></svg>
+                Ask Your Health Coach
+              </div>
+              ${healthChatMessages.length > 0 ? `<button class="briefing-refresh" onclick="healthChatMessages=[];render()">Clear chat</button>` : ''}
+            </div>
+            <div class="health-chat-messages" id="healthChatMessages">
+              ${chatHtml}
+            </div>
+            <div class="health-chat-input-wrap">
+              <input type="text" class="health-chat-input" id="healthChatInput" placeholder="Ask about nutrition, fitness, sleep, stress..." onkeydown="healthChatKeydown(event)" autocomplete="off"${healthChatLoading ? ' disabled' : ''}>
+              <button class="health-chat-send" onclick="healthChatSendBtn()"${healthChatLoading ? ' disabled' : ''}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M14 2L7 9M14 2l-4 12-3-5-5-3 12-4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
           </div>
         </div>`;
     }
@@ -3774,7 +5013,7 @@
             <button class="btn-icon" onclick="openEditModal('${task.id}')" aria-label="Edit task" title="Edit task">
               <svg width="16" height="16" viewBox="0 0 16 16"><path d="M11.5 1.5l3 3-9 9H2.5v-3l9-9z" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
-            <button class="btn-icon btn-danger" onclick="requestDelete('${task.id}')" aria-label="Delete task" title="Delete task">
+            <button class="btn-icon btn-danger" onclick="requestDelete('${task.id}')" aria-label="Delete task" title="Delete task" style="${isAdmin() ? '' : 'display:none'}">
               <svg width="16" height="16" viewBox="0 0 16 16"><path d="M3 4h10M6 4V3a1 1 0 011-1h2a1 1 0 011 1v1M5 4v9a1 1 0 001 1h4a1 1 0 001-1V4" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
           </div>
@@ -4110,7 +5349,7 @@
     async function initNativePushNotifications() {
       if (!isNativeApp()) return;
       try {
-        const { LocalNotifications } = await import('https://esm.sh/@capacitor/local-notifications@6');
+        const LocalNotifications = getCapPlugin('LocalNotifications');
         const perm = await LocalNotifications.requestPermissions();
         if (perm.display !== 'granted') return;
 
@@ -4237,33 +5476,163 @@
     const GEOFENCE_RADIUS_M = 500; // 500 meters
     let locationCheckInterval = null;
     let notifiedLocationTasks = new Set(); // track notified task IDs to avoid duplicates
+    let bgLocationWatcherId = null;
+    let bgLocationRunning = false;
+    const BG_LOC_PREF_KEY = 'bgLocationEnabled';
+
+    function isBgLocationEnabled() {
+      return localStorage.getItem(BG_LOC_PREF_KEY) === 'true';
+    }
 
     async function initNativeLocation() {
       if (!isNativeApp()) return;
-      try {
-        const { Geolocation } = await import('https://esm.sh/@capacitor/geolocation@6');
-        const { LocalNotifications } = await import('https://esm.sh/@capacitor/local-notifications@6');
 
-        // Request permissions
+      // Show the toggle in the user dropdown
+      document.getElementById('bgLocSep').style.display = '';
+      document.getElementById('bgLocToggleWrap').style.display = '';
+
+      try {
+        const Geolocation = getCapPlugin('Geolocation');
+        const LocalNotifications = getCapPlugin('LocalNotifications');
+
+        // Request foreground permissions
         const locPerm = await Geolocation.requestPermissions();
         if (locPerm.location !== 'granted' && locPerm.coarseLocation !== 'granted') return;
 
         const notifPerm = await LocalNotifications.requestPermissions();
         if (notifPerm.display !== 'granted') return;
 
-        // Check immediately and then every 5 minutes
+        // Foreground polling (lightweight, same as before)
         checkNearbyTasks(Geolocation, LocalNotifications);
         locationCheckInterval = setInterval(() => {
           checkNearbyTasks(Geolocation, LocalNotifications);
         }, 5 * 60 * 1000);
 
-        // Also check on app resume
         document.addEventListener('resume', () => {
-          notifiedLocationTasks.clear(); // reset on resume
+          notifiedLocationTasks.clear();
           checkNearbyTasks(Geolocation, LocalNotifications);
         });
+
+        // Auto-start background tracking if previously enabled
+        if (isBgLocationEnabled()) {
+          await startBackgroundLocation();
+        }
+        updateBgLocUI();
       } catch (err) {
         console.log('Native location not available:', err.message);
+      }
+    }
+
+    async function toggleBackgroundLocation(enabled) {
+      if (enabled) {
+        localStorage.setItem(BG_LOC_PREF_KEY, 'true');
+        await startBackgroundLocation();
+      } else {
+        localStorage.setItem(BG_LOC_PREF_KEY, 'false');
+        await stopBackgroundLocation();
+      }
+      updateBgLocUI();
+    }
+
+    async function startBackgroundLocation() {
+      if (bgLocationRunning) return;
+      try {
+        const BackgroundGeolocation = getCapPlugin('BackgroundGeolocation');
+        const LocalNotifications = getCapPlugin('LocalNotifications');
+
+        bgLocationWatcherId = await BackgroundGeolocation.addWatcher({
+          backgroundMessage: 'Smart Reminder is checking nearby tasks',
+          backgroundTitle: 'Location tracking active',
+          requestPermissions: true,
+          stale: false,
+          distanceFilter: 100 // meters -- only fire callback after moving 100m
+        }, async (location, error) => {
+          if (error) {
+            if (error.code === 'NOT_AUTHORIZED') {
+              const confirm = window.confirm(
+                'Background location is needed for nearby task alerts. Open settings to grant permission?'
+              );
+              if (confirm) {
+                BackgroundGeolocation.openSettings();
+              }
+            }
+            return;
+          }
+          if (!location) return;
+
+          // Process nearby tasks against this background position
+          const userLat = location.latitude;
+          const userLng = location.longitude;
+          const locationTasks = tasks.filter(t =>
+            t.status !== 'completed' &&
+            t.locationLat != null && t.locationLng != null &&
+            !notifiedLocationTasks.has(t.id)
+          );
+
+          const groups = {};
+          for (const t of locationTasks) {
+            const dist = haversineDistance(userLat, userLng, t.locationLat, t.locationLng);
+            if (dist <= GEOFENCE_RADIUS_M) {
+              const key = (t.locationText || 'this location').toLowerCase();
+              if (!groups[key]) groups[key] = [];
+              groups[key].push(t);
+              notifiedLocationTasks.add(t.id);
+            }
+          }
+
+          let notifId = Date.now();
+          for (const [loc, locTasks] of Object.entries(groups)) {
+            try {
+              await LocalNotifications.schedule({
+                notifications: [{
+                  id: notifId++,
+                  title: `You're near ${loc}`,
+                  body: `You have ${locTasks.length} pending task${locTasks.length > 1 ? 's' : ''} here: ${locTasks[0].text}${locTasks.length > 1 ? ' and more' : ''}`,
+                  smallIcon: 'ic_launcher',
+                  largeIcon: 'ic_launcher'
+                }]
+              });
+            } catch (e) {
+              console.log('BG notification error:', e.message);
+            }
+          }
+        });
+
+        bgLocationRunning = true;
+        console.log('Background location started, watcher ID:', bgLocationWatcherId);
+        toast('Background location tracking enabled');
+      } catch (err) {
+        console.log('Background location start error:', err.message);
+        localStorage.setItem(BG_LOC_PREF_KEY, 'false');
+        updateBgLocUI();
+        toast('Could not start background tracking: ' + err.message);
+      }
+    }
+
+    async function stopBackgroundLocation() {
+      if (!bgLocationRunning || bgLocationWatcherId == null) return;
+      try {
+        const BackgroundGeolocation = getCapPlugin('BackgroundGeolocation');
+        await BackgroundGeolocation.removeWatcher({ id: bgLocationWatcherId });
+        bgLocationWatcherId = null;
+        bgLocationRunning = false;
+        console.log('Background location stopped');
+        toast('Background location tracking disabled');
+      } catch (err) {
+        console.log('Background location stop error:', err.message);
+      }
+    }
+
+    function updateBgLocUI() {
+      const toggle = document.getElementById('bgLocToggle');
+      const statusText = document.getElementById('bgLocStatusText');
+      if (!toggle) return;
+      const enabled = isBgLocationEnabled() && bgLocationRunning;
+      toggle.checked = enabled;
+      if (statusText) {
+        statusText.textContent = enabled
+          ? 'Active -- tracking in background'
+          : 'Alerts when near tasks';
       }
     }
 
@@ -4329,7 +5698,7 @@
       const btn = document.getElementById('locationPinBtn');
       if (btn) { btn.disabled = true; btn.textContent = 'Getting location...'; }
       try {
-        const { Geolocation } = await import('https://esm.sh/@capacitor/geolocation@6');
+        const Geolocation = getCapPlugin('Geolocation');
         const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true });
         // Store in hidden fields
         document.getElementById('taskLocationLat').value = pos.coords.latitude;
