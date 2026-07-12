@@ -5867,6 +5867,12 @@
         closeModal();
         render();
         scheduleThemeRefresh();
+        // Clear notified set so updated task locations are re-evaluated immediately
+        notifiedLocationTasks.clear();
+        // Trigger a fresh nearby check so newly added/edited location tasks fire quickly
+        if (!isNativeApp() && navigator.geolocation) {
+          setTimeout(checkNearbyTasksWeb, 1000);
+        }
       } catch (err) {
         toast(err.message || 'Failed to save task');
       }
@@ -6156,11 +6162,16 @@
     // ── Location-based geofence alerts (Native + Web) ──
     const GEOFENCE_RADIUS_M = 500; // 500 meters
     let locationCheckInterval = null;
-    let notifiedLocationTasks = new Set(); // track notified task IDs to avoid duplicates
+    let notifiedLocationTasks = new Set(); // track notified task IDs to avoid duplicates within a session
     let bgLocationWatcherId = null;
     let bgLocationRunning = false;
     const BG_LOC_PREF_KEY = 'bgLocationEnabled';
     let webLocationWatchId = null;
+
+    // Clear the notified set every 30 minutes so re-entering an area fires again
+    setInterval(function() {
+      notifiedLocationTasks.clear();
+    }, 30 * 60 * 1000);
 
     function isBgLocationEnabled() {
       return localStorage.getItem(BG_LOC_PREF_KEY) === 'true';
@@ -6214,6 +6225,16 @@
       // Request notification permission if not already granted
       if ('Notification' in window && Notification.permission === 'default') {
         try { await Notification.requestPermission(); } catch (e) {}
+      }
+
+      // Only proceed with geofencing if notifications are permitted
+      if (!('Notification' in window) || Notification.permission !== 'granted') {
+        console.log('Notification permission not granted; geofence alerts disabled until permission is given.');
+        // Still show the toggle UI so user can enable later
+        document.getElementById('bgLocSep').style.display = '';
+        document.getElementById('bgLocToggleWrap').style.display = '';
+        updateBgLocUI();
+        return;
       }
 
       // Show the background location toggle for web too
@@ -6469,7 +6490,8 @@
 
     async function checkNearbyTasks(Geolocation, LocalNotifications) {
       try {
-        const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: false });
+        // Add timeout to prevent silent hangs on Android
+        const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: false, timeout: 15000 });
         const userLat = pos.coords.latitude;
         const userLng = pos.coords.longitude;
 
@@ -6479,6 +6501,8 @@
           t.locationLat != null && t.locationLng != null &&
           !notifiedLocationTasks.has(t.id)
         );
+
+        if (locationTasks.length === 0) return;
 
         // Group by location text
         const groups = {};
@@ -6495,15 +6519,19 @@
         // Send notifications
         let notifId = Date.now();
         for (const [loc, locTasks] of Object.entries(groups)) {
-          await LocalNotifications.schedule({
-            notifications: [{
-              id: notifId++,
-              title: `You're near ${loc}`,
-              body: `You have ${locTasks.length} pending task${locTasks.length > 1 ? 's' : ''} here: ${locTasks[0].text}${locTasks.length > 1 ? ' and more' : ''}`,
-              smallIcon: 'ic_launcher',
-              largeIcon: 'ic_launcher'
-            }]
-          });
+          try {
+            await LocalNotifications.schedule({
+              notifications: [{
+                id: notifId++,
+                title: `You're near ${loc}`,
+                body: `You have ${locTasks.length} pending task${locTasks.length > 1 ? 's' : ''} here: ${locTasks[0].text}${locTasks.length > 1 ? ' and more' : ''}`,
+                smallIcon: 'ic_launcher',
+                largeIcon: 'ic_launcher'
+              }]
+            });
+          } catch (notifErr) {
+            console.log('Notification schedule error:', notifErr.message);
+          }
         }
       } catch (err) {
         console.log('Location check error:', err.message);
@@ -6548,15 +6576,52 @@
     }
 
     // Auto-geocode location text to lat/lng using Nominatim
+    // Uses user's current location as a viewport bias for more relevant local results
     async function geocodeLocationText(text) {
       if (!text || text.length < 2) return null;
       try {
-        var resp = await fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(text) + '&format=json&limit=1', {
+        // Try to get user's current position to bias the search results locally
+        let viewboxParam = '';
+        let proximityParam = '';
+        try {
+          if (navigator.geolocation) {
+            const pos = await new Promise(function(resolve, reject) {
+              navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000, maximumAge: 300000 });
+            });
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            // Create a ~50km bounding box around the user for local results
+            const delta = 0.5;
+            viewboxParam = '&viewbox=' + (lng - delta) + ',' + (lat + delta) + ',' + (lng + delta) + ',' + (lat - delta) + '&bounded=0';
+            proximityParam = '&lat=' + lat + '&lon=' + lng;
+          }
+        } catch (geoErr) {
+          // If geolocation fails, proceed without location bias
+        }
+
+        var url = 'https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(text) +
+          '&format=json&limit=3' + viewboxParam;
+        var resp = await fetch(url, {
           headers: { 'Accept': 'application/json' }
         });
         if (!resp.ok) return null;
         var data = await resp.json();
         if (data && data.length > 0) {
+          // If we have user location, pick the closest result
+          if (proximityParam && data.length > 1) {
+            try {
+              const userPos = await new Promise(function(resolve, reject) {
+                navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000, maximumAge: 300000 });
+              });
+              let best = data[0];
+              let bestDist = haversineDistance(userPos.coords.latitude, userPos.coords.longitude, parseFloat(data[0].lat), parseFloat(data[0].lon));
+              for (var i = 1; i < data.length; i++) {
+                var d = haversineDistance(userPos.coords.latitude, userPos.coords.longitude, parseFloat(data[i].lat), parseFloat(data[i].lon));
+                if (d < bestDist) { bestDist = d; best = data[i]; }
+              }
+              return { lat: parseFloat(best.lat), lng: parseFloat(best.lon) };
+            } catch (e2) {}
+          }
           return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
         }
       } catch (e) {

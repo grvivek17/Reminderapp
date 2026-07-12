@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
 const auth = require('../middleware/auth');
+const { adminOnly } = require('../middleware/admin');
 
 const router = express.Router();
 
@@ -140,8 +141,8 @@ router.get('/users', auth, async (req, res) => {
   }
 });
 
-// DELETE /api/auth/users/:id -- remove a user (cannot delete self)
-router.delete('/users/:id', auth, async (req, res) => {
+// DELETE /api/auth/users/:id -- remove a user (admin only, cannot delete self)
+router.delete('/users/:id', auth, adminOnly, async (req, res) => {
   try {
     const targetId = parseInt(req.params.id);
     if (targetId === req.user.id) {

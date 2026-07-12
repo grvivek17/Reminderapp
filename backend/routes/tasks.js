@@ -2,6 +2,7 @@ const express = require('express');
 const oracledb = require('oracledb');
 const db = require('../db');
 const auth = require('../middleware/auth');
+const { adminOnly } = require('../middleware/admin');
 
 const router = express.Router();
 
@@ -180,18 +181,17 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-// DELETE /api/tasks/:id -- delete a task (owner only)
-router.delete('/:id', auth, async (req, res) => {
+// DELETE /api/tasks/:id -- delete a task (admin only)
+router.delete('/:id', auth, adminOnly, async (req, res) => {
   try {
     const taskId = parseInt(req.params.id);
 
-    // Only owner can delete
     const check = await db.execute(
-      'SELECT id FROM reminder_tasks WHERE id = :taskId AND created_by = :userId',
-      { taskId, userId: req.user.id }
+      'SELECT id FROM reminder_tasks WHERE id = :taskId',
+      { taskId }
     );
     if (check.rows.length === 0) {
-      return res.status(404).json({ error: 'Task not found or not owner' });
+      return res.status(404).json({ error: 'Task not found' });
     }
 
     // Assignments cascade-delete automatically
