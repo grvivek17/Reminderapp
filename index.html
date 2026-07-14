@@ -6381,7 +6381,21 @@
 
         let html = `<b>Your location:</b> ${userLat.toFixed(5)}, ${userLng.toFixed(5)}<br>`;
         if (forceLat) html += `<span style="color:#f59e0b">(⚠ Spoofed via URL params)</span><br>`;
-        html += `<b>Notification permission:</b> ${notifPerm}<br>`;
+        
+        let permColor = '#a6e3a1';
+        if (notifPerm === 'denied') permColor = '#f38ba8';
+        else if (notifPerm === 'default') permColor = '#f9e2af';
+        
+        html += `<b>Notification permission:</b> <span style="color:${permColor};font-weight:bold">${notifPerm}</span><br>`;
+        if (notifPerm === 'denied') {
+          html += `<div style="background:rgba(243,139,168,0.15);border:1px solid #f38ba8;border-radius:8px;padding:8px;margin:8px 0;color:#f38ba8;font-size:12px">
+            ⚠ <b>Notifications are blocked.</b> Please click the lock or site settings icon next to the URL in your browser address bar and set Notifications to "Allow" to receive push alerts.
+          </div>`;
+        } else if (notifPerm === 'default') {
+          html += `<div style="margin:8px 0">
+            <button class="btn btn-sm btn-primary" onclick="Notification.requestPermission().then(() => { this.closest('div[style*=inset]').remove(); testGeofenceNow(); })">Request Notification Permission</button>
+          </div>`;
+        }
         html += `<b>Tasks with coords:</b> ${locationTasks.length}<br><hr style="border-color:#313244;margin:10px 0">`;
         html += `<b>Distance to each task:</b><br><br>`;
 
