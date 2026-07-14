@@ -2878,6 +2878,12 @@
                 </label>
               </div>
             </div>
+            <!-- Debug test button - only visible at ?debug=1 -->
+            <div class="user-dropdown-sep" id="geofenceTestSep" style="display:none"></div>
+            <button class="user-dropdown-item" id="geofenceTestBtn" style="display:none;color:#f59e0b" onclick="testGeofenceNow()">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4"/><path d="M5 7l1.5 1.5L9.5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Test Geofence Now
+            </button>
             <div class="user-dropdown-sep"></div>
             <button class="user-dropdown-item danger" onclick="logout()">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 2H3a1 1 0 00-1 1v8a1 1 0 001 1h2M9 10l3-3-3-3M12 7H5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
@@ -6326,6 +6332,85 @@
         } catch (e) {
           console.log('Web notification error:', e.message);
         }
+      }
+    }
+
+    // ── Debug: show test button if ?debug=1 ──
+    if (new URLSearchParams(window.location.search).get('debug') === '1') {
+      document.getElementById('geofenceTestSep').style.display = '';
+      document.getElementById('geofenceTestBtn').style.display = '';
+    }
+
+    // ── Test geofence: fires immediately, shows modal with distances ──
+    async function testGeofenceNow() {
+      closeUserDropdown();
+      const params = new URLSearchParams(window.location.search);
+      const forceLat = params.get('lat') ? parseFloat(params.get('lat')) : null;
+      const forceLng = params.get('lng') ? parseFloat(params.get('lng')) : null;
+
+      const resultEl = document.createElement('div');
+      resultEl.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+      resultEl.innerHTML = `<div style="background:#1e1e2e;border-radius:16px;padding:20px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto;color:#cdd6f4;font-family:inherit">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 style="margin:0;font-size:15px;color:#89b4fa">📡 Geofence Test</h3>
+          <button onclick="this.closest('div[style*=inset]').remove()" style="background:none;border:none;color:#6c7086;font-size:18px;cursor:pointer">✕</button>
+        </div>
+        <div id="geofenceTestOutput" style="font-size:13px;line-height:1.7">Getting location...</div>
+      </div>`;
+      document.body.appendChild(resultEl);
+
+      const out = document.getElementById('geofenceTestOutput');
+
+      const getPos = () => new Promise((resolve, reject) => {
+        if (forceLat && forceLng) {
+          resolve({ coords: { latitude: forceLat, longitude: forceLng } });
+        } else if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 15000, enableHighAccuracy: false });
+        } else {
+          reject(new Error('Geolocation not available'));
+        }
+      });
+
+      try {
+        const pos = await getPos();
+        const userLat = pos.coords.latitude;
+        const userLng = pos.coords.longitude;
+
+        const locationTasks = tasks.filter(t => t.status !== 'completed' && t.locationLat != null && t.locationLng != null);
+        const notifPerm = ('Notification' in window) ? Notification.permission : 'N/A';
+
+        let html = `<b>Your location:</b> ${userLat.toFixed(5)}, ${userLng.toFixed(5)}<br>`;
+        if (forceLat) html += `<span style="color:#f59e0b">(⚠ Spoofed via URL params)</span><br>`;
+        html += `<b>Notification permission:</b> ${notifPerm}<br>`;
+        html += `<b>Tasks with coords:</b> ${locationTasks.length}<br><hr style="border-color:#313244;margin:10px 0">`;
+        html += `<b>Distance to each task:</b><br><br>`;
+
+        let fired = 0;
+        const notifiedCopy = new Set(notifiedLocationTasks);
+        for (const t of locationTasks) {
+          const dist = haversineDistance(userLat, userLng, t.locationLat, t.locationLng);
+          const inRange = dist <= GEOFENCE_RADIUS_M;
+          const alreadySent = notifiedLocationTasks.has(t.id);
+          const icon = inRange ? '🔔' : '📍';
+          const color = inRange ? '#a6e3a1' : '#6c7086';
+          html += `<div style="color:${color};margin-bottom:4px">${icon} <b>${t.locationText || '?'}</b> — ${dist < 1000 ? Math.round(dist)+'m' : (dist/1000).toFixed(1)+'km'}${inRange ? ' <b>IN RANGE!</b>' : ''}${alreadySent ? ' (already notified)' : ''}</div>`;
+          if (inRange) {
+            fired++;
+            // Actually fire the notification for real
+            sendWebProximityNotification((t.locationText || 'this location').toLowerCase(), [t]);
+            notifiedLocationTasks.add(t.id);
+          }
+        }
+
+        if (fired === 0) {
+          html += `<br><div style="color:#f38ba8">No tasks within ${GEOFENCE_RADIUS_M}m radius. Move closer to a task location to trigger.</div>`;
+        } else {
+          html += `<br><div style="color:#a6e3a1">✓ Fired ${fired} notification(s)!</div>`;
+        }
+
+        out.innerHTML = html;
+      } catch (err) {
+        out.innerHTML = `<span style="color:#f38ba8">Error: ${err.message}</span><br>Try adding <code>?debug=1&lat=YOUR_LAT&lng=YOUR_LNG</code> to the URL to spoof a location.`;
       }
     }
 
