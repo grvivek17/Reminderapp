@@ -68,6 +68,38 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// GET /api/tasks/geocode -- proxy geocoding to bypass CORS/User-Agent blocks
+router.get('/geocode', auth, async (req, res) => {
+  try {
+    const { q, lat, lon } = req.query;
+    if (!q) {
+      return res.status(400).json({ error: 'Query string q is required' });
+    }
+    let viewboxParam = '';
+    if (lat && lon) {
+      const uLat = parseFloat(lat);
+      const uLng = parseFloat(lon);
+      const delta = 0.5;
+      viewboxParam = `&viewbox=${uLng - delta},${uLat + delta},${uLng + delta},${uLat - delta}&bounded=0`;
+    }
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=3${viewboxParam}`;
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'SmartReminderApp/1.0 (grvivek17@gmail.com)'
+      }
+    });
+    if (!response.ok) {
+      return res.status(response.status).json({ error: 'Geocoding service error' });
+    }
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    console.error('Proxy geocoding error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // POST /api/tasks -- create a task
 router.post('/', auth, async (req, res) => {
   try {

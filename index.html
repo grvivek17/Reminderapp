@@ -5870,7 +5870,13 @@
         // Clear notified set so updated task locations are re-evaluated immediately
         notifiedLocationTasks.clear();
         // Trigger a fresh nearby check so newly added/edited location tasks fire quickly
-        if (!isNativeApp() && navigator.geolocation) {
+        if (isNativeApp()) {
+          const Geolocation = getCapPlugin('Geolocation');
+          const LocalNotifications = getCapPlugin('LocalNotifications');
+          if (Geolocation && LocalNotifications) {
+            setTimeout(function() { checkNearbyTasks(Geolocation, LocalNotifications); }, 1000);
+          }
+        } else if (navigator.geolocation) {
           setTimeout(checkNearbyTasksWeb, 1000);
         }
       } catch (err) {
@@ -6575,53 +6581,30 @@
       if (btn) { btn.disabled = false; btn.textContent = 'Pin current location'; }
     }
 
-    // Auto-geocode location text to lat/lng using Nominatim
-    // Uses user's current location as a viewport bias for more relevant local results
+    // Auto-geocode location text to lat/lng using the server proxy
     async function geocodeLocationText(text) {
       if (!text || text.length < 2) return null;
       try {
-        // Try to get user's current position to bias the search results locally
-        let viewboxParam = '';
-        let proximityParam = '';
+        let queryParams = '?q=' + encodeURIComponent(text);
         try {
-          if (navigator.geolocation) {
+          if (isNativeApp()) {
+            const Geolocation = getCapPlugin('Geolocation');
+            if (Geolocation) {
+              const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: false, timeout: 5000 });
+              queryParams += '&lat=' + pos.coords.latitude + '&lon=' + pos.coords.longitude;
+            }
+          } else if (navigator.geolocation) {
             const pos = await new Promise(function(resolve, reject) {
               navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000, maximumAge: 300000 });
             });
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            // Create a ~50km bounding box around the user for local results
-            const delta = 0.5;
-            viewboxParam = '&viewbox=' + (lng - delta) + ',' + (lat + delta) + ',' + (lng + delta) + ',' + (lat - delta) + '&bounded=0';
-            proximityParam = '&lat=' + lat + '&lon=' + lng;
+            queryParams += '&lat=' + pos.coords.latitude + '&lon=' + pos.coords.longitude;
           }
         } catch (geoErr) {
           // If geolocation fails, proceed without location bias
         }
 
-        var url = 'https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(text) +
-          '&format=json&limit=3' + viewboxParam;
-        var resp = await fetch(url, {
-          headers: { 'Accept': 'application/json' }
-        });
-        if (!resp.ok) return null;
-        var data = await resp.json();
+        const data = await api('/tasks/geocode' + queryParams);
         if (data && data.length > 0) {
-          // If we have user location, pick the closest result
-          if (proximityParam && data.length > 1) {
-            try {
-              const userPos = await new Promise(function(resolve, reject) {
-                navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000, maximumAge: 300000 });
-              });
-              let best = data[0];
-              let bestDist = haversineDistance(userPos.coords.latitude, userPos.coords.longitude, parseFloat(data[0].lat), parseFloat(data[0].lon));
-              for (var i = 1; i < data.length; i++) {
-                var d = haversineDistance(userPos.coords.latitude, userPos.coords.longitude, parseFloat(data[i].lat), parseFloat(data[i].lon));
-                if (d < bestDist) { bestDist = d; best = data[i]; }
-              }
-              return { lat: parseFloat(best.lat), lng: parseFloat(best.lon) };
-            } catch (e2) {}
-          }
           return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
         }
       } catch (e) {
