@@ -6269,10 +6269,12 @@
 
     function checkNearbyTasksWeb() {
       if (!navigator.geolocation) return;
+      console.log('[Geofence] Web check starting...');
       navigator.geolocation.getCurrentPosition(
         function(pos) {
           var userLat = pos.coords.latitude;
           var userLng = pos.coords.longitude;
+          console.log('[Geofence] Web - user at:', userLat, userLng);
 
           var locationTasks = tasks.filter(function(t) {
             return t.status !== 'completed' &&
@@ -6280,10 +6282,12 @@
               !notifiedLocationTasks.has(t.id);
           });
 
+          console.log('[Geofence] Checking', locationTasks.length, 'tasks with coords');
           var groups = {};
           for (var i = 0; i < locationTasks.length; i++) {
             var t = locationTasks[i];
             var dist = haversineDistance(userLat, userLng, t.locationLat, t.locationLng);
+            console.log('[Geofence] Task', t.id, t.locationText, '- distance:', Math.round(dist) + 'm');
             if (dist <= GEOFENCE_RADIUS_M) {
               var key = (t.locationText || 'this location').toLowerCase();
               if (!groups[key]) groups[key] = [];
@@ -6295,11 +6299,12 @@
           // Send browser notifications
           for (var loc in groups) {
             var locTasks = groups[loc];
+            console.log('[Geofence] FIRING web notification for location:', loc);
             sendWebProximityNotification(loc, locTasks);
           }
         },
         function(err) {
-          console.log('Web location check error:', err.message);
+          console.log('[Geofence] Web location check error:', err.message);
         },
         { timeout: 15000, enableHighAccuracy: false, maximumAge: 60000 }
       );
@@ -6500,6 +6505,7 @@
         const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: false, timeout: 15000 });
         const userLat = pos.coords.latitude;
         const userLng = pos.coords.longitude;
+        console.log('[Geofence] Native check - user at:', userLat, userLng);
 
         // Find tasks with location coordinates
         const locationTasks = tasks.filter(t =>
@@ -6508,12 +6514,14 @@
           !notifiedLocationTasks.has(t.id)
         );
 
+        console.log('[Geofence] Checking', locationTasks.length, 'tasks with coords');
         if (locationTasks.length === 0) return;
 
         // Group by location text
         const groups = {};
         for (const t of locationTasks) {
           const dist = haversineDistance(userLat, userLng, t.locationLat, t.locationLng);
+          console.log('[Geofence] Task', t.id, t.locationText, '- distance:', Math.round(dist) + 'm');
           if (dist <= GEOFENCE_RADIUS_M) {
             const key = (t.locationText || 'this location').toLowerCase();
             if (!groups[key]) groups[key] = [];
@@ -6522,25 +6530,26 @@
           }
         }
 
-        // Send notifications
-        let notifId = Date.now();
+        // Send notifications -- use safe IDs within Android 32-bit int range
+        let notifId = Math.floor(Math.random() * 1000000) + 1;
         for (const [loc, locTasks] of Object.entries(groups)) {
+          console.log('[Geofence] FIRING notification for location:', loc);
           try {
             await LocalNotifications.schedule({
               notifications: [{
                 id: notifId++,
-                title: `You're near ${loc}`,
+                title: `📍 You're near ${loc}`,
                 body: `You have ${locTasks.length} pending task${locTasks.length > 1 ? 's' : ''} here: ${locTasks[0].text}${locTasks.length > 1 ? ' and more' : ''}`,
                 smallIcon: 'ic_launcher',
                 largeIcon: 'ic_launcher'
               }]
             });
           } catch (notifErr) {
-            console.log('Notification schedule error:', notifErr.message);
+            console.log('[Geofence] Notification error:', notifErr.message);
           }
         }
       } catch (err) {
-        console.log('Location check error:', err.message);
+        console.log('[Geofence] Native check error:', err.message);
       }
     }
 

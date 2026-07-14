@@ -82,7 +82,7 @@ router.get('/geocode', auth, async (req, res) => {
       const delta = 0.5;
       viewboxParam = `&viewbox=${uLng - delta},${uLat + delta},${uLng + delta},${uLat - delta}&bounded=0`;
     }
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=3${viewboxParam}`;
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=3&countrycodes=in${viewboxParam}`;
     const response = await fetch(url, {
       headers: {
         'Accept': 'application/json',
