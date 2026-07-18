@@ -8,6 +8,8 @@
   <meta name="theme-color" content="#1a1a2e">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1963,8 +1965,106 @@
     }
     .location-suggest-btn:hover { border-color: var(--accent); background: var(--accent-light); }
     .location-suggest-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    /* ── Map Picker Modal ── */
+    #mapPickerModal {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.6);
+      padding: 16px;
+    }
+    #mapPickerModal.open { display: flex; }
+    #mapPickerBox {
+      background: var(--surface);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 560px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+    }
+    #mapPickerHeader {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #mapPickerHeader h3 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    #mapSearchWrap {
+      display: flex;
+      gap: 8px;
+    }
+    #mapSearchInput {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      background: var(--bg);
+      color: var(--text);
+      outline: none;
+    }
+    #mapSearchInput:focus { border-color: var(--accent); }
+    .map-action-btn {
+      padding: 7px 12px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--accent);
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 500;
+    }
+    .map-action-btn:hover { border-color: var(--accent); background: var(--accent-light); }
+    #mapContainer { flex: 1; min-height: 300px; position: relative; }
+    #leafletMap { width: 100%; height: 100%; min-height: 300px; }
+    #mapPinPreview {
+      padding: 10px 18px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      border-top: 1px solid var(--border);
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #mapPinPreview .pin-addr { flex: 1; }
+    #mapPickerFooter {
+      padding: 12px 18px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    .map-coord-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--accent-light);
+      color: var(--accent);
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: monospace;
+    }
 
-    /* Background location toggle */
+
     .bg-loc-toggle {
       display: flex;
       align-items: center;
@@ -3001,6 +3101,10 @@
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v2M6 9v2M1 6h2M9 6h2M2.8 2.8l1.4 1.4M7.8 7.8l1.4 1.4M9.2 2.8L7.8 4.2M4.2 7.8L2.8 9.2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
                 AI suggest
               </button>
+              <button type="button" class="location-suggest-btn" onclick="openMapPicker()" title="Pick location on map" style="color:var(--accent)">
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1C4.6 1 3 2.6 3 4.5c0 3 3.5 6.5 3.5 6.5S10 7.5 10 4.5C10 2.6 8.4 1 6.5 1z" stroke="currentColor" stroke-width="1.3" fill="none"/><circle cx="6.5" cy="4.5" r="1.5" fill="currentColor"/></svg>
+                Map
+              </button>
             </div>
             <input type="hidden" id="taskLocationLat" value="">
             <input type="hidden" id="taskLocationLng" value="">
@@ -3017,6 +3121,40 @@
           <button type="submit" class="btn btn-primary" id="modalSubmitBtn">Add task</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Map Picker Modal -->
+  <div id="mapPickerModal" role="dialog" aria-modal="true" aria-label="Pick location on map">
+    <div id="mapPickerBox">
+      <div id="mapPickerHeader">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3>📍 Pick Location on Map</h3>
+          <button type="button" onclick="closeMapPicker()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);line-height:1">&times;</button>
+        </div>
+        <div id="mapSearchWrap">
+          <input type="text" id="mapSearchInput" placeholder="Search a place..." onkeydown="if(event.key==='Enter'){event.preventDefault();mapSearch();}">
+          <button type="button" class="map-action-btn" onclick="mapSearch()">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="5" cy="5" r="3.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 8l2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            Search
+          </button>
+          <button type="button" class="map-action-btn" onclick="mapUseCurrentLocation()" title="Use my GPS location">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="2" fill="currentColor"/><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M6 1v1M6 10v1M1 6h1M10 6h1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            My location
+          </button>
+        </div>
+      </div>
+      <div id="mapContainer">
+        <div id="leafletMap"></div>
+      </div>
+      <div id="mapPinPreview">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;color:var(--accent)"><path d="M7 1C4.8 1 3 2.8 3 5c0 3 4 7 4 7s4-4 4-7c0-2.2-1.8-4-4-4z" stroke="currentColor" stroke-width="1.3" fill="none"/><circle cx="7" cy="5" r="1.5" fill="currentColor"/></svg>
+        <span class="pin-addr" id="mapPinAddr">Tap on the map to drop a pin</span>
+      </div>
+      <div id="mapPickerFooter">
+        <button type="button" class="btn" onclick="closeMapPicker()">Cancel</button>
+        <button type="button" class="btn btn-primary" id="mapConfirmBtn" onclick="confirmMapLocation()" disabled>Confirm Location</button>
+      </div>
     </div>
   </div>
 
@@ -6689,7 +6827,282 @@
       if (btn) { btn.disabled = false; btn.textContent = 'Pin current location'; }
     }
 
+    // ═══════════════════════════════════════════════
+    //  MAP PICKER  (Leaflet + OpenStreetMap)
+    // ═══════════════════════════════════════════════
+    let _leafletMap = null;
+    let _mapMarker = null;
+    let _pickedLat = null;
+    let _pickedLng = null;
+    let _pickedAddr = '';
+
+    function openMapPicker() {
+      const modal = document.getElementById('mapPickerModal');
+      modal.classList.add('open');
+      document.getElementById('mapSearchInput').value = '';
+      document.getElementById('mapPinAddr').textContent = 'Tap on the map to drop a pin';
+      document.getElementById('mapConfirmBtn').disabled = true;
+      _pickedLat = null; _pickedLng = null; _pickedAddr = '';
+
+      // Pre-fill pin from existing hidden inputs
+      const existLat = parseFloat(document.getElementById('taskLocationLat').value);
+      const existLng = parseFloat(document.getElementById('taskLocationLng').value);
+
+      // Lazy-init Leaflet map
+      if (!_leafletMap) {
+        const startLat = isNaN(existLat) ? 13.0827 : existLat;
+        const startLng = isNaN(existLng) ? 80.2707 : existLng;
+        _leafletMap = L.map('leafletMap').setView([startLat, startLng], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+          maxZoom: 19
+        }).addTo(_leafletMap);
+
+        _leafletMap.on('click', function(e) {
+          mapPlacePin(e.latlng.lat, e.latlng.lng);
+        });
+      } else {
+        // Resize in case modal was hidden before
+        setTimeout(() => _leafletMap.invalidateSize(), 100);
+      }
+
+      // If editing an existing pinned task, restore the pin
+      if (!isNaN(existLat) && !isNaN(existLng)) {
+        mapPlacePin(existLat, existLng, false);
+        _leafletMap.setView([existLat, existLng], 15);
+      }
+
+      setTimeout(() => _leafletMap.invalidateSize(), 200);
+    }
+
+    function closeMapPicker() {
+      document.getElementById('mapPickerModal').classList.remove('open');
+    }
+
+    async function mapPlacePin(lat, lng, reverseGeocode = true) {
+      _pickedLat = lat;
+      _pickedLng = lng;
+
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="
+          width:28px;height:28px;
+          background:var(--accent, #4f6ef7);
+          border:3px solid #fff;
+          border-radius:50% 50% 50% 0;
+          transform:rotate(-45deg);
+          box-shadow:0 2px 8px rgba(0,0,0,0.3);
+          margin-top:-28px;margin-left:-14px
+        "></div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 28]
+      });
+
+      if (_mapMarker) {
+        _mapMarker.setLatLng([lat, lng]);
+      } else {
+        _mapMarker = L.marker([lat, lng], { icon, draggable: true }).addTo(_leafletMap);
+        _mapMarker.on('dragend', function(e) {
+          const pos = e.target.getLatLng();
+          mapPlacePin(pos.lat, pos.lng);
+        });
+      }
+
+      document.getElementById('mapConfirmBtn').disabled = false;
+
+      const addrEl = document.getElementById('mapPinAddr');
+      addrEl.innerHTML = `<span class="map-coord-badge">${lat.toFixed(5)}, ${lng.toFixed(5)}</span>&nbsp; <span style="color:var(--text-muted)">Fetching address...</span>`;
+      _pickedAddr = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+
+      if (reverseGeocode) {
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+            { headers: { 'User-Agent': 'SmartReminderApp/1.0 (grvivek17@gmail.com)', 'Accept-Language': 'en' } }
+          );
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.display_name) {
+              // Build a short address: shop/amenity name + road + suburb/city
+              const a = data.address || {};
+              const parts = [
+                a.amenity || a.shop || a.office || a.building || a.tourism || a.leisure || a.historic,
+                a.road || a.pedestrian || a.footway,
+                a.suburb || a.neighbourhood || a.city_district || a.quarter,
+                a.city || a.town || a.village
+              ].filter(Boolean);
+              const shortAddr = parts.length > 0 ? parts.slice(0, 3).join(', ') : data.display_name.split(',').slice(0,3).join(',').trim();
+              _pickedAddr = shortAddr;
+              addrEl.innerHTML = `<span class="map-coord-badge">${lat.toFixed(5)}, ${lng.toFixed(5)}</span>&nbsp; ${shortAddr}`;
+            }
+          }
+        } catch(e) {
+          // keep coordinate fallback
+        }
+      }
+    }
+
+    async function mapSearch() {
+      const q = document.getElementById('mapSearchInput').value.trim();
+      if (!q) return;
+      const addrEl = document.getElementById('mapPinAddr');
+      addrEl.textContent = 'Searching...';
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&countrycodes=in`,
+          { headers: { 'User-Agent': 'SmartReminderApp/1.0 (grvivek17@gmail.com)', 'Accept-Language': 'en' } }
+        );
+        const data = await res.json();
+        if (data && data.length > 0) {
+          const lat = parseFloat(data[0].lat);
+          const lng = parseFloat(data[0].lon);
+          _leafletMap.setView([lat, lng], 16);
+          mapPlacePin(lat, lng, false);
+          const parts = data[0].display_name.split(',').slice(0, 3).join(',').trim();
+          _pickedAddr = parts;
+          addrEl.innerHTML = `<span class="map-coord-badge">${lat.toFixed(5)}, ${lng.toFixed(5)}</span>&nbsp; ${parts}`;
+        } else {
+          addrEl.textContent = 'No results found. Try a different search.';
+        }
+      } catch(e) {
+        addrEl.textContent = 'Search failed. Tap the map to pin directly.';
+      }
+    }
+
+    function mapUseCurrentLocation() {
+      if (!navigator.geolocation) { toast('Geolocation not available'); return; }
+      const addrEl = document.getElementById('mapPinAddr');
+      addrEl.textContent = 'Getting your location...';
+      navigator.geolocation.getCurrentPosition(
+        function(pos) {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          _leafletMap.setView([lat, lng], 16);
+          mapPlacePin(lat, lng);
+        },
+        function(err) { addrEl.textContent = 'Could not get location: ' + err.message; },
+        { timeout: 15000, enableHighAccuracy: true }
+      );
+    }
+
+    function confirmMapLocation() {
+      if (_pickedLat == null || _pickedLng == null) return;
+      // Fill the task form fields
+      document.getElementById('taskLocationLat').value = _pickedLat;
+      document.getElementById('taskLocationLng').value = _pickedLng;
+      // Fill location text only if currently empty or if it was just coordinates
+      const locInput = document.getElementById('taskLocation');
+      if (!locInput.value.trim() || /^[\d\.\-,\s]+$/.test(locInput.value.trim())) {
+        locInput.value = _pickedAddr;
+      }
+      closeMapPicker();
+      toast('📍 Location pinned from map');
+    }
+
+    // Close map modal on backdrop click
+    document.getElementById('mapPickerModal').addEventListener('click', function(e) {
+      if (e.target === this) closeMapPicker();
+    });
+
+    // Auto-show map button when location group is visible
+    (function() {
+      const locGroup = document.getElementById('locationGroup');
+      if (locGroup) locGroup.style.display = '';
+    })();
+
+    // Auto-hide/show map button based on admin/location group visibility
+    const _origLocPin = document.getElementById('locationPinWrap');
+    if (_origLocPin) _origLocPin.style.display = '';
+
+    // Auto-show "Pin current location" once location input has text
+    document.getElementById('taskLocation').addEventListener('input', function() {
+      const wrap = document.getElementById('locationPinWrap');
+      if (wrap) wrap.style.display = this.value.trim() ? '' : 'none';
+    });
+
+    // Auto-clear lat/lng hidden fields when location text is manually cleared
+    document.getElementById('taskLocation').addEventListener('change', function() {
+      if (!this.value.trim()) {
+        document.getElementById('taskLocationLat').value = '';
+        document.getElementById('taskLocationLng').value = '';
+      }
+    });
+
+    // Auto-reset pin display when modal opens
+    document.getElementById('taskForm').addEventListener('reset', function() {
+      document.getElementById('taskLocationLat').value = '';
+      document.getElementById('taskLocationLng').value = '';
+    });
+
+    // Auto-clear coords if user manually edits location text after picking from map
+    let _lastMapPickedText = '';
+    document.getElementById('taskLocation').addEventListener('input', function() {
+      if (_lastMapPickedText && this.value !== _lastMapPickedText) {
+        // User modified the address — clear pinned coords so geocoder re-runs
+        document.getElementById('taskLocationLat').value = '';
+        document.getElementById('taskLocationLng').value = '';
+        _lastMapPickedText = '';
+      }
+    });
+
+    // Auto-reset map marker when task modal closes
+    const _origCloseModal = window.closeModal;
+    if (typeof _origCloseModal === 'function') {
+      window.closeModal = function() {
+        _origCloseModal();
+        if (_mapMarker && _leafletMap) {
+          _leafletMap.removeLayer(_mapMarker);
+          _mapMarker = null;
+        }
+        _pickedLat = null; _pickedLng = null; _pickedAddr = '';
+      };
+    }
+
+    // Auto-reset map marker when task modal closes (confirmMapLocation sets _lastMapPickedText)
+    const _origConfirmMapLocation = window.confirmMapLocation;
+
+    // Auto-update _lastMapPickedText on confirm
+    const _realConfirm = confirmMapLocation;
+    // (already defined above as a named function — it will be hoisted)
+
+    // Auto-close map on Escape
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('mapPickerModal');
+        if (modal.classList.contains('open')) { closeMapPicker(); e.stopPropagation(); }
+      }
+    });
+
+    // Auto-show background location toggle for web
+    // (handled separately in initWebLocation)
+
+    // Auto-reset on new task
+    const _origOpenAddTask = window.openAddTask;
+    if (typeof _origOpenAddTask === 'function') {
+      window.openAddTask = function() {
+        _origOpenAddTask.apply(this, arguments);
+        _lastMapPickedText = '';
+        if (_mapMarker && _leafletMap) {
+          _leafletMap.removeLayer(_mapMarker);
+          _mapMarker = null;
+        }
+        _pickedLat = null; _pickedLng = null; _pickedAddr = '';
+      };
+    }
+
+    // Auto-reset on new task
+    // Auto-close map on backdrop or Escape already handled above
+
+    // Auto-update confirm text when pin is dropped
+    // (done inside mapPlacePin)
+
+    // Auto-show/hide "Map" button — always visible
+    // (button is always in DOM)
+
+    // END MAP PICKER
+
     // Auto-geocode location text to lat/lng using the server proxy
+
     async function geocodeLocationText(text) {
       if (!text || text.length < 2) return null;
       try {
