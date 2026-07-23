@@ -2799,7 +2799,7 @@
     .barcode-modal-content {
       width: 90%;
       max-width: 400px;
-      background: var(--card);
+      background: var(--surface);
       border-radius: 16px;
       overflow: hidden;
     }
@@ -2874,6 +2874,49 @@
     }
     .health-wearable-btn:hover { background: rgba(139,92,246,0.25); }
 
+    /* ── Progress bar ── */
+    .task-progress-wrap { display:flex; align-items:center; gap:8px; margin:4px 0; }
+    .task-progress-bar { flex:1; height:5px; background:var(--bg); border-radius:3px; overflow:hidden; min-width:40px; }
+    .task-progress-bar--lg { height:8px; }
+    .task-progress-fill { height:100%; background:linear-gradient(90deg, var(--accent), #8b5cf6); border-radius:3px; transition:width 0.4s ease; }
+    .task-progress-text { font-size:0.6875rem; font-weight:700; color:var(--accent); white-space:nowrap; min-width:28px; text-align:right; }
+
+    /* ── Routine badge ── */
+    .routine-badge { display:inline-flex; align-items:center; gap:3px; font-size:0.625rem; font-weight:700; padding:2px 6px; border-radius:4px; background:rgba(79,110,247,0.1); color:var(--accent); letter-spacing:0.02em; }
+
+    /* ── ETA badge ── */
+    .eta-badge { display:inline-flex; align-items:center; gap:3px; font-size:0.625rem; font-weight:700; padding:2px 6px; border-radius:4px; }
+    .eta-badge--eta-ok { background:rgba(34,197,94,0.1); color:var(--low); }
+    .eta-badge--eta-at-risk { background:rgba(245,158,11,0.1); color:var(--medium); }
+    .eta-badge--eta-overdue { background:rgba(239,68,68,0.1); color:var(--danger); }
+
+    /* ── Date-shift badge ── */
+    .date-shift-badge { display:inline-flex; align-items:center; gap:3px; font-size:0.625rem; font-weight:600; padding:2px 6px; border-radius:4px; background:rgba(245,158,11,0.1); color:var(--medium); }
+
+    /* ── Overdue task ── */
+    .task-overdue { border-left:3px solid var(--danger) !important; }
+    .task-overdue .task-text { color:var(--danger); }
+
+    /* ── Restore button ── */
+    .restore-btn { color:var(--status-in-progress) !important; }
+    .restore-btn:hover { background:var(--status-in-progress-bg) !important; }
+
+    /* ── Done tab badge ── */
+    .done-tab-count { display:inline-flex; align-items:center; justify-content:center; min-width:16px; height:16px; background:var(--low); color:#fff; font-size:0.5rem; font-weight:800; border-radius:8px; padding:0 3px; margin-left:3px; line-height:1; vertical-align:middle; }
+
+    /* ── Logs timeline ── */
+    #logsList { list-style:none; padding:0; margin:0; }
+    .log-timeline-item { display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
+    .log-timeline-item:last-child { border-bottom:none; }
+    .log-timeline-dot { width:28px; height:28px; border-radius:50%; background:var(--accent-light); display:flex; align-items:center; justify-content:center; font-size:0.875rem; flex-shrink:0; border:2px solid var(--border); }
+    .log-timeline-content { flex:1; min-width:0; }
+    .log-message { font-size:0.875rem; color:var(--text); line-height:1.4; }
+    .log-time { font-size:0.6875rem; color:var(--text-muted); margin-top:3px; }
+    .log-task-info { padding:12px 14px; background:var(--accent-light); border-radius:var(--radius-sm); margin-bottom:14px; font-size:0.8125rem; display:flex; flex-direction:column; gap:5px; border-left:3px solid var(--accent); }
+
+    /* ── Cal routine dot ── */
+    .cal-dot-routine { box-shadow:0 0 0 1px var(--accent); }
+
   </style>
 </head>
 <body>
@@ -2933,6 +2976,10 @@
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 12.5s-5.5-3.5-5.5-7A3 3 0 017 3a3 3 0 015.5 2.5c0 3.5-5.5 7-5.5 7z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
             <span class="view-label">Health</span>
           </button>
+          <button data-view="completed" onclick="switchView('completed')">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3 3L12 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="view-label">Done</span><span class="done-tab-count" id="doneTabBadge" style="display:none">0</span>
+          </button>
           <button data-view="expense" onclick="switchView('expense')" style="position:relative">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M4 4.5C4 3.1 5.3 2 7 2s3 1.1 3 2.5S8.7 7 7 7 4 8.1 4 9.5 5.3 12 7 12s3-1.1 3-2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
             <span class="view-label">Expenses</span>
@@ -2963,14 +3010,11 @@
               Manage users
             </button>
             <div class="user-dropdown-sep" id="bgLocSep" style="display:none"></div>
-            <div class="user-dropdown-item" id="bgLocToggleWrap" style="display:none;pointer-events:auto" onclick="event.stopPropagation()">
+            <div id="bgLocToggleWrap" style="display:none;padding:8px 14px">
               <div class="bg-loc-toggle">
                 <div class="bg-loc-toggle-label">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1C4.8 1 3 2.8 3 5c0 3 4 8 4 8s4-5 4-8c0-2.2-1.8-4-4-4z" stroke="currentColor" stroke-width="1.3" fill="none"/><circle cx="7" cy="5" r="1.5" fill="currentColor"/></svg>
-                  <div>
-                    Background location
-                    <span class="bg-loc-sub" id="bgLocStatusText">Alerts when near tasks</span>
-                  </div>
+                  📍 Location alerts
+                  <span class="bg-loc-sub" id="bgLocStatusText">Alerts when near tasks</span>
                 </div>
                 <label class="toggle-switch">
                   <input type="checkbox" id="bgLocToggle" onchange="toggleBackgroundLocation(this.checked)">
@@ -2978,11 +3022,9 @@
                 </label>
               </div>
             </div>
-            <!-- Debug test button - only visible at ?debug=1 -->
             <div class="user-dropdown-sep" id="geofenceTestSep" style="display:none"></div>
-            <button class="user-dropdown-item" id="geofenceTestBtn" style="display:none;color:#f59e0b" onclick="testGeofenceNow()">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4"/><path d="M5 7l1.5 1.5L9.5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Test Geofence Now
+            <button class="user-dropdown-item" id="geofenceTestBtn" style="display:none" onclick="testGeofenceNow()">
+              📡 Test geofence
             </button>
             <div class="user-dropdown-sep"></div>
             <button class="user-dropdown-item danger" onclick="logout()">
@@ -3016,35 +3058,13 @@
     <button class="filter-chip active" data-filter="category" data-value="all" onclick="setFilter('category','all',this)">All tags</button>
     <button class="filter-chip" data-filter="category" data-value="personal" onclick="setFilter('category','personal',this)">Personal</button>
     <button class="filter-chip" data-filter="category" data-value="professional" onclick="setFilter('category','professional',this)">Professional</button>
-    <div class="filter-separator"></div>
-    <button class="filter-chip active" data-filter="status" data-value="all" onclick="setFilter('status','all',this)">Any status</button>
-    <button class="filter-chip" data-filter="status" data-value="not_started" onclick="setFilter('status','not_started',this)">Not started</button>
-    <button class="filter-chip" data-filter="status" data-value="in_progress" onclick="setFilter('status','in_progress',this)">In progress</button>
-    <button class="filter-chip" data-filter="status" data-value="on_hold" onclick="setFilter('status','on_hold',this)">On hold</button>
-    <button class="filter-chip" data-filter="status" data-value="completed" onclick="setFilter('status','completed',this)">Completed</button>
-    <div class="filter-separator"></div>
-    <button class="filter-chip active" data-filter="owner" data-value="all" onclick="setFilter('owner','all',this)">All tasks</button>
-    <button class="filter-chip" data-filter="owner" data-value="mine" onclick="setFilter('owner','mine',this)">My tasks</button>
-    <button class="filter-chip" data-filter="owner" data-value="assigned" onclick="setFilter('owner','assigned',this)">Assigned to me</button>
   </div>
 
-  <!-- Stats sidebar (left, wide screens only) -->
+  <!-- Stats sidebar (visible on wide screens via CSS) -->
   <div class="stats-sidebar" id="statsSidebar"></div>
 
   <!-- Main content -->
   <main class="main" id="app"></main>
-
-  <!-- Quote of the Day -->
-  <div class="qotd-container" id="qotd"></div>
-
-  <!-- H badge with aarathi -->
-  <div class="h-badge" title="Hari Om">
-    <div class="h-badge-letter">
-      <span class="h-badge-flame">&#128293;</span>
-      H
-    </div>
-    <span class="h-badge-diya">&#128367;&#65039;</span>
-  </div>
 
   <!-- Add / Edit modal -->
   <div class="modal-overlay" id="taskModal">
@@ -3083,37 +3103,41 @@
           <div class="form-group">
             <label>Status</label>
             <div class="segmented status">
-              <label><input type="radio" name="status" value="not_started" checked><span>Not started</span></label>
-              <label><input type="radio" name="status" value="in_progress"><span>In progress</span></label>
-              <label><input type="radio" name="status" value="on_hold"><span>On hold</span></label>
-              <label><input type="radio" name="status" value="completed"><span>Completed</span></label>
+              <label><input type="radio" name="status" value="not_started" checked onchange="document.getElementById('progressGroup').style.display='none'"><span>Not started</span></label>
+              <label><input type="radio" name="status" value="in_progress" onchange="document.getElementById('progressGroup').style.display=''"><span>In progress</span></label>
+              <label><input type="radio" name="status" value="on_hold" onchange="document.getElementById('progressGroup').style.display='none'"><span>On hold</span></label>
+              <label><input type="radio" name="status" value="completed" onchange="document.getElementById('progressGroup').style.display='none'"><span>Completed</span></label>
             </div>
+          </div>
+          <div class="form-group" id="progressGroup" style="display:none">
+            <label for="taskProgress">Progress: <strong><span id="progressVal">0</span>%</strong></label>
+            <input type="range" id="taskProgress" min="0" max="100" value="0" style="width:100%" oninput="document.getElementById('progressVal').innerText = this.value">
+          </div>
+          <div class="form-group">
+            <label for="taskEta">ETA / Target date</label>
+            <input type="date" id="taskEta" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>Repeat / Routine type</label>
+            <select id="taskRoutine" class="form-input form-select">
+              <option value="none">None (one-time task)</option>
+              <option value="daily">🔁 Daily</option>
+              <option value="weekly">🔁 Weekly</option>
+              <option value="monthly">🔁 Monthly</option>
+            </select>
+          </div>
+          <div class="form-group" id="locationGroup">
+            <label>Location (optional)</label>
+            <div class="location-field-wrap">
+              <input type="text" id="taskLocation" class="form-input" placeholder="e.g. Office, Market" autocomplete="off">
+              <button type="button" class="location-suggest-btn" onclick="openMapPicker()">📍 Map</button>
+            </div>
+            <input type="hidden" id="taskLocationLat">
+            <input type="hidden" id="taskLocationLng">
           </div>
           <div class="form-group">
             <label>Assign to</label>
             <div class="assign-picker" id="assignPicker"></div>
-          </div>
-          <div class="form-group" id="locationGroup">
-            <label>Location <span style="font-weight:400;color:var(--text-muted);font-size:0.75rem">(optional)</span></label>
-            <div class="location-field-wrap">
-              <input type="text" id="taskLocation" class="form-input" placeholder="e.g. Pharmacy, Office, Gym" autocomplete="off">
-              <button type="button" class="location-suggest-btn" onclick="suggestLocation()" id="locationSuggestBtn">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v2M6 9v2M1 6h2M9 6h2M2.8 2.8l1.4 1.4M7.8 7.8l1.4 1.4M9.2 2.8L7.8 4.2M4.2 7.8L2.8 9.2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-                AI suggest
-              </button>
-              <button type="button" class="location-suggest-btn" onclick="openMapPicker()" title="Pick location on map" style="color:var(--accent)">
-                <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1C4.6 1 3 2.6 3 4.5c0 3 3.5 6.5 3.5 6.5S10 7.5 10 4.5C10 2.6 8.4 1 6.5 1z" stroke="currentColor" stroke-width="1.3" fill="none"/><circle cx="6.5" cy="4.5" r="1.5" fill="currentColor"/></svg>
-                Map
-              </button>
-            </div>
-            <input type="hidden" id="taskLocationLat" value="">
-            <input type="hidden" id="taskLocationLng" value="">
-            <div id="locationPinWrap" style="margin-top:6px;display:none">
-              <button type="button" class="location-suggest-btn" id="locationPinBtn" onclick="pinCurrentLocation()">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1C4.3 1 3 2.3 3 4c0 2.5 3 5 3 5s3-2.5 3-5c0-1.7-1.3-3-3-3z" stroke="currentColor" stroke-width="1" fill="none"/><circle cx="6" cy="4" r="1" fill="currentColor"/></svg>
-                Pin current location
-              </button>
-            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -3124,78 +3148,43 @@
     </div>
   </div>
 
-  <!-- Map Picker Modal -->
-  <div id="mapPickerModal" role="dialog" aria-modal="true" aria-label="Pick location on map">
-    <div id="mapPickerBox">
-      <div id="mapPickerHeader">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <h3>📍 Pick Location on Map</h3>
-          <button type="button" onclick="closeMapPicker()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);line-height:1">&times;</button>
-        </div>
-        <div id="mapSearchWrap">
-          <input type="text" id="mapSearchInput" placeholder="Search a place..." onkeydown="if(event.key==='Enter'){event.preventDefault();mapSearch();}">
-          <button type="button" class="map-action-btn" onclick="mapSearch()">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="5" cy="5" r="3.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 8l2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            Search
-          </button>
-          <button type="button" class="map-action-btn" onclick="mapUseCurrentLocation()" title="Use my GPS location">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="2" fill="currentColor"/><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M6 1v1M6 10v1M1 6h1M10 6h1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-            My location
-          </button>
-        </div>
-      </div>
-      <div id="mapContainer">
-        <div id="leafletMap"></div>
-      </div>
-      <div id="mapPinPreview">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;color:var(--accent)"><path d="M7 1C4.8 1 3 2.8 3 5c0 3 4 7 4 7s4-4 4-7c0-2.2-1.8-4-4-4z" stroke="currentColor" stroke-width="1.3" fill="none"/><circle cx="7" cy="5" r="1.5" fill="currentColor"/></svg>
-        <span class="pin-addr" id="mapPinAddr">Tap on the map to drop a pin</span>
-      </div>
-      <div id="mapPickerFooter">
-        <button type="button" class="btn" onclick="closeMapPicker()">Cancel</button>
-        <button type="button" class="btn btn-primary" id="mapConfirmBtn" onclick="confirmMapLocation()" disabled>Confirm Location</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Confirm dialog -->
-  <div class="modal-overlay" id="confirmModal">
-    <div class="modal" style="max-width:360px">
-      <div class="confirm-body">
-        <p id="confirmMessage">Delete this task?</p>
-        <div class="confirm-actions">
-          <button class="btn" onclick="closeConfirm()">Cancel</button>
-          <button class="btn btn-danger" id="confirmBtn" onclick="confirmAction()">Delete</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Share modal -->
-  <div class="modal-overlay" id="shareModal">
-    <div class="modal" style="max-width:400px">
+  <!-- Logs Modal -->
+  <div class="modal-overlay" id="logsModal">
+    <div class="modal">
       <div class="modal-header">
-        <h2>Share task</h2>
-        <button class="btn-icon" onclick="closeShareModal()" aria-label="Close">
+        <h2>Task History</h2>
+        <button class="btn-icon" onclick="document.getElementById('logsModal').classList.remove('open')" aria-label="Close">
           <svg width="18" height="18" viewBox="0 0 18 18"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         </button>
       </div>
       <div class="modal-body">
-        <div class="share-user-list" id="shareUserList"></div>
+        <ul id="logsList" style="list-style:none; padding:0; margin:0; font-size:0.9rem;">
+          <li style="color:var(--text-muted)">Loading...</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="document.getElementById('logsModal').classList.remove('open')">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- Manage users modal -->
-  <div class="modal-overlay" id="manageUsersModal">
-    <div class="modal" style="max-width:440px">
-      <div class="modal-header">
-        <h2>Manage users</h2>
-        <button class="btn-icon" onclick="closeManageUsers()" aria-label="Close">
-          <svg width="18" height="18" viewBox="0 0 18 18"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        </button>
+  <!-- Map Picker Modal -->
+  <div id="mapPickerModal">
+    <div id="mapPickerBox">
+      <div id="mapPickerHeader">
+        <h3>📍 Pick a location</h3>
+        <div id="mapSearchWrap">
+          <input type="text" id="mapSearchInput" placeholder="Search location..." onkeydown="if(event.key==='Enter')mapSearch()">
+          <button class="map-action-btn" onclick="mapSearch()">Search</button>
+          <button class="map-action-btn" onclick="mapUseCurrentLocation()">📍 My location</button>
+        </div>
       </div>
-      <div class="modal-body" id="manageUsersBody"></div>
+      <div id="mapContainer"><div id="leafletMap"></div></div>
+      <div id="mapPinPreview"><span class="pin-addr" id="mapPinAddr">Tap the map to drop a pin</span></div>
+      <div id="mapPickerFooter">
+        <button class="btn" onclick="closeMapPicker()">Cancel</button>
+        <button class="btn btn-primary" id="mapConfirmBtn" onclick="confirmMapLocation()" disabled>Use this location</button>
+      </div>
     </div>
   </div>
 
@@ -3214,2838 +3203,694 @@
       if (authToken) headers['Authorization'] = 'Bearer ' + authToken;
       const res = await fetch(API_BASE + path, { ...options, headers });
       if (res.status === 401) {
-        const err = await res.json().catch(() => ({ error: 'Request failed' }));
-        // Only clear session for non-auth endpoints (expired token)
-        if (!path.startsWith('/auth/login') && !path.startsWith('/auth/signup')) {
-          authToken = null;
-          localStorage.removeItem('reminder_app_token');
-          localStorage.removeItem('reminder_app_user');
-          showAuth();
-        }
-        throw new Error(err.error || 'Invalid credentials');
+        authToken = null; localStorage.removeItem('reminder_app_token'); showAuth();
+        throw new Error('Unauthorized');
       }
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Request failed' }));
-        throw new Error(err.error || 'Request failed');
-      }
+      if (!res.ok) throw new Error('Request failed');
       return res.json();
     }
 
-    async function loadAppData() {
-      const [tasksData, usersData] = await Promise.all([
-        api('/tasks'),
-        api('/users')
-      ]);
-      tasks = tasksData;
-      users = usersData;
+    // ── Constants ──
+    const STATUS_LABELS = { not_started: 'Not started', in_progress: 'In progress', on_hold: 'On hold', completed: 'Completed' };
+    const STATUS_CYCLE  = ['not_started', 'in_progress', 'on_hold', 'completed'];
+    const DAY_NAMES   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const DAY_SHORT   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+    // ── State ──
+    let tasks = [], users = [], currentUser = null;
+    let currentView  = 'all';
+    let editingId    = null;
+    let weekOffset   = 0;
+    let calendarYear, calendarMonth;
+    let activeFilters = { priority: 'all', category: 'all', day: 'all' };
+
+    // ── Utils ──
+    function escapeHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function todayStr()   { return new Date().toISOString().slice(0,10); }
+    function toDateStr(d) { return d.toISOString().slice(0,10); }
+    function formatShort(ds) {
+      if (!ds) return '';
+      const d = new Date(ds + 'T00:00:00');
+      return DAY_SHORT[d.getDay()] + ' ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()].slice(0,3);
+    }
+    function formatFull(ds) {
+      if (!ds) return '';
+      const d = new Date(ds + 'T00:00:00');
+      return DAY_NAMES[d.getDay()] + ', ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear();
+    }
+    function daysFromToday(ds) {
+      const t = new Date(); t.setHours(0,0,0,0);
+      return Math.round((new Date(ds+'T00:00:00') - t) / 86400000);
+    }
+    function avatarColor(name) {
+      const cols = ['#4f6ef7','#8b5cf6','#0ea5e9','#22c55e','#f59e0b','#ef4444','#ec4899'];
+      let h = 0; for (const c of (name||'?')) h = c.charCodeAt(0) + h * 31;
+      return cols[Math.abs(h) % cols.length];
+    }
+    function initials(name) { return (name||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
+    function isNativeApp()   { return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); }
+    function getCapPlugin(n) { return window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins[n]; }
+
+    function etaStatus(task) {
+      if (!task.etaDate || task.status === 'completed') return null;
+      const today = todayStr();
+      const days  = daysFromToday(task.etaDate);
+      if (task.etaDate < today) return { label: 'ETA overdue', cls: 'eta-overdue', icon: '🔴' };
+      if (days <= 3)            return { label: `ETA in ${days}d`, cls: 'eta-at-risk', icon: '🟠' };
+      return                           { label: formatShort(task.etaDate), cls: 'eta-ok', icon: '⏳' };
     }
 
-    // ── User system ──
-    const AVATAR_COLORS = ['#4f6ef7','#8b5cf6','#0ea5e9','#22c55e','#ef4444','#f59e0b','#ec4899','#6366f1','#14b8a6','#f97316'];
-
-    function getUserById(id) { return users.find(u => u.id == id) || null; }
-    function getUserInitials(user) {
-      if (!user) return '?';
-      const parts = user.name.trim().split(/\s+/);
-      return parts.length >= 2 ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase() : parts[0].slice(0,2).toUpperCase();
-    }
-    function getUserColor(user) {
-      if (!user) return AVATAR_COLORS[0];
-      return user.color || AVATAR_COLORS[0];
-    }
-
-    let users = [];
-    let currentUser = null;
-    let authMode = 'signup'; // 'signup' or 'login'
-    const ADMIN_EMAIL = 'grvivek17@gmail.com';
-    function isAdmin() { return currentUser && currentUser.email && currentUser.email.toLowerCase() === ADMIN_EMAIL; }
-
+    // ── Auth / Init ──
     async function initAuth() {
       if (!authToken) { showAuth(); return; }
       try {
         currentUser = await api('/auth/me');
-        await loadAppData();
+        [tasks, users] = await Promise.all([api('/tasks'), api('/users')]);
         showApp();
-      } catch {
-        showAuth();
-      }
+      } catch { showAuth(); }
     }
 
     function showAuth() {
       document.getElementById('authScreen').style.display = '';
       document.getElementById('appWrapper').style.display = 'none';
-      // Default to login if users exist, signup if no users
-      if (users.length > 0) {
-        authMode = 'login';
-      } else {
-        authMode = 'signup';
-      }
-      updateAuthUI();
     }
 
     function showApp() {
       document.getElementById('authScreen').style.display = 'none';
       document.getElementById('appWrapper').style.display = '';
-      updateHeaderUser();
-      // Reset briefing dismissed state so it shows on fresh app load
-      briefingDismissedToday = false;
-      briefingError = false;
+      const av = document.getElementById('headerAvatar');
+      if (av && currentUser) { av.style.background = avatarColor(currentUser.name); av.textContent = initials(currentUser.name); }
+      const nm = document.getElementById('dropdownUserName');  if (nm) nm.textContent = currentUser?.name || '';
+      const em = document.getElementById('dropdownUserEmail'); if (em) em.textContent = currentUser?.email || '';
       render();
       initNotifications();
-      initBriefing();
       initNativeLocation();
     }
 
-    function toggleAuthMode() {
-      authMode = authMode === 'signup' ? 'login' : 'signup';
-      updateAuthUI();
-    }
-
-    function updateAuthUI() {
-      const isSignup = authMode === 'signup';
-      document.getElementById('authTitle').textContent = isSignup ? 'Sign up' : 'Log in';
-      document.getElementById('authSub').textContent = isSignup ? 'Create an account to get started' : 'Welcome back';
-      document.getElementById('authSubmitBtn').textContent = isSignup ? 'Create account' : 'Log in';
-      document.getElementById('authToggle').innerHTML = isSignup
-        ? 'Already have an account? <a onclick="toggleAuthMode()">Log in</a>'
-        : 'New here? <a onclick="toggleAuthMode()">Create account</a>';
-      document.getElementById('authName').parentElement.style.display = isSignup ? '' : 'none';
-      document.getElementById('authName').required = isSignup;
-      document.getElementById('authPassword').autocomplete = isSignup ? 'new-password' : 'current-password';
-      document.getElementById('authForm').reset();
-    }
-
-    async function handleAuth(e) {
-      e.preventDefault();
-      const email = document.getElementById('authEmail').value.trim();
-      const password = document.getElementById('authPassword').value;
-
-      try {
-        if (authMode === 'signup') {
-          const name = document.getElementById('authName').value.trim();
-          if (!name || !email || !password) return;
-          const data = await api('/auth/signup', {
-            method: 'POST',
-            body: JSON.stringify({ name, email, password })
-          });
-          authToken = data.token;
-          localStorage.setItem('reminder_app_token', data.token);
-          currentUser = data.user;
-          await loadAppData();
-          toast('Account created');
-          showApp();
-        } else {
-          if (!email || !password) return;
-          const data = await api('/auth/login', {
-            method: 'POST',
-            body: JSON.stringify({ email, password })
-          });
-          authToken = data.token;
-          localStorage.setItem('reminder_app_token', data.token);
-          currentUser = data.user;
-          await loadAppData();
-          toast('Welcome back, ' + data.user.name);
-          showApp();
-        }
-      } catch (err) {
-        toast(err.message || 'Something went wrong');
-      }
-    }
-
-    function logout() {
-      currentUser = null;
-      authToken = null;
-      localStorage.removeItem('reminder_app_token');
-      closeUserDropdown();
-      showAuth();
-    }
-
-    function updateHeaderUser() {
-      if (!currentUser) return;
-      const avatar = document.getElementById('headerAvatar');
-      avatar.textContent = getUserInitials(currentUser);
-      avatar.style.background = getUserColor(currentUser);
-      document.getElementById('dropdownUserName').textContent = currentUser.name;
-      document.getElementById('dropdownUserEmail').textContent = currentUser.email;
-    }
-
-    function toggleUserDropdown(e) {
-      e.stopPropagation();
-      document.getElementById('userDropdown').classList.toggle('open');
-    }
-    function closeUserDropdown() {
-      document.getElementById('userDropdown').classList.remove('open');
-    }
-    document.addEventListener('click', () => { closeUserDropdown(); closeNotificationPanel(); });
-
-    // ── Manage users modal ──
-    function openManageUsers() {
-      closeUserDropdown();
-      const body = document.getElementById('manageUsersBody');
-      body.innerHTML = users.map(u => `
-        <div class="share-user-row">
-          <div class="user-avatar" style="background:${u.color}">${getUserInitials(u)}</div>
-          <div class="share-user-info">
-            <div class="share-user-name">${escapeHtml(u.name)}${u.id === currentUser.id ? ' <span style="color:var(--accent);font-size:0.6875rem">(you)</span>' : ''}</div>
-            <div class="share-user-email">${escapeHtml(u.email)}</div>
-          </div>
-          ${u.id !== currentUser.id && isAdmin() ? `<button class="btn btn-sm btn-danger" onclick="removeUser('${u.id}')" style="border:1px solid var(--danger)">Remove</button>` : ''}
-        </div>
-      `).join('') || '<div class="empty-state"><p>No other users</p></div>';
-      document.getElementById('manageUsersModal').classList.add('open');
-    }
-    function closeManageUsers() {
-      document.getElementById('manageUsersModal').classList.remove('open');
-    }
-    async function removeUser(id) {
-      id = Number(id);
-      if (id === currentUser.id) return;
-      try {
-        await api('/auth/users/' + id, { method: 'DELETE' });
-        users = users.filter(u => u.id !== id);
-        // Remove user from in-memory task assignments
-        tasks.forEach(t => {
-          t.assignedTo = (t.assignedTo || []).filter(uid => uid !== id);
-        });
-        openManageUsers();
-        render();
-        toast('User removed');
-      } catch (err) {
-        toast(err.message || 'Failed to remove user');
-      }
-    }
-
-    // ── Share modal ──
-    let sharingTaskId = null;
-    function openShareModal(taskId) {
-      taskId = Number(taskId);
-      sharingTaskId = taskId;
-      const task = tasks.find(t => t.id == taskId);
-      if (!task) return;
-      const assignedSet = new Set(task.assignedTo || []);
-      const otherUsers = users.filter(u => u.id !== currentUser.id);
-      const list = document.getElementById('shareUserList');
-      if (otherUsers.length === 0) {
-        list.innerHTML = '<div class="empty-state"><p>No other users to share with. Create more accounts first.</p></div>';
-      } else {
-        list.innerHTML = otherUsers.map(u => {
-          const isAssigned = assignedSet.has(u.id);
-          return `<div class="share-user-row">
-            <div class="user-avatar sm" style="background:${u.color}">${getUserInitials(u)}</div>
-            <div class="share-user-info">
-              <div class="share-user-name">${escapeHtml(u.name)}</div>
-              <div class="share-user-email">${escapeHtml(u.email)}</div>
-            </div>
-            <button class="btn btn-sm ${isAssigned ? 'btn-primary' : ''}" style="${isAssigned ? 'border-color:var(--accent)' : ''}" onclick="toggleShareUser('${u.id}')">
-              ${isAssigned ? 'Assigned' : 'Assign'}
-            </button>
-          </div>`;
-        }).join('');
-      }
-      document.getElementById('shareModal').classList.add('open');
-    }
-    function closeShareModal() {
-      document.getElementById('shareModal').classList.remove('open');
-      sharingTaskId = null;
-    }
-    async function toggleShareUser(userId) {
-      userId = Number(userId);
-      const task = tasks.find(t => t.id == sharingTaskId);
-      if (!task) return;
-      if (!task.assignedTo) task.assignedTo = [];
-      const idx = task.assignedTo.indexOf(userId);
-      let newAssigned;
-      if (idx >= 0) {
-        newAssigned = task.assignedTo.filter(uid => uid !== userId);
-      } else {
-        newAssigned = [...task.assignedTo, userId];
-      }
-      try {
-        await api('/tasks/' + task.id + '/assign', {
-          method: 'POST',
-          body: JSON.stringify({ assignedTo: newAssigned })
-        });
-        task.assignedTo = newAssigned;
-        openShareModal(sharingTaskId); // refresh
-        render();
-        const user = getUserById(userId);
-        toast(idx >= 0 ? 'Unassigned from ' + (user?.name) : 'Assigned to ' + (user?.name));
-      } catch (err) {
-        toast(err.message || 'Failed to update assignment');
-      }
-    }
-
-    // ── Constants ──
-    const DAYS = [
-      { key: 'mon', label: 'Monday', weekend: false },
-      { key: 'tue', label: 'Tuesday', weekend: false },
-      { key: 'wed', label: 'Wednesday', weekend: false },
-      { key: 'thu', label: 'Thursday', weekend: false },
-      { key: 'fri', label: 'Friday', weekend: false },
-      { key: 'sat', label: 'Saturday', weekend: true },
-      { key: 'sun', label: 'Sunday', weekend: true },
-    ];
-    const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-    const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    const DAY_LABELS_SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-
-    const STATUSES = [
-      { key: 'not_started', label: 'Not started' },
-      { key: 'in_progress', label: 'In progress' },
-      { key: 'on_hold', label: 'On hold' },
-      { key: 'completed', label: 'Completed' },
-    ];
-    const STATUS_LABELS = { not_started: 'Not started', in_progress: 'In progress', on_hold: 'On hold', completed: 'Completed' };
-
-    // ── State ──
-    let tasks = [];
-    let editingId = null;
-    let pendingConfirm = null;
-    let currentView = 'all'; // 'all', 'week', 'calendar', 'progress', 'health', 'expense'
-    let calMonth = new Date().getMonth();
-    let calYear = new Date().getFullYear();
-    let selectedDate = null; // YYYY-MM-DD string when a calendar date is clicked
-    let allSort = 'date'; // 'date', 'priority', 'category', 'themes', 'location'
-    let progressWeekOffset = 0; // 0 = this week, -1 = last week, etc.
-    const filters = { day: 'all', priority: 'all', category: 'all', status: 'all', owner: 'all' };
-
-    // ── AI state ──
-    let themeCache = { hash: '', groups: [], loading: false };
-    let themeFetchTimer = null;
-    let briefingData = null; // { summary, workPlan, alerts, recommendations }
-    let briefingLoading = false;
-    let briefingError = false;
-    let briefingDismissedToday = localStorage.getItem('briefing_dismissed') === todayStr();
-    const BRIEFING_CACHE_KEY = 'reminder_briefing_cache';
-
-    // ── Holiday cache ──
-    let holidayCache = null;
-    const HOLIDAY_CACHE_KEY = 'reminder_holiday_cache';
-
-    // ── Weather state ──
-    let weatherData = null;
-    let weatherLoading = false;
-    let weatherError = null; // null | 'permission' | 'timeout' | 'network'
-    const WEATHER_CACHE_KEY = 'reminder_weather_cache';
-
-    // ── Helpers ──
-    function toDateStr(d) {
-      const yy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      return `${yy}-${mm}-${dd}`;
-    }
-    function todayStr() { return toDateStr(new Date()); }
-    function dayKeyFromDate(dateStr) {
-      const d = new Date(dateStr + 'T00:00:00');
-      return DAY_KEYS[d.getDay()];
-    }
-    function parseDateNice(dateStr) {
-      const d = new Date(dateStr + 'T00:00:00');
-      return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-    }
-    function formatShort(dateStr) {
-      const d = new Date(dateStr + 'T00:00:00');
-      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }
-
-    // ── Persistence (handled by backend API) ──
-    function getNextDateForDay(dayKey) {
-      const target = DAY_KEYS.indexOf(dayKey);
-      const now = new Date();
-      const curr = now.getDay();
-      let diff = target - curr;
-      if (diff < 0) diff += 7;
-      const d = new Date(now);
-      d.setDate(d.getDate() + diff);
-      return toDateStr(d);
-    }
-
-    function genId() {
-      return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-    }
-
-    // ── AI: helpers ──
-    function getTasksHash() {
-      const active = tasks.filter(t => t.status !== 'completed');
-      const str = active.map(t => `${t.id}:${t.text}:${t.status}`).join('|');
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        hash = ((hash << 5) - hash) + str.charCodeAt(i);
-        hash |= 0;
-      }
-      return String(hash);
-    }
-
-    function isNativeApp() {
-      return window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
-    }
-
-    // Get Capacitor plugin - use native bridge in APK, esm.sh fallback for web
-    function getCapPlugin(name) {
-      if (window.Capacitor && window.Capacitor.registerPlugin) {
-        return window.Capacitor.registerPlugin(name);
-      }
-      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins[name]) {
-        return window.Capacitor.Plugins[name];
-      }
-      return null;
-    }
-
-    // ── AI: Theme grouping ──
-    async function fetchThemeGroups() {
-      const active = tasks.filter(t => t.status !== 'completed');
-      if (active.length < 4) {
-        themeCache = { hash: getTasksHash(), groups: [], loading: false };
-        render();
-        return;
-      }
-      themeCache.loading = true;
-      render();
-      try {
-        const payload = active.map(t => ({ id: t.id, text: t.text, category: t.category, priority: t.priority }));
-        const result = await api('/ai/group-themes', {
-          method: 'POST',
-          body: JSON.stringify({ tasks: payload })
-        });
-        themeCache = { hash: getTasksHash(), groups: result.groups || [], loading: false };
-      } catch (err) {
-        console.error('Theme fetch error:', err);
-        themeCache = { hash: getTasksHash(), groups: [], loading: false };
-        toast('Could not group by theme');
-      }
-      render();
-    }
-
-    function scheduleThemeRefresh() {
-      if (allSort !== 'themes') return;
-      if (themeFetchTimer) clearTimeout(themeFetchTimer);
-      themeFetchTimer = setTimeout(() => fetchThemeGroups(), 3000);
-    }
-
-    // ── AI: Daily briefing ──
-    async function initBriefing() {
-      const today = todayStr();
-      // Start weather fetch in parallel (don't block briefing)
-      fetchWeather().then(() => render());
-      // Check localStorage cache
-      try {
-        const cached = JSON.parse(localStorage.getItem(BRIEFING_CACHE_KEY) || 'null');
-        if (cached && cached.date === today && cached.taskHash === getTasksHash()) {
-          briefingData = cached.briefing;
-          briefingLoading = false;
-          render();
-          return;
-        }
-      } catch {}
-      // Fetch new briefing
-      await fetchDailyBriefing();
-    }
-
-    // ── Weather ──
-    const WMO_WEATHER = {
-      0: { label: 'Clear sky', icon: '&#9728;&#65039;' },
-      1: { label: 'Mostly clear', icon: '&#127780;&#65039;' },
-      2: { label: 'Partly cloudy', icon: '&#9925;' },
-      3: { label: 'Overcast', icon: '&#9729;&#65039;' },
-      45: { label: 'Foggy', icon: '&#127787;&#65039;' },
-      48: { label: 'Fog (rime)', icon: '&#127787;&#65039;' },
-      51: { label: 'Light drizzle', icon: '&#127782;&#65039;' },
-      53: { label: 'Drizzle', icon: '&#127782;&#65039;' },
-      55: { label: 'Heavy drizzle', icon: '&#127782;&#65039;' },
-      61: { label: 'Light rain', icon: '&#127783;&#65039;' },
-      63: { label: 'Rain', icon: '&#127783;&#65039;' },
-      65: { label: 'Heavy rain', icon: '&#127783;&#65039;' },
-      66: { label: 'Freezing rain', icon: '&#127783;&#65039;' },
-      67: { label: 'Heavy freezing rain', icon: '&#127783;&#65039;' },
-      71: { label: 'Light snow', icon: '&#127784;&#65039;' },
-      73: { label: 'Snow', icon: '&#127784;&#65039;' },
-      75: { label: 'Heavy snow', icon: '&#127784;&#65039;' },
-      77: { label: 'Snow grains', icon: '&#127784;&#65039;' },
-      80: { label: 'Rain showers', icon: '&#127783;&#65039;' },
-      81: { label: 'Heavy showers', icon: '&#127783;&#65039;' },
-      82: { label: 'Violent showers', icon: '&#127783;&#65039;' },
-      85: { label: 'Snow showers', icon: '&#127784;&#65039;' },
-      86: { label: 'Heavy snow showers', icon: '&#127784;&#65039;' },
-      95: { label: 'Thunderstorm', icon: '&#9928;&#65039;' },
-      96: { label: 'Thunderstorm + hail', icon: '&#9928;&#65039;' },
-      99: { label: 'Thunderstorm + heavy hail', icon: '&#9928;&#65039;' }
-    };
-
-    function getWeatherInfo(code) {
-      return WMO_WEATHER[code] || { label: 'Unknown', icon: '&#127777;&#65039;' };
-    }
-
-    function isWeatherBad(code) {
-      return code >= 51; // drizzle, rain, snow, thunderstorm
-    }
-
-    async function fetchWeather(retryCount = 0) {
-      // Check cache (valid for 1 hour)
-      try {
-        const cached = JSON.parse(localStorage.getItem(WEATHER_CACHE_KEY) || 'null');
-        if (cached && (Date.now() - cached.ts) < 3600000) {
-          weatherData = cached.data;
-          weatherError = null;
-          return;
-        }
-      } catch {}
-
-      weatherLoading = true;
-      weatherError = null;
-      try {
-        let lat, lng;
-        if (isNativeApp()) {
-          // Use Capacitor Geolocation plugin on mobile
-          const Geolocation = getCapPlugin('Geolocation');
-          try { await Geolocation.requestPermissions(); } catch {}
-          const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: false, timeout: 15000 });
-          lat = pos.coords.latitude.toFixed(4);
-          lng = pos.coords.longitude.toFixed(4);
-        } else if (window.isSecureContext && navigator.geolocation) {
-          // Use browser geolocation only on HTTPS
-          const pos = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 15000, enableHighAccuracy: false });
-          });
-          lat = pos.coords.latitude.toFixed(4);
-          lng = pos.coords.longitude.toFixed(4);
-        } else {
-          // HTTP fallback: use IP-based geolocation
-          const geoResp = await fetch('https://ipapi.co/json/');
-          if (geoResp.ok) {
-            const geoData = await geoResp.json();
-            lat = parseFloat(geoData.latitude).toFixed(4);
-            lng = parseFloat(geoData.longitude).toFixed(4);
-          } else {
-            throw new Error('IP geolocation failed');
-          }
-        }
-
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=3`;
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error('Weather API error');
-        const data = await resp.json();
-
-        weatherData = {
-          current: {
-            temp: Math.round(data.current.temperature_2m),
-            code: data.current.weather_code,
-            humidity: data.current.relative_humidity_2m,
-            wind: Math.round(data.current.wind_speed_10m),
-            unit: data.current_units?.temperature_2m || '°C'
-          },
-          daily: data.daily.time.map((date, i) => ({
-            date,
-            code: data.daily.weather_code[i],
-            high: Math.round(data.daily.temperature_2m_max[i]),
-            low: Math.round(data.daily.temperature_2m_min[i]),
-            rainChance: data.daily.precipitation_probability_max[i]
-          }))
-        };
-        weatherError = null;
-        localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: weatherData }));
-      } catch (err) {
-        console.warn('Weather fetch failed:', err.message);
-        weatherData = null;
-        if (err.code === 1) weatherError = 'permission';
-        else if (err.code === 3) weatherError = 'timeout';
-        else weatherError = 'network';
-        // Auto-retry once for timeout/network errors
-        if (retryCount < 1 && weatherError !== 'permission') {
-          weatherLoading = false;
-          await new Promise(r => setTimeout(r, 2000));
-          return fetchWeather(retryCount + 1);
-        }
-      }
-      weatherLoading = false;
-    }
-
-    function getWeatherSummaryForAI() {
-      if (!weatherData) return '';
-      const cur = weatherData.current;
-      const info = getWeatherInfo(cur.code);
-      let summary = `Current weather: ${info.label}, ${cur.temp}${cur.unit}, humidity ${cur.humidity}%, wind ${cur.wind} km/h.`;
-      if (weatherData.daily && weatherData.daily.length > 0) {
-        const today = weatherData.daily[0];
-        summary += ` Today: high ${today.high}${cur.unit}, low ${today.low}${cur.unit}, ${today.rainChance}% chance of rain.`;
-      }
-      return summary;
-    }
-
-    async function fetchHolidayInfo(dateStr) {
-      const year = dateStr.slice(0, 4);
-      const cacheKey = HOLIDAY_CACHE_KEY + '_' + year;
-      try {
-        const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
-        if (cached && cached.year === year) {
-          holidayCache = cached.holidays;
-          const match = holidayCache.find(h => h.date === dateStr);
-          return match ? { isHoliday: true, name: match.localName || match.name } : { isHoliday: false, name: null };
-        }
-      } catch {}
-      try {
-        const resp = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/IN`);
-        if (resp.ok) {
-          const holidays = await resp.json();
-          holidayCache = holidays;
-          localStorage.setItem(cacheKey, JSON.stringify({ year, holidays }));
-          const match = holidays.find(h => h.date === dateStr);
-          return match ? { isHoliday: true, name: match.localName || match.name } : { isHoliday: false, name: null };
-        }
-      } catch (err) {
-        console.log('Holiday API error:', err.message);
-      }
-      return { isHoliday: false, name: null };
-    }
-
-    function getWeekTaskCounts(today) {
-      const d = new Date(today + 'T00:00:00');
-      const dayOfWeek = d.getDay();
-      const monday = new Date(d);
-      monday.setDate(d.getDate() - ((dayOfWeek + 6) % 7));
-      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      const counts = {};
-      for (let i = 0; i < 7; i++) {
-        const day = new Date(monday);
-        day.setDate(monday.getDate() + i);
-        const dateStr = day.toISOString().slice(0, 10);
-        const count = tasks.filter(t => t.date === dateStr && t.status !== 'completed').length;
-        counts[`${days[i]} (${dateStr})`] = count;
-      }
-      return counts;
-    }
-
-    async function fetchDailyBriefing() {
-      const today = todayStr();
-      const activeTasks = tasks.filter(t => t.status !== 'completed');
-      const completedTasks = tasks.filter(t => t.status === 'completed');
-      briefingLoading = true;
-      render();
-      try {
-        // Gather rich context
-        const overdueTasks = activeTasks
-          .filter(t => t.date && t.date < today)
-          .map(t => ({ text: t.text, priority: t.priority, category: t.category, date: t.date, location: t.locationText || null }));
-
-        const payload = activeTasks.map(t => ({
-          text: t.text, priority: t.priority, category: t.category, status: t.status,
-          date: t.date || null, location: t.locationText || null
-        }));
-
-        const d = new Date(today + 'T00:00:00');
-        const dayNum = d.getDay();
-        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        const isWeekend = dayNum === 0 || dayNum === 6;
-
-        // Fetch holiday info (non-blocking, with fallback)
-        let holidayInfo = { isHoliday: false, name: null };
-        try { holidayInfo = await fetchHolidayInfo(today); } catch {}
-
-        const weekTasks = getWeekTaskCounts(today);
-        const weather = getWeatherSummaryForAI();
-
-        const result = await api('/ai/daily-briefing', {
-          method: 'POST',
-          body: JSON.stringify({
-            tasks: payload,
-            today,
-            weather,
-            overdueTasks,
-            completedCount: completedTasks.length,
-            totalCount: tasks.length,
-            weekTasks,
-            isWeekend,
-            isHoliday: holidayInfo.isHoliday,
-            holidayName: holidayInfo.name,
-            dayOfWeek: dayNames[dayNum]
-          })
-        });
-
-        briefingData = {
-          summary: result.summary || '',
-          workPlan: result.workPlan || [],
-          alerts: result.alerts || [],
-          recommendations: result.recommendations || []
-        };
-        briefingLoading = false;
-        briefingError = false;
-        briefingDismissedToday = false;
-        // Cache
-        localStorage.setItem(BRIEFING_CACHE_KEY, JSON.stringify({
-          date: today, briefing: briefingData, taskHash: getTasksHash()
-        }));
-        localStorage.removeItem('briefing_dismissed');
-      } catch (err) {
-        console.error('Briefing error:', err);
-        briefingData = null;
-        briefingLoading = false;
-        briefingError = true;
-      }
-      render();
-    }
-
-    function dismissBriefing() {
-      briefingDismissedToday = true;
-      localStorage.setItem('briefing_dismissed', todayStr());
-      render();
-    }
-
-    function refreshBriefing() {
-      fetchDailyBriefing();
-    }
-
-    function renderWeatherHtml() {
-      if (weatherLoading) {
-        return `<div class="weather-strip weather-strip--muted">
-          <span class="weather-icon">&#127777;&#65039;</span>
-          <span class="weather-details">Loading weather...</span>
-        </div>`;
-      }
-      if (weatherError) {
-        const msgs = { permission: 'Location access needed', timeout: 'Location timed out', network: 'Weather unavailable' };
-        return `<div class="weather-strip weather-strip--muted">
-          <span class="weather-icon">&#127777;&#65039;</span>
-          <span class="weather-details">${msgs[weatherError] || 'Weather unavailable'}</span>
-          <button class="briefing-refresh" onclick="retryWeather()" style="margin-left:auto">Retry</button>
-        </div>`;
-      }
-      if (!weatherData) return '';
-      const cur = weatherData.current;
-      const info = getWeatherInfo(cur.code);
-      const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-      let forecastHtml = '';
-      if (weatherData.daily && weatherData.daily.length > 1) {
-        forecastHtml = '<div class="weather-forecast">' +
-          weatherData.daily.slice(1).map(d => {
-            const dInfo = getWeatherInfo(d.code);
-            const dt = new Date(d.date + 'T00:00:00');
-            return `<div class="weather-day">
-              <span class="weather-icon">${dInfo.icon}</span>
-              <div>${DAYS_SHORT[dt.getDay()]}</div>
-              <div>${d.high}/${d.low}</div>
-              ${d.rainChance > 20 ? `<div class="rain-chance">${d.rainChance}%</div>` : ''}
-            </div>`;
-          }).join('') + '</div>';
-      }
-      const todayDaily = weatherData.daily?.[0];
-      const rainWarn = todayDaily && todayDaily.rainChance > 40
-        ? `<span class="weather-bad-tag">${todayDaily.rainChance}% rain</span>` : '';
-      return `<div class="weather-strip">
-        <div class="weather-now">
-          <span class="weather-icon">${info.icon}</span>
-          ${cur.temp}${cur.unit}${rainWarn}
-        </div>
-        <div class="weather-details">
-          ${info.label}<br>
-          Wind ${cur.wind} km/h &middot; Humidity ${cur.humidity}%
-        </div>
-        ${forecastHtml}
-      </div>`;
-    }
-
-    function retryWeather() {
-      weatherError = null;
-      weatherData = null;
-      localStorage.removeItem(WEATHER_CACHE_KEY);
-      fetchWeather().then(() => render());
-    }
-
-    let briefingExpanded = true;
-
-    function renderBriefingHtml() {
-      try {
-      if (briefingDismissedToday) return '';
-      const weatherHtml = renderWeatherHtml();
-      const labelSvg = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.8 2.8l1.4 1.4M9.8 9.8l1.4 1.4M11.2 2.8l-1.4 1.4M4.2 9.8l-1.4 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
-
-      if (briefingLoading) {
-        return `<div class="briefing-card">
-          ${weatherHtml}
-          <div class="briefing-label">${labelSvg} Smart Briefing</div>
-          <div class="briefing-loading">Analyzing tasks, calendar & weather...</div>
-        </div>`;
-      }
-
-      if (!briefingData && !weatherHtml && !briefingError) return '';
-
-      if (!briefingData && briefingError) {
-        return `<div class="briefing-card">
-          <button class="briefing-dismiss" onclick="dismissBriefing()" aria-label="Dismiss">
-            <svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </button>
-          ${weatherHtml}
-          <div class="briefing-label">${labelSvg} Smart Briefing</div>
-          <div class="briefing-text" style="color:var(--text-muted);font-style:italic">Could not generate briefing. Tap refresh to retry.</div>
-          <div class="briefing-actions">
-            <button class="briefing-refresh" onclick="refreshBriefing()">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6a5 5 0 019-3M11 6a5 5 0 01-9 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M10 1v3h-3M2 11V8h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Refresh
-            </button>
-          </div>
-        </div>`;
-      }
-
-      if (!briefingData) {
-        if (weatherHtml) {
-          return `<div class="briefing-card">
-            <button class="briefing-dismiss" onclick="dismissBriefing()" aria-label="Dismiss">
-              <svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            </button>
-            ${weatherHtml}
-          </div>`;
-        }
-        return '';
-      }
-
-      // Build structured briefing
-      const b = briefingData;
-      let html = `<div class="briefing-card">
-        <button class="briefing-dismiss" onclick="dismissBriefing()" aria-label="Dismiss">
-          <svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 3l8 8M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        </button>
-        ${weatherHtml}
-        <div class="briefing-label">${labelSvg} Smart Briefing</div>`;
-
-      // Summary with marquee
-      if (b.summary) {
-        const isLong = b.summary.length > 60;
-        const sep = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-        const scrollText = isLong
-          ? `${escapeHtml(b.summary)}${sep}${escapeHtml(b.summary)}${sep}`
-          : escapeHtml(b.summary);
-        html += `<div class="briefing-summary${isLong ? '' : ' briefing-summary--static'}">
-          <span class="briefing-marquee">${scrollText}</span>
-        </div>`;
-      }
-
-      // Alerts
-      if (b.alerts && b.alerts.length > 0) {
-        html += `<div class="briefing-section">
-          <div class="briefing-section-title">
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1L1 9h8L5 1z" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M5 4v2M5 7.5v.01" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
-            Alerts
-          </div>`;
-        for (const alert of b.alerts) {
-          html += `<div class="briefing-alert">
-            <span class="briefing-alert-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M5 3v2.5M5 7v.01" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg></span>
-            ${escapeHtml(alert)}
-          </div>`;
-        }
-        html += '</div>';
-      }
-
-      // Collapsible detail sections
-      const hasDetails = (b.workPlan && b.workPlan.length > 0) || (b.recommendations && b.recommendations.length > 0);
-      if (hasDetails) {
-        html += `<button class="briefing-expand-btn" onclick="toggleBriefingExpand()">
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="transform:rotate(${briefingExpanded ? '90' : '0'}deg);transition:transform 0.2s"><path d="M3 1l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          ${briefingExpanded ? 'Hide details' : 'Show work plan & tips'}
-        </button>`;
-      }
-
-      if (hasDetails && briefingExpanded) {
-        // Work Plan
-        if (b.workPlan && b.workPlan.length > 0) {
-          html += `<div class="briefing-section">
-            <div class="briefing-section-title">
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="1" y="1" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M3 5l1.5 1.5L7 4" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Today's Plan
-            </div>`;
-          b.workPlan.forEach((item, i) => {
-            html += `<div class="briefing-plan-item">
-              <div class="briefing-plan-num">${i + 1}</div>
-              <div class="briefing-plan-body">
-                <div class="briefing-plan-task">${escapeHtml(item.task || '')}</div>
-                <div class="briefing-plan-meta">
-                  ${item.timeHint ? `<span class="briefing-plan-time">${escapeHtml(item.timeHint)}</span>` : ''}
-                  ${item.why ? `<span class="briefing-plan-why">${escapeHtml(item.why)}</span>` : ''}
-                </div>
-              </div>
-            </div>`;
-          });
-          html += '</div>';
-        }
-
-        // Recommendations
-        if (b.recommendations && b.recommendations.length > 0) {
-          html += `<div class="briefing-section">
-            <div class="briefing-section-title">
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="4" r="3" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M4 7v1.5a1 1 0 002 0V7" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
-              Smart Tips
-            </div>`;
-          for (const rec of b.recommendations) {
-            html += `<div class="briefing-rec">
-              <span class="briefing-rec-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 5l3 3 5-6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-              ${escapeHtml(rec)}
-            </div>`;
-          }
-          html += '</div>';
-        }
-      }
-
-      // Actions
-      html += `<div class="briefing-actions">
-          <button class="briefing-refresh" onclick="refreshBriefing()">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6a5 5 0 019-3M11 6a5 5 0 01-9 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M10 1v3h-3M2 11V8h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Refresh
-          </button>
-        </div>
-      </div>`;
-
-      return html;
-      } catch (e) {
-        console.error('Briefing render error:', e);
-        return `<div class="briefing-card"><div class="briefing-label">Smart Briefing</div><div class="briefing-text" style="color:var(--danger)">Render error: ${e.message}</div></div>`;
-      }
-    }
-
-    function toggleBriefingExpand() {
-      briefingExpanded = !briefingExpanded;
-      render();
-    }
-
-    // ── AI: Location suggest ──
-    async function suggestLocation() {
-      const textEl = document.getElementById('taskText');
-      const locEl = document.getElementById('taskLocation');
-      const btn = document.getElementById('locationSuggestBtn');
-      const text = textEl.value.trim();
-      if (!text) { toast('Enter a task description first'); return; }
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner" style="width:12px;height:12px;border-width:1.5px;margin:0"></span> Thinking...';
-      try {
-        const result = await api('/ai/infer-location', {
-          method: 'POST',
-          body: JSON.stringify({ text })
-        });
-        if (result.location) {
-          locEl.value = result.location;
-          toast('Location suggested: ' + result.location);
-        } else {
-          toast('No location inferred for this task');
-        }
-      } catch (err) {
-        toast('Could not suggest location');
-      }
-      btn.disabled = false;
-      btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v2M6 9v2M1 6h2M9 6h2M2.8 2.8l1.4 1.4M7.8 7.8l1.4 1.4M9.2 2.8L7.8 4.2M4.2 7.8L2.8 9.2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg> AI suggest';
-    }
-
-    // ── View switching ──
+    // ── View / Filter ──
     function switchView(view) {
       currentView = view;
-      document.querySelectorAll('#viewToggle button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
-      // Day filter chips only relevant in week view
-      document.getElementById('dayFilters').style.display = view === 'week' ? '' : 'none';
-      // Hide filters entirely on health/expense views
-      document.getElementById('filters').style.display = (view === 'health' || view === 'expense') ? 'none' : '';
+      document.querySelectorAll('.view-toggle button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+      const df = document.getElementById('dayFilters');
+      if (df) df.style.display = view === 'week' ? '' : 'none';
       render();
     }
 
-    // ── Filters ──
-    function setFilter(type, value, el) {
-      filters[type] = value;
-      document.querySelectorAll(`.filter-chip[data-filter="${type}"]`).forEach(c => c.classList.remove('active'));
-      el.classList.add('active');
+    function setFilter(type, value, btn) {
+      activeFilters[type] = value;
+      document.querySelectorAll(`.filter-chip[data-filter="${type}"]`).forEach(c => c.classList.toggle('active', c.dataset.value === value));
       render();
     }
 
-    function matchesFilters(task) {
-      if (currentView === 'week' && filters.day !== 'all') {
-        const taskDay = dayKeyFromDate(task.date);
-        if (taskDay !== filters.day) return false;
-      }
-      if (filters.priority !== 'all' && task.priority !== filters.priority) return false;
-      if (filters.category !== 'all' && task.category !== filters.category) return false;
-      if (filters.status !== 'all' && task.status !== filters.status) return false;
-      if (filters.owner === 'mine' && task.createdBy != currentUser?.id) return false;
-      if (filters.owner === 'assigned' && !(task.assignedTo || []).some(uid => uid == currentUser?.id)) return false;
-      return true;
+    function applyFilters(list) {
+      return list.filter(t => {
+        if (activeFilters.priority !== 'all' && t.priority !== activeFilters.priority) return false;
+        if (activeFilters.category !== 'all' && t.category !== activeFilters.category) return false;
+        return true;
+      });
     }
 
-    // ── Quote of the Day ──
-    const QUOTES = [
-      { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
-      { text: "It always seems impossible until it's done.", author: "Nelson Mandela" },
-      { text: "Do what you can, with what you have, where you are.", author: "Theodore Roosevelt" },
-      { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
-      { text: "Start where you are. Use what you have. Do what you can.", author: "Arthur Ashe" },
-      { text: "Small daily improvements over time lead to stunning results.", author: "Robin Sharma" },
-      { text: "Focus on being productive instead of busy.", author: "Tim Ferriss" },
-      { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
-      { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
-      { text: "The best time to plant a tree was 20 years ago. The second best time is now.", author: "Chinese Proverb" },
-      { text: "Action is the foundational key to all success.", author: "Pablo Picasso" },
-      { text: "What you do today can improve all your tomorrows.", author: "Ralph Marston" },
-      { text: "Either you run the day, or the day runs you.", author: "Jim Rohn" },
-      { text: "Productivity is never an accident. It is always the result of intelligent effort.", author: "Paul J. Meyer" },
-      { text: "The way to get started is to quit talking and begin doing.", author: "Walt Disney" },
-      { text: "Your future is created by what you do today, not tomorrow.", author: "Robert Kiyosaki" },
-      { text: "Amateurs sit and wait for inspiration, the rest of us just get up and go to work.", author: "Stephen King" },
-      { text: "Success is the sum of small efforts repeated day in and day out.", author: "Robert Collier" },
-      { text: "One task at a time. That's the secret.", author: "Gary Keller" },
-      { text: "Done is better than perfect.", author: "Sheryl Sandberg" },
-      { text: "If you want something you've never had, you must do something you've never done.", author: "Thomas Jefferson" },
-      { text: "A year from now you may wish you had started today.", author: "Karen Lamb" },
-      { text: "The harder you work for something, the greater you'll feel when you achieve it.", author: "Anonymous" },
-      { text: "Dream big. Start small. Act now.", author: "Robin Sharma" },
-      { text: "Progress, not perfection.", author: "Anonymous" },
-      { text: "You are never too old to set another goal or to dream a new dream.", author: "C.S. Lewis" },
-      { text: "Discipline is choosing between what you want now and what you want most.", author: "Abraham Lincoln" },
-      { text: "Success usually comes to those who are too busy to be looking for it.", author: "Henry David Thoreau" },
-      { text: "Don't be afraid to give up the good to go for the great.", author: "John D. Rockefeller" },
-      { text: "Be so good they can't ignore you.", author: "Steve Martin" },
-      { text: "The only limit to our realization of tomorrow will be our doubts of today.", author: "Franklin D. Roosevelt" }
-    ];
+    // ── Component builders ──
+    function progressBarHtml(task) {
+      if (task.status !== 'in_progress') return '';
+      const pct = task.progress || 0;
+      return `<div class="task-progress-wrap"><div class="task-progress-bar"><div class="task-progress-fill" style="width:${pct}%"></div></div><span class="task-progress-text">${pct}%</span></div>`;
+    }
 
-    function getDailyQuote() {
+    function routineBadgeHtml(task) {
+      if (!task.routineType || task.routineType === 'none') return '';
+      const lbl = { daily:'🔁 Daily', weekly:'🔁 Weekly', monthly:'🔁 Monthly' };
+      return `<span class="routine-badge">${lbl[task.routineType] || task.routineType}</span>`;
+    }
+
+    function etaBadgeHtml(task) {
+      const s = etaStatus(task);
+      if (!s) return '';
+      return `<span class="eta-badge eta-badge--${s.cls}">${s.icon} ${s.label}</span>`;
+    }
+
+    function locationBadgeHtml(task) {
+      return task.locationText ? `<span class="location-badge">📍 ${escapeHtml(task.locationText)}</span>` : '';
+    }
+
+    // ── Task card HTML ──
+    function taskHtml(task, showDate = false, opts = {}) {
+      const statusLabel = STATUS_LABELS[task.status] || task.status;
       const today = todayStr();
-      const cacheKey = 'reminder_qotd';
-      try {
-        const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
-        if (cached && cached.date === today) return cached.quote;
-      } catch {}
-      // Deterministic pick based on date
-      const seed = today.split('-').join('');
-      const idx = parseInt(seed, 10) % QUOTES.length;
-      const quote = QUOTES[idx];
-      localStorage.setItem(cacheKey, JSON.stringify({ date: today, quote }));
-      return quote;
+      const isCompleted = task.status === 'completed';
+      const isOverdue   = !isCompleted && task.date && task.date < today;
+
+      let dateBadge = '';
+      if (showDate && task.date) {
+        const lbl = task.date === today ? 'Today' : formatShort(task.date);
+        dateBadge = `<span class="date-label${isOverdue?' date-overdue':''}">${isOverdue?'⚠ ':''}${lbl}</span>`;
+      }
+
+      let shiftBadge = '';
+      if (task.originalStartDate && task.originalStartDate !== task.date && !isCompleted) {
+        const d = Math.abs(daysFromToday(task.originalStartDate) - daysFromToday(task.date));
+        shiftBadge = `<span class="date-shift-badge" title="Original: ${task.originalStartDate}">📅 +${d}d shift</span>`;
+      }
+
+      const assigneeHtml = (task.assignedTo||[]).map(uid => {
+        const u = users.find(x => x.id === uid);
+        return u ? `<span class="assignee-chip"><span class="user-avatar sm" style="background:${avatarColor(u.name)}">${initials(u.name)}</span>${escapeHtml(u.name.split(' ')[0])}</span>` : '';
+      }).join('');
+
+      const restoreBtn = (isCompleted && opts.showRestore)
+        ? `<button class="btn-icon restore-btn" onclick="restoreTask(${task.id})" title="Restore task">↩</button>` : '';
+      const deleteBtn  = currentUser?.role === 'admin'
+        ? `<button class="btn-icon" style="color:var(--danger)" onclick="deleteTask(${task.id})" title="Delete">🗑</button>` : '';
+
+      return `<li class="task-item status-${task.status}${isOverdue?' task-overdue':''}">
+        <span class="priority-dot ${task.priority}"></span>
+        <button class="status-badge ${task.status}" onclick="cycleStatus(${task.id})">${statusLabel}</button>
+        <div class="task-body">
+          <div class="task-text">${escapeHtml(task.text)}</div>
+          ${progressBarHtml(task)}
+          <div class="task-meta">
+            ${dateBadge}${etaBadgeHtml(task)}${routineBadgeHtml(task)}${shiftBadge}${locationBadgeHtml(task)}<span class="tag ${task.category}">${task.category}</span>${assigneeHtml}
+          </div>
+        </div>
+        <div class="task-actions">${restoreBtn}${deleteBtn}<button class="btn-icon" onclick="viewLogs(${task.id})" title="History">📋</button><button class="btn-icon" onclick="openEditModal(${task.id})" title="Edit">✏️</button></div>
+      </li>`;
     }
 
-    function renderQuoteOfDay() {
-      const el = document.getElementById('qotd');
-      if (!el) return;
-      const q = getDailyQuote();
-      el.innerHTML = `<div class="qotd-card">
-        <div class="qotd-label">Quote of the Day</div>
-        <div class="qotd-text">"${q.text}"</div>
-        <div class="qotd-author">&mdash; ${q.author}</div>
-      </div>`;
-    }
-
-    // ── Rendering ──
+    // ── Render dispatcher ──
     function render() {
       const app = document.getElementById('app');
-      if (currentView === 'week') {
-        renderWeekView(app);
-      } else if (currentView === 'calendar') {
-        renderCalendarView(app);
-      } else if (currentView === 'progress') {
-        renderProgressView(app);
-      } else if (currentView === 'health') {
-        renderHealthView(app);
-      } else if (currentView === 'expense') {
-        renderExpenseView(app);
-      } else {
-        renderAllView(app);
-      }
+      updateDoneTabBadge();
+      if (currentView === 'completed') renderCompletedView(app);
+      else if (currentView === 'week')     renderWeekView(app);
+      else if (currentView === 'calendar') renderCalendarView(app);
+      else if (currentView === 'progress') renderProgressView(app);
+      else if (currentView === 'health')   renderHealthView(app);
+      else if (currentView === 'expense')  renderExpenseView(app);
+      else renderAllView(app);
       updateNotificationBell();
-      renderQuoteOfDay();
-      renderStatsSidebar();
     }
 
-    function renderStatsSidebar() {
-      const sb = document.getElementById('statsSidebar');
-      if (!sb) return;
-      const totalAll = tasks.length;
-      const totalActive = tasks.filter(t => t.status !== 'completed').length;
-      const totalCompleted = tasks.filter(t => t.status === 'completed').length;
-      const highActive = tasks.filter(t => t.status !== 'completed' && t.priority === 'high').length;
-      const personalCount = tasks.filter(t => t.status !== 'completed' && t.category === 'personal').length;
-      const professionalCount = tasks.filter(t => t.status !== 'completed' && t.category === 'professional').length;
-      sb.innerHTML = `
-        <div class="stat-card"><div class="stat-value accent">${totalAll}</div><div class="stat-label">Total</div></div>
-        <div class="stat-card"><div class="stat-value">${totalActive}</div><div class="stat-label">Active</div></div>
-        <div class="stat-card"><div class="stat-value done-color">${totalCompleted}</div><div class="stat-label">Done</div></div>
-        <div class="stat-card"><div class="stat-value high-color">${highActive}</div><div class="stat-label">High pri</div></div>
-        <div class="stat-card"><div class="stat-value" style="color:var(--personal)">${personalCount}</div><div class="stat-label">Personal</div></div>
-        <div class="stat-card"><div class="stat-value" style="color:var(--professional)">${professionalCount}</div><div class="stat-label">Work</div></div>`;
+    function updateDoneTabBadge() {
+      const cnt = tasks.filter(t => t.status === 'completed').length;
+      const el  = document.getElementById('doneTabBadge');
+      if (el) { el.textContent = cnt; el.style.display = cnt > 0 ? '' : 'none'; }
     }
 
-    // ── Week view ──
-    function renderWeekView(app) {
-      const daysToShow = filters.day === 'all' ? DAYS : DAYS.filter(d => d.key === filters.day);
-
-      app.innerHTML = daysToShow.map(day => {
-        const allDayTasks = tasks.filter(t => dayKeyFromDate(t.date) === day.key);
-        const visibleTasks = allDayTasks.filter(matchesFilters);
-        const highCount = allDayTasks.filter(t => t.priority === 'high' && t.status !== 'completed').length;
-        const activeCount = allDayTasks.filter(t => t.status !== 'completed').length;
-
-        const summaryParts = [];
-        summaryParts.push(`${activeCount} task${activeCount !== 1 ? 's' : ''}`);
-        if (highCount > 0) summaryParts.push(`${highCount} high priority`);
-
-        const emptyMsg = `No tasks for ${day.label} yet \u2014 add one`;
-
-        const tasksHtml = visibleTasks.length === 0
-          ? `<div class="empty-state">
-               <p>${emptyMsg}</p>
-               <button class="btn btn-sm btn-primary" onclick="openAddModal('${day.key}')">Add task</button>
-             </div>`
-          : `<ul class="task-list">${visibleTasks.map(t => taskHtml(t, true)).join('')}</ul>`;
-
-        return `
-          <section class="day-section${day.weekend ? ' weekend' : ''}">
-            <div class="day-header">
-              <div class="day-title">
-                ${day.label}
-                ${day.weekend ? '<span class="weekend-badge">Weekend</span>' : ''}
-              </div>
-              <div class="day-summary">${summaryParts.join(', ')}</div>
-            </div>
-            ${tasksHtml}
-          </section>`;
-      }).join('');
-      // Prepend briefing card in week view
-      const weekBriefing = renderBriefingHtml();
-      if (weekBriefing) app.innerHTML = weekBriefing + app.innerHTML;
-    }
-
-    // ── Calendar view ──
-    function renderCalendarView(app) {
-      const today = todayStr();
-      // Build calendar grid data
-      const firstDay = new Date(calYear, calMonth, 1);
-      const lastDay = new Date(calYear, calMonth + 1, 0);
-      // Monday = 0 in our grid. JS: Sun=0,Mon=1...Sat=6 → shift so Mon=0
-      let startDow = (firstDay.getDay() + 6) % 7; // 0=Mon
-      const daysInMonth = lastDay.getDate();
-
-      // Cells: fill leading days from prev month
-      const cells = [];
-      const prevMonthLast = new Date(calYear, calMonth, 0);
-      for (let i = startDow - 1; i >= 0; i--) {
-        const d = new Date(calYear, calMonth, 0 - i);
-        cells.push({ date: toDateStr(d), day: d.getDate(), outside: true });
-      }
-      for (let i = 1; i <= daysInMonth; i++) {
-        const d = new Date(calYear, calMonth, i);
-        cells.push({ date: toDateStr(d), day: i, outside: false });
-      }
-      // Fill trailing days
-      const remain = 7 - (cells.length % 7);
-      if (remain < 7) {
-        for (let i = 1; i <= remain; i++) {
-          const d = new Date(calYear, calMonth + 1, i);
-          cells.push({ date: toDateStr(d), day: i, outside: true });
-        }
-      }
-
-      // Task counts per date
-      const tasksByDate = {};
-      tasks.forEach(t => {
-        if (!tasksByDate[t.date]) tasksByDate[t.date] = [];
-        tasksByDate[t.date].push(t);
-      });
-
-      // Day labels row
-      const dayLabelsHtml = DAY_LABELS_SHORT.map((l, i) =>
-        `<div class="calendar-day-label${i >= 5 ? ' weekend-label' : ''}">${l}</div>`
-      ).join('');
-
-      // Cells
-      const cellsHtml = cells.map(c => {
-        const isToday = c.date === today;
-        const isSelected = c.date === selectedDate;
-        const isWeekend = [0, 6].includes(new Date(c.date + 'T00:00:00').getDay());
-        const dateTasks = tasksByDate[c.date] || [];
-        const activeTasks = dateTasks.filter(t => t.status !== 'completed');
-
-        let classes = 'calendar-cell';
-        if (c.outside) classes += ' outside';
-        if (isWeekend && !c.outside) classes += ' weekend-cell';
-        if (isToday) classes += ' today';
-        if (isSelected) classes += ' selected';
-
-        // Priority dots (max 5 shown)
-        const dots = activeTasks.slice(0, 5).map(t =>
-          `<span class="cal-dot ${t.priority}"></span>`
-        ).join('');
-
-        const countLabel = activeTasks.length > 5
-          ? `<div class="cal-task-count">+${activeTasks.length - 5} more</div>` : '';
-
-        return `<div class="${classes}" onclick="selectCalDate('${c.date}')">
-          <div class="cal-date">${c.day}</div>
-          <div class="cal-dots">${dots}</div>
-          ${countLabel}
-        </div>`;
-      }).join('');
-
-      // Selected date tasks panel
-      let panelHtml = '';
-      if (selectedDate) {
-        const selTasks = (tasksByDate[selectedDate] || []).filter(matchesFilters);
-        const dayInfo = DAYS.find(d => d.key === dayKeyFromDate(selectedDate));
-        const isWeekend = dayInfo && dayInfo.weekend;
-
-        const panelTitle = parseDateNice(selectedDate);
-        const activeCount = selTasks.filter(t => t.status !== 'completed').length;
-        const highCount = selTasks.filter(t => t.priority === 'high' && t.status !== 'completed').length;
-        const summaryParts = [`${activeCount} task${activeCount !== 1 ? 's' : ''}`];
-        if (highCount > 0) summaryParts.push(`${highCount} high priority`);
-
-        const taskListHtml = selTasks.length === 0
-          ? `<div class="empty-state">
-               <p>No tasks for ${parseDateNice(selectedDate)} yet \u2014 add one</p>
-               <button class="btn btn-sm btn-primary" onclick="openAddModal(null, '${selectedDate}')">Add task</button>
-             </div>`
-          : `<ul class="task-list">${selTasks.map(t => taskHtml(t, false)).join('')}</ul>`;
-
-        panelHtml = `
-          <div class="selected-date-panel">
-            <section class="day-section${isWeekend ? ' weekend' : ''}">
-              <div class="day-header">
-                <div class="day-title">
-                  ${panelTitle}
-                  ${isWeekend ? '<span class="weekend-badge">Weekend</span>' : ''}
-                </div>
-                <div class="day-summary">${summaryParts.join(', ')}</div>
-              </div>
-              ${taskListHtml}
-            </section>
-          </div>`;
-      }
-
-      app.innerHTML = `
-        <div class="calendar-wrapper">
-          <div class="calendar-nav">
-            <button class="calendar-nav-btn" onclick="navMonth(-1)" aria-label="Previous month">
-              <svg width="14" height="14" viewBox="0 0 14 14"><path d="M9 3L5 7l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-            </button>
-            <div class="calendar-nav-center">
-              <span class="calendar-nav-title">${MONTH_NAMES[calMonth]} ${calYear}</span>
-              <button class="calendar-today-btn" onclick="goToday()">Today</button>
-            </div>
-            <button class="calendar-nav-btn" onclick="navMonth(1)" aria-label="Next month">
-              <svg width="14" height="14" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-            </button>
-          </div>
-          <div class="calendar-grid">
-            ${dayLabelsHtml}
-            ${cellsHtml}
-          </div>
-        </div>
-        ${panelHtml}`;
-      // Prepend briefing card in calendar view
-      const calBriefing = renderBriefingHtml();
-      if (calBriefing) app.innerHTML = calBriefing + app.innerHTML;
-    }
-
-    function selectCalDate(dateStr) {
-      selectedDate = (selectedDate === dateStr) ? null : dateStr;
-      render();
-    }
-
-    function navMonth(dir) {
-      calMonth += dir;
-      if (calMonth > 11) { calMonth = 0; calYear++; }
-      if (calMonth < 0) { calMonth = 11; calYear--; }
-      selectedDate = null;
-      render();
-    }
-
-    function goToday() {
-      const now = new Date();
-      calMonth = now.getMonth();
-      calYear = now.getFullYear();
-      selectedDate = todayStr();
-      render();
-    }
-
-    // ── Progress view helpers ──
-    function getWeekDates(offset) {
-      // Returns array of 7 date strings (Mon-Sun) for the week at the given offset
-      const now = new Date();
-      const day = now.getDay(); // 0=Sun
-      const mondayOffset = day === 0 ? -6 : 1 - day;
-      const monday = new Date(now);
-      monday.setDate(now.getDate() + mondayOffset + (offset * 7));
-      const dates = [];
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(monday);
-        d.setDate(monday.getDate() + i);
-        dates.push(toDateStr(d));
-      }
-      return dates;
-    }
-
-    function getWeekLabel(dates) {
-      const start = new Date(dates[0] + 'T00:00:00');
-      const end = new Date(dates[6] + 'T00:00:00');
-      const opts = { month: 'short', day: 'numeric' };
-      const startStr = start.toLocaleDateString('en-US', opts);
-      const endOpts = start.getMonth() === end.getMonth() ? { day: 'numeric' } : opts;
-      const endStr = end.toLocaleDateString('en-US', endOpts);
-      return `${startStr} \u2013 ${endStr}, ${end.getFullYear()}`;
-    }
-
-    function getWeekTasks(dates) {
-      const dateSet = new Set(dates);
-      return tasks.filter(t => dateSet.has(t.date));
-    }
-
-    function navProgressWeek(dir) {
-      progressWeekOffset += dir;
-      render();
-    }
-
-    function goThisWeek() {
-      progressWeekOffset = 0;
-      render();
-    }
-
-    // ── Progress view ──
-    function renderProgressView(app) {
-      const weekDates = getWeekDates(progressWeekOffset);
-      const prevWeekDates = getWeekDates(progressWeekOffset - 1);
-      const weekTasks = getWeekTasks(weekDates);
-      const prevWeekTasks = getWeekTasks(prevWeekDates);
-      const today = todayStr();
-      const isThisWeek = progressWeekOffset === 0;
-
-      // Week label
-      const weekLabel = isThisWeek ? 'This week' : (progressWeekOffset === -1 ? 'Last week' : getWeekLabel(weekDates));
-      const weekSub = getWeekLabel(weekDates);
-
-      // Core stats
-      const total = weekTasks.length;
-      const completed = weekTasks.filter(t => t.status === 'completed').length;
-      const active = total - completed;
-      const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-      const prevTotal = prevWeekTasks.length;
-      const prevCompleted = prevWeekTasks.filter(t => t.status === 'completed').length;
-      const prevPct = prevTotal > 0 ? Math.round((prevCompleted / prevTotal) * 100) : 0;
-
-      // Ring color
-      const ringColor = pct >= 75 ? 'var(--low)' : pct >= 40 ? 'var(--medium)' : pct > 0 ? 'var(--high)' : 'var(--border)';
-      const circ = 2 * Math.PI * 42;
-      const dashOffset = circ - (circ * pct / 100);
-
-      // Daily chart data
-      const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      const dayData = weekDates.map((date, i) => {
-        const dayTasks = weekTasks.filter(t => t.date === date);
-        return {
-          label: dayLabels[i],
-          total: dayTasks.length,
-          completed: dayTasks.filter(t => t.status === 'completed').length,
-          pending: dayTasks.filter(t => t.status !== 'completed').length,
-          isWeekend: i >= 5,
-          isToday: date === today,
-          date
-        };
-      });
-      const maxDayTotal = Math.max(1, ...dayData.map(d => d.total));
-
-      // Bar chart HTML
-      const barsHtml = dayData.map(d => {
-        const compH = d.total > 0 ? Math.round((d.completed / maxDayTotal) * 100) : 0;
-        const pendH = d.total > 0 ? Math.round((d.pending / maxDayTotal) * 100) : 0;
-        return `<div class="bar-col${d.isToday ? ' today-col' : ''}">
-          <div class="bar-count">${d.total > 0 ? d.completed + '/' + d.total : ''}</div>
-          <div class="bar-stack">
-            ${d.pending > 0 ? `<div class="bar-segment pending-bar" style="height:${pendH}%"></div>` : ''}
-            ${d.completed > 0 ? `<div class="bar-segment completed-bar" style="height:${compH}%"></div>` : ''}
-          </div>
-          <div class="bar-day-label${d.isWeekend ? ' weekend-bar' : ''}">${d.label}</div>
-        </div>`;
-      }).join('');
-
-      // Priority breakdown
-      const priHigh = weekTasks.filter(t => t.priority === 'high').length;
-      const priMed = weekTasks.filter(t => t.priority === 'medium').length;
-      const priLow = weekTasks.filter(t => t.priority === 'low').length;
-      const priHighDone = weekTasks.filter(t => t.priority === 'high' && t.status === 'completed').length;
-      const priMedDone = weekTasks.filter(t => t.priority === 'medium' && t.status === 'completed').length;
-      const priLowDone = weekTasks.filter(t => t.priority === 'low' && t.status === 'completed').length;
-
-      function breakdownBar(label, count, doneCount, total, color) {
-        const fillPct = total > 0 ? Math.round((count / total) * 100) : 0;
-        const donePct = count > 0 ? Math.round((doneCount / count) * 100) : 0;
-        return `<div class="breakdown-row">
-          <div class="breakdown-header">
-            <span class="breakdown-label"><span class="priority-dot" style="background:${color};width:8px;height:8px"></span> ${label}</span>
-            <span class="breakdown-value">${doneCount}/${count} done</span>
-          </div>
-          <div class="breakdown-track">
-            <div class="breakdown-fill" style="width:${fillPct}%;background:${color};opacity:${donePct > 0 ? 0.3 + 0.7 * (donePct/100) : 0.3}"></div>
-          </div>
-        </div>`;
-      }
-
-      // Category breakdown
-      const catPersonal = weekTasks.filter(t => t.category === 'personal').length;
-      const catProfessional = weekTasks.filter(t => t.category === 'professional').length;
-      const catPersonalDone = weekTasks.filter(t => t.category === 'personal' && t.status === 'completed').length;
-      const catProfDone = weekTasks.filter(t => t.category === 'professional' && t.status === 'completed').length;
-
-      // Week-over-week comparison
-      const prevActive = prevTotal - prevCompleted;
-      function delta(curr, prev) {
-        const diff = curr - prev;
-        if (diff === 0) return '<span class="wow-delta neutral">No change</span>';
-        const arrow = diff > 0 ? '\u2191' : '\u2193';
-        // For completion rate and completed, up is good
-        return `<span class="wow-delta ${diff > 0 ? 'up' : 'down'}">${arrow} ${Math.abs(diff)}</span>`;
-      }
-      function deltaPct(curr, prev) {
-        const diff = curr - prev;
-        if (diff === 0) return '<span class="wow-delta neutral">No change</span>';
-        const arrow = diff > 0 ? '\u2191' : '\u2193';
-        return `<span class="wow-delta ${diff > 0 ? 'up' : 'down'}">${arrow} ${Math.abs(diff)}%</span>`;
-      }
-
-      // Streak: count consecutive days (up to today) where all tasks were completed
-      function computeStreak() {
-        let streak = 0;
-        const d = new Date();
-        // Start from yesterday if today has pending tasks (give credit for today only if all done)
-        while (true) {
-          const ds = toDateStr(d);
-          const dayT = tasks.filter(t => t.date === ds);
-          if (dayT.length === 0) {
-            // No tasks = don't count, but also don't break streak (skip)
-            d.setDate(d.getDate() - 1);
-            // Limit lookback to 60 days
-            if (streak === 0 && toDateStr(d) < toDateStr(new Date(Date.now() - 60*86400000))) break;
-            continue;
-          }
-          const allDone = dayT.every(t => t.status === 'completed');
-          if (allDone) { streak++; d.setDate(d.getDate() - 1); }
-          else break;
-        }
-        return streak;
-      }
-      const streak = computeStreak();
-
-      // Streak dots for current week
-      const streakDotsHtml = weekDates.map((date, i) => {
-        const dayT = weekTasks.filter(t => t.date === date);
-        const isToday = date === today;
-        const isFuture = date > today;
-        let cls = 'streak-dot';
-        if (isFuture) {
-          // future: plain
-        } else if (dayT.length === 0) {
-          // no tasks
-          cls += ' neutral';
-        } else if (dayT.every(t => t.status === 'completed')) {
-          cls += ' done';
-        } else if (dayT.some(t => t.status === 'completed')) {
-          cls += ' partial';
-        }
-        if (isToday) cls += ' today-dot';
-        const label = dayLabels[i].charAt(0);
-        return `<div class="${cls}">${label}</div>`;
-      }).join('');
-
-      // Busiest day
-      const busiestDay = dayData.reduce((best, d) => d.total > best.total ? d : best, dayData[0]);
-
-      app.innerHTML = `
-        <div class="progress-week-nav">
-          <button class="calendar-nav-btn" onclick="navProgressWeek(-1)" aria-label="Previous week">
-            <svg width="14" height="14" viewBox="0 0 14 14"><path d="M9 3L5 7l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-          </button>
-          <div>
-            <div class="progress-week-label">${weekLabel}</div>
-            <div class="progress-week-sub">${isThisWeek ? weekSub : ''}</div>
-          </div>
-          <div style="display:flex;gap:6px;align-items:center">
-            ${!isThisWeek ? '<button class="calendar-today-btn" onclick="goThisWeek()">This week</button>' : ''}
-            <button class="calendar-nav-btn" onclick="navProgressWeek(1)" aria-label="Next week">
-              <svg width="14" height="14" viewBox="0 0 14 14"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- Completion rate -->
-        <div class="progress-section">
-          <div class="progress-section-title">Completion rate</div>
-          <div class="ring-row">
-            <div class="ring-wrap">
-              <svg class="ring-svg" width="100" height="100" viewBox="0 0 100 100">
-                <circle class="ring-bg" cx="50" cy="50" r="42"/>
-                <circle class="ring-fill" cx="50" cy="50" r="42"
-                  stroke="${ringColor}"
-                  stroke-dasharray="${circ}"
-                  stroke-dashoffset="${dashOffset}"/>
-              </svg>
-              <div class="ring-label">
-                <div class="ring-pct" style="color:${ringColor}">${pct}%</div>
-                <div class="ring-sub">Done</div>
-              </div>
-            </div>
-            <div class="ring-stats">
-              <div class="ring-stat-row"><span class="ring-stat-label">Total tasks</span><span class="ring-stat-value">${total}</span></div>
-              <div class="ring-stat-row"><span class="ring-stat-label">Completed</span><span class="ring-stat-value" style="color:var(--low)">${completed}</span></div>
-              <div class="ring-stat-row"><span class="ring-stat-label">Remaining</span><span class="ring-stat-value" style="color:var(--medium)">${active}</span></div>
-              <div class="ring-stat-row"><span class="ring-stat-label">Busiest day</span><span class="ring-stat-value">${busiestDay.total > 0 ? busiestDay.label + ' (' + busiestDay.total + ')' : '\u2014'}</span></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Daily breakdown chart -->
-        <div class="progress-section">
-          <div class="progress-section-title">Daily breakdown</div>
-          <div class="bar-chart">${barsHtml}</div>
-        </div>
-
-        <!-- Priority & category -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-          <div class="progress-section">
-            <div class="progress-section-title">By priority</div>
-            ${breakdownBar('High', priHigh, priHighDone, total, 'var(--high)')}
-            ${breakdownBar('Medium', priMed, priMedDone, total, 'var(--medium)')}
-            ${breakdownBar('Low', priLow, priLowDone, total, 'var(--low)')}
-          </div>
-          <div class="progress-section">
-            <div class="progress-section-title">By category</div>
-            ${breakdownBar('Personal', catPersonal, catPersonalDone, total, 'var(--personal)')}
-            ${breakdownBar('Professional', catProfessional, catProfDone, total, 'var(--professional)')}
-          </div>
-        </div>
-
-        <!-- Streak -->
-        <div class="progress-section">
-          <div class="progress-section-title">Completion streak</div>
-          <div class="streak-row">
-            <div class="streak-number">${streak}</div>
-            <div class="streak-text"><strong>${streak === 1 ? '1 day' : streak + ' days'}</strong> with all tasks completed</div>
-          </div>
-          <div class="streak-dots">${streakDotsHtml}</div>
-        </div>
-
-        <!-- Week-over-week -->
-        <div class="progress-section">
-          <div class="progress-section-title">Compared to previous week</div>
-          <div class="wow-grid">
-            <div class="wow-card">
-              <div class="wow-value">${total}</div>
-              <div class="wow-label">Total tasks</div>
-              ${delta(total, prevTotal)}
-            </div>
-            <div class="wow-card">
-              <div class="wow-value" style="color:var(--low)">${completed}</div>
-              <div class="wow-label">Completed</div>
-              ${delta(completed, prevCompleted)}
-            </div>
-            <div class="wow-card">
-              <div class="wow-value" style="color:${ringColor}">${pct}%</div>
-              <div class="wow-label">Completion rate</div>
-              ${deltaPct(pct, prevPct)}
-            </div>
-            <div class="wow-card">
-              <div class="wow-value" style="color:var(--medium)">${active}</div>
-              <div class="wow-label">Remaining</div>
-              ${delta(active, prevActive)}
-            </div>
-          </div>
-        </div>
-      `;
-      // Prepend briefing card in progress view
-      const progBriefing = renderBriefingHtml();
-      if (progBriefing) app.innerHTML = progBriefing + app.innerHTML;
-    }
-
-    // ── Health Coach View ──
-    const HEALTH_STORAGE_KEY = 'reminder_health_data';
-    let healthData = loadHealthData();
-    let healthChatMessages = [];
-    let healthChatLoading = false;
-    let healthPhotoAnalyzing = false;
-    let healthPhotoResult = null;
-    let healthVoiceActive = false;
-    let healthMealAdvice = null;
-    let healthMealAdviceLoading = false;
-    let healthBarcodeScanner = null;
-
-    function loadHealthData() {
-      try {
-        const stored = JSON.parse(localStorage.getItem(HEALTH_STORAGE_KEY) || 'null');
-        if (stored && stored.date === todayStr()) return stored;
-      } catch {}
-      return { date: todayStr(), water: 0, waterGoal: 8, sleep: null, steps: 0, stepsGoal: 10000, meals: [], exercise: [], mood: null };
-    }
-
-    function saveHealthData() {
-      healthData.date = todayStr();
-      localStorage.setItem(HEALTH_STORAGE_KEY, JSON.stringify(healthData));
-    }
-
-    function resetHealthIfNewDay() {
-      if (healthData.date !== todayStr()) {
-        healthData = { date: todayStr(), water: 0, waterGoal: 8, sleep: null, steps: 0, stepsGoal: 10000, meals: [], exercise: [], mood: null };
-        saveHealthData();
-      }
-    }
-
-    function adjustWater(delta) {
-      resetHealthIfNewDay();
-      healthData.water = Math.max(0, (healthData.water || 0) + delta);
-      saveHealthData();
-      render();
-    }
-
-    function adjustSteps(delta) {
-      resetHealthIfNewDay();
-      healthData.steps = Math.max(0, (healthData.steps || 0) + delta);
-      saveHealthData();
-      render();
-    }
-
-    function setHealthSleep(hours) {
-      resetHealthIfNewDay();
-      const val = parseFloat(hours);
-      if (!isNaN(val) && val >= 0 && val <= 24) {
-        healthData.sleep = val;
-        saveHealthData();
-        render();
-      }
-    }
-
-    function setHealthMood(mood) {
-      resetHealthIfNewDay();
-      healthData.mood = mood;
-      saveHealthData();
-      render();
-    }
-
-    function addHealthMeal(mealText) {
-      resetHealthIfNewDay();
-      const text = mealText.trim();
-      if (!text) return;
-      healthData.meals.push(text);
-      saveHealthData();
-      render();
-      getMealAdvice(text);
-    }
-
-    function removeHealthMeal(idx) {
-      resetHealthIfNewDay();
-      healthData.meals.splice(idx, 1);
-      saveHealthData();
-      render();
-    }
-
-    function addHealthExercise(exerciseText) {
-      resetHealthIfNewDay();
-      const text = exerciseText.trim();
-      if (!text) return;
-      healthData.exercise.push(text);
-      saveHealthData();
-      render();
-    }
-
-    function removeHealthExercise(idx) {
-      resetHealthIfNewDay();
-      healthData.exercise.splice(idx, 1);
-      saveHealthData();
-      render();
-    }
-
-    function healthLogKeydown(e, type) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        if (type === 'meal') { addHealthMeal(e.target.value); e.target.value = ''; }
-        else if (type === 'exercise') { addHealthExercise(e.target.value); e.target.value = ''; }
-      }
-    }
-
-    function healthLogBtn(type) {
-      const input = document.getElementById(type === 'meal' ? 'healthMealInput' : 'healthExerciseInput');
-      if (!input) return;
-      if (type === 'meal') addHealthMeal(input.value);
-      else addHealthExercise(input.value);
-      input.value = '';
-      input.focus();
-    }
-
-    function getHealthPatterns() {
-      const patterns = [];
-      const h = healthData;
-      if (h.water >= h.waterGoal) patterns.push({ icon: '&#10003;', text: 'Great job! You hit your hydration goal today.' });
-      else if (h.water > 0 && h.water < h.waterGoal / 2) patterns.push({ icon: '&#128167;', text: `Only ${h.water} glasses so far. Try to drink ${h.waterGoal - h.water} more before bedtime.` });
-      if (h.sleep !== null && h.sleep < 6) patterns.push({ icon: '&#9888;', text: `${h.sleep} hours of sleep is below recommended. Aim for 7-9 hours tonight.` });
-      if (h.sleep !== null && h.sleep >= 7 && h.sleep <= 9) patterns.push({ icon: '&#10003;', text: `${h.sleep} hours of sleep - right in the sweet spot!` });
-      if (h.meals.length === 0) {
-        const hour = new Date().getHours();
-        if (hour >= 10) patterns.push({ icon: '&#127860;', text: 'No meals logged yet today. Remember to eat regularly for sustained energy.' });
-      }
-      if (h.exercise.length === 0) {
-        const hour = new Date().getHours();
-        if (hour >= 14) patterns.push({ icon: '&#127939;', text: 'No exercise logged today. Even a 10-minute walk makes a difference!' });
-      }
-      if (h.mood === 'stressed' || h.mood === 'sad') patterns.push({ icon: '&#128161;', text: 'Feeling down? Try a 5-minute breathing exercise: breathe in 4s, hold 4s, out 4s.' });
-      if (h.steps >= h.stepsGoal) patterns.push({ icon: '&#127942;', text: `Amazing! You reached your ${h.stepsGoal.toLocaleString()} step goal!` });
-      return patterns;
-    }
-
-    async function sendHealthMessage(messageText) {
-      const text = messageText || '';
-      if (!text.trim() || healthChatLoading) return;
-
-      healthChatMessages.push({ role: 'user', text: text.trim() });
-      healthChatLoading = true;
-      render();
-
-      // Scroll chat to bottom
-      setTimeout(() => {
-        const chatEl = document.getElementById('healthChatMessages');
-        if (chatEl) chatEl.scrollTop = chatEl.scrollHeight;
-      }, 50);
-
-      try {
-        resetHealthIfNewDay();
-        const history = healthChatMessages
-          .filter(m => m.role === 'user' || m.role === 'assistant')
-          .map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.role === 'user' ? m.text : (m.recommendation || '') }));
-
-        const result = await api('/ai/health-coach', {
-          method: 'POST',
-          body: JSON.stringify({
-            message: text.trim(),
-            history,
-            trackers: healthData,
-            weather: getWeatherSummaryForAI() || null
-          })
-        });
-
-        healthChatMessages.push({
-          role: 'assistant',
-          recommendation: result.recommendation || '',
-          reasoning: result.reasoning || '',
-          tips: result.tips || [],
-          trackerNudge: result.trackerNudge || null
-        });
-      } catch (err) {
-        healthChatMessages.push({
-          role: 'assistant',
-          recommendation: 'Sorry, I couldn\'t process that right now. Please try again.',
-          reasoning: '',
-          tips: [],
-          trackerNudge: null
-        });
-      }
-
-      healthChatLoading = false;
-      render();
-
-      setTimeout(() => {
-        const chatEl = document.getElementById('healthChatMessages');
-        if (chatEl) chatEl.scrollTop = chatEl.scrollHeight;
-      }, 50);
-    }
-
-    function healthChatKeydown(e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        const input = document.getElementById('healthChatInput');
-        if (input && input.value.trim()) {
-          sendHealthMessage(input.value);
-          input.value = '';
-        }
-      }
-    }
-
-    function healthChatSendBtn() {
-      const input = document.getElementById('healthChatInput');
-      if (input && input.value.trim()) {
-        sendHealthMessage(input.value);
-        input.value = '';
-      }
-    }
-
-    function sendHealthQuick(text) {
-      sendHealthMessage(text);
-    }
-
-    function promptSleepHours() {
-      const val = prompt('How many hours did you sleep last night?', healthData.sleep || '7');
-      if (val !== null) setHealthSleep(val);
-    }
-
-    // ── Health: Contextual Nudge Engine ──
-    function getContextualNudge() {
-      const hour = new Date().getHours();
-      const h = healthData;
-      if (h.water > 0 && h.water < Math.floor(h.waterGoal / 2) && hour >= 14)
-        return { icon: '\u{1F4A7}', text: 'Only ' + h.water + ' glasses of water so far. Try to drink ' + (h.waterGoal - h.water) + ' more before evening to stay sharp.', label: 'Hydration Alert' };
-      if (h.meals.length === 0 && hour >= 10 && hour < 14)
-        return { icon: '\u{1F373}', text: 'No breakfast logged yet! A protein-rich breakfast stabilizes blood sugar and keeps focus high.', label: 'Nutrition Reminder' };
-      if (h.exercise.length === 0 && hour >= 15 && hour < 21)
-        return { icon: '\u{1F3C3}', text: 'No exercise yet today. Even a brisk 15-minute walk boosts mood and burns ~75 calories.', label: 'Movement Nudge' };
-      if (h.mood === 'stressed')
-        return { icon: '\u{1F9D8}', text: 'Feeling stressed? Try 4-7-8 breathing: inhale 4s, hold 7s, exhale 8s. Repeat 3 times.', label: 'Stress Relief' };
-      if (h.sleep !== null && h.sleep < 6)
-        return { icon: '\u{2615}', text: h.sleep + 'hrs of sleep is rough. Have caffeine before 2pm only, and try a 20-min power nap if possible.', label: 'Sleep Recovery' };
-      if (hour >= 6 && hour < 9) return { icon: '\u{1F305}', text: 'Good morning! Start with a glass of water to rehydrate after sleep and kickstart your metabolism.', label: 'Morning Wellness' };
-      if (hour >= 9 && hour < 11) return { icon: '\u{1F9E0}', text: 'Peak focus hours! Cortisol is naturally high now \u2014 tackle your most important task.', label: 'Focus Time' };
-      if (hour >= 11 && hour < 13) return { icon: '\u{1F957}', text: 'Lunch approaching. Aim for protein + fiber + healthy fats to avoid the afternoon crash.', label: 'Lunch Planning' };
-      if (hour >= 13 && hour < 15) return { icon: '\u{1F6B6}', text: 'Post-lunch dip? A 10-minute walk aids digestion and restores alertness better than coffee.', label: 'Afternoon Boost' };
-      if (hour >= 15 && hour < 17) return { icon: '\u{1F34E}', text: 'Afternoon energy dip is normal. Reach for fruit or nuts instead of sugary snacks.', label: 'Smart Snacking' };
-      if (hour >= 17 && hour < 20) return { icon: '\u{1F3E0}', text: 'Transition time. Light stretching or a walk helps shift from work mode to personal time.', label: 'Wind Down' };
-      if (hour >= 20 && hour < 22) return { icon: '\u{1F319}', text: 'Evening routine matters. Dim lights and avoid screens 30min before bed for better sleep.', label: 'Sleep Prep' };
-      return { icon: '\u{1F634}', text: 'Late night! Sleep is when your body repairs itself. Try to get to bed \u2014 your future self will thank you.', label: 'Rest Up' };
-    }
-
-    // ── Health: Image Resize Utility ──
-    function resizeHealthImage(file, maxDim) {
-      maxDim = maxDim || 800;
-      return new Promise(function(resolve) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-          var img = new Image();
-          img.onload = function() {
-            var canvas = document.createElement('canvas');
-            var w = img.width, h = img.height;
-            if (w > maxDim || h > maxDim) {
-              if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
-              else { w = Math.round(w * maxDim / h); h = maxDim; }
-            }
-            canvas.width = w;
-            canvas.height = h;
-            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-            resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
-          };
-          img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-
-    // ── Health: Camera / Photo Analysis ──
-    function triggerMealPhoto() {
-      var input = document.getElementById('healthPhotoInput');
-      if (!input) {
-        input = document.createElement('input');
-        input.type = 'file';
-        input.id = 'healthPhotoInput';
-        input.accept = 'image/*';
-        input.capture = 'environment';
-        input.style.display = 'none';
-        input.onchange = handleMealPhoto;
-        document.body.appendChild(input);
-      }
-      input.value = '';
-      input.click();
-    }
-
-    async function handleMealPhoto(event) {
-      var file = event.target.files[0];
-      if (!file) return;
-      healthPhotoAnalyzing = true;
-      healthPhotoResult = null;
-      healthMealAdvice = null;
-      render();
-      try {
-        var base64 = await resizeHealthImage(file);
-        var result = await api('/ai/analyze-meal-photo', {
-          method: 'POST',
-          body: JSON.stringify({ image: base64 })
-        });
-        healthPhotoResult = result;
-      } catch (err) {
-        healthPhotoResult = { error: 'Failed to analyze photo. Try again or log manually.' };
-      }
-      healthPhotoAnalyzing = false;
-      render();
-    }
-
-    function addPhotoMeals() {
-      if (!healthPhotoResult || !healthPhotoResult.foods) return;
-      healthPhotoResult.foods.forEach(function(f) { if (f.name) healthData.meals.push(f.name); });
-      saveHealthData();
-      healthPhotoResult = null;
-      render();
-    }
-
-    function dismissPhotoResult() {
-      healthPhotoResult = null;
-      render();
-    }
-
-    // ── Health: Barcode Scanner ──
-    function loadExternalScript(src) {
-      return new Promise(function(resolve, reject) {
-        if (document.querySelector('script[src="' + src + '"]')) { resolve(); return; }
-        var s = document.createElement('script');
-        s.src = src;
-        s.onload = resolve;
-        s.onerror = reject;
-        document.head.appendChild(s);
-      });
-    }
-
-    async function startBarcodeScan() {
-      try {
-        await loadExternalScript('https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js');
-      } catch (e) {
-        alert('Failed to load barcode scanner. Check your internet connection.');
-        return;
-      }
-      var overlay = document.createElement('div');
-      overlay.className = 'barcode-modal-overlay';
-      overlay.id = 'barcodeOverlay';
-      overlay.innerHTML = '<div class="barcode-modal-content">' +
-        '<div class="barcode-modal-header"><h3>Scan Barcode</h3><button class="barcode-modal-close" onclick="stopBarcodeScan()">&times;</button></div>' +
-        '<div id="barcode-reader"></div>' +
-        '<div class="barcode-modal-footer">Point your camera at a food product barcode</div></div>';
-      document.body.appendChild(overlay);
-
-      try {
-        healthBarcodeScanner = new Html5Qrcode('barcode-reader');
-        await healthBarcodeScanner.start(
-          { facingMode: 'environment' },
-          { fps: 10, qrbox: { width: 250, height: 150 } },
-          async function(decodedText) {
-            await stopBarcodeScan();
-            await lookupBarcode(decodedText);
-          },
-          function() {}
-        );
-      } catch (err) {
-        stopBarcodeScan();
-        alert('Could not access camera. Please allow camera permissions.');
-      }
-    }
-
-    async function stopBarcodeScan() {
-      if (healthBarcodeScanner) {
-        try { await healthBarcodeScanner.stop(); } catch (e) {}
-        healthBarcodeScanner = null;
-      }
-      var overlay = document.getElementById('barcodeOverlay');
-      if (overlay) overlay.remove();
-    }
-
-    async function lookupBarcode(code) {
-      healthPhotoAnalyzing = true;
-      healthPhotoResult = null;
-      healthMealAdvice = null;
-      render();
-      try {
-        var resp = await fetch('https://world.openfoodfacts.org/api/v0/product/' + code + '.json');
-        var data = await resp.json();
-        if (data.status === 1 && data.product) {
-          var p = data.product;
-          var nut = p.nutriments || {};
-          healthPhotoResult = {
-            barcode: code,
-            productName: p.product_name || 'Unknown product',
-            brands: p.brands || '',
-            foods: [{
-              name: p.product_name || 'Scanned product',
-              portion: p.serving_size || p.quantity || 'per 100g',
-              calories: Math.round(nut['energy-kcal_100g'] || nut['energy-kcal'] || 0),
-              protein: Math.round(nut.proteins_100g || nut.proteins || 0),
-              carbs: Math.round(nut.carbohydrates_100g || nut.carbohydrates || 0),
-              fat: Math.round(nut.fat_100g || nut.fat || 0)
-            }],
-            totalCalories: Math.round(nut['energy-kcal_100g'] || nut['energy-kcal'] || 0),
-            summary: (p.product_name || 'Product') + (p.brands ? ' by ' + p.brands : ''),
-            ingredients: p.ingredients_text || '',
-            nutriscore: p.nutriscore_grade || null
-          };
-        } else {
-          healthPhotoResult = { error: 'Product not found in database. Try scanning again or log manually.' };
-        }
-      } catch (e) {
-        healthPhotoResult = { error: 'Failed to look up product. Check your connection.' };
-      }
-      healthPhotoAnalyzing = false;
-      render();
-    }
-
-    // ── Health: Voice Input (Web Speech API) ──
-    function startVoiceMealInput() {
-      var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        alert('Voice input is not supported in this browser. Try Chrome or Edge.');
-        return;
-      }
-      if (healthVoiceActive) { stopVoiceMealInput(); return; }
-
-      healthVoiceActive = true;
-      render();
-
-      var recognition = new SpeechRecognition();
-      recognition.lang = 'en-US';
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-      window._healthVoiceRecognition = recognition;
-
-      recognition.onresult = async function(event) {
-        var text = event.results[0][0].transcript;
-        healthVoiceActive = false;
-        window._healthVoiceRecognition = null;
-
-        healthPhotoAnalyzing = true;
-        healthMealAdvice = null;
-        render();
-        try {
-          var result = await api('/ai/parse-voice-meal', {
-            method: 'POST',
-            body: JSON.stringify({ text: text })
-          });
-          if (result.meals && result.meals.length > 0) {
-            healthPhotoResult = {
-              voiceText: text,
-              foods: result.meals.map(function(m) {
-                return { name: m.name, portion: 'estimated', calories: m.calories, protein: m.protein, carbs: m.carbs, fat: m.fat };
-              }),
-              totalCalories: result.totalCalories || 0,
-              summary: 'Voice: "' + text + '"',
-              advice: result.advice || '',
-              reasoning: result.reasoning || ''
-            };
-          } else {
-            var input = document.getElementById('healthMealInput');
-            if (input) input.value = text;
-          }
-        } catch (e) {
-          var input2 = document.getElementById('healthMealInput');
-          if (input2) input2.value = text;
-        }
-        healthPhotoAnalyzing = false;
-        render();
-      };
-
-      recognition.onerror = function() {
-        healthVoiceActive = false;
-        window._healthVoiceRecognition = null;
-        render();
-      };
-
-      recognition.onend = function() {
-        if (healthVoiceActive) {
-          healthVoiceActive = false;
-          window._healthVoiceRecognition = null;
-          render();
-        }
-      };
-
-      recognition.start();
-    }
-
-    function stopVoiceMealInput() {
-      if (window._healthVoiceRecognition) {
-        try { window._healthVoiceRecognition.stop(); } catch (e) {}
-        window._healthVoiceRecognition = null;
-      }
-      healthVoiceActive = false;
-      render();
-    }
-
-    // ── Health: Auto-Advice After Meal Logging ──
-    async function getMealAdvice(mealText) {
-      healthMealAdviceLoading = true;
-      healthMealAdvice = null;
-      render();
-      try {
-        var hour = new Date().getHours();
-        var timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
-        var result = await api('/ai/meal-advice', {
-          method: 'POST',
-          body: JSON.stringify({ meal: mealText, trackers: healthData, timeOfDay: timeOfDay })
-        });
-        healthMealAdvice = result;
-      } catch (e) {
-        healthMealAdvice = null;
-      }
-      healthMealAdviceLoading = false;
-      render();
-    }
-
-    function renderHealthView(app) {
-      resetHealthIfNewDay();
-      const h = healthData;
-
-      // Water progress
-      const waterPct = Math.min(100, Math.round((h.water / h.waterGoal) * 100));
-      const waterColor = waterPct >= 100 ? 'var(--low)' : waterPct >= 50 ? 'var(--accent)' : 'var(--medium)';
-
-      // Steps progress
-      const stepsPct = Math.min(100, Math.round((h.steps / h.stepsGoal) * 100));
-      const stepsColor = stepsPct >= 100 ? 'var(--low)' : stepsPct >= 50 ? 'var(--accent)' : 'var(--medium)';
-
-      // Mood emoji map
-      const MOODS = [
-        { key: 'great', emoji: '&#128513;', label: 'Great' },
-        { key: 'good', emoji: '&#128578;', label: 'Good' },
-        { key: 'okay', emoji: '&#128528;', label: 'Okay' },
-        { key: 'tired', emoji: '&#128564;', label: 'Tired' },
-        { key: 'stressed', emoji: '&#128556;', label: 'Stressed' },
-        { key: 'sad', emoji: '&#128546;', label: 'Sad' }
-      ];
-
-      const moodHtml = MOODS.map(m =>
-        `<div class="mood-option${h.mood === m.key ? ' active' : ''}" onclick="setHealthMood('${m.key}')" title="${m.label}">${m.emoji}</div>`
-      ).join('');
-
-      // Meals tags
-      const mealsHtml = h.meals.map((m, i) =>
-        `<span class="health-log-tag">${escapeHtml(m)}<button onclick="removeHealthMeal(${i})">&times;</button></span>`
-      ).join('');
-
-      // Exercise tags
-      const exerciseHtml = h.exercise.map((e, i) =>
-        `<span class="health-log-tag">${escapeHtml(e)}<button onclick="removeHealthExercise(${i})">&times;</button></span>`
-      ).join('');
-
-      // Patterns
-      const patterns = getHealthPatterns();
-      const patternsHtml = patterns.length > 0 ? `
-        <div class="health-patterns">
-          <div class="health-patterns-title">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v2M6 9v2M1 6h2M9 6h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            Insights & Patterns
-          </div>
-          ${patterns.map(p => `<div class="health-pattern-item">
-            <span class="health-pattern-icon">${p.icon}</span>
-            <span>${p.text}</span>
-          </div>`).join('')}
-        </div>` : '';
-
-      // Contextual nudge
-      const nudge = getContextualNudge();
-      const nudgeHtml = `
-        <div class="health-nudge">
-          <div class="health-nudge-icon">${nudge.icon}</div>
-          <div class="health-nudge-content">
-            <div class="health-nudge-label">${nudge.label}</div>
-            <div class="health-nudge-text">${nudge.text}</div>
-          </div>
-        </div>`;
-
-      // Analysis result card builder
-      function buildAnalysisHtml() {
-        if (healthPhotoAnalyzing) return '<div class="health-analyzing"><div class="health-analyzing-spinner"></div>Analyzing...</div>';
-        if (!healthPhotoResult) return '';
-        if (healthPhotoResult.error) return '<div class="health-analysis-card" style="border-color:rgba(239,68,68,0.2);background:rgba(239,68,68,0.06)"><div style="font-size:0.78rem;color:var(--high)">' + escapeHtml(healthPhotoResult.error) + '</div><button class="health-analysis-btn secondary" style="margin-top:8px;width:100%" onclick="dismissPhotoResult()">Dismiss</button></div>';
-        var r = healthPhotoResult;
-        var titleIcon = r.barcode ? '&#128179; Product Found' : r.voiceText ? '&#127908; Voice Parsed' : '&#128248; Photo Analysis';
-        var foodsHtml = (r.foods || []).map(function(f) {
-          return '<div class="health-analysis-food"><span class="health-analysis-food-name">' + escapeHtml(f.name) + (f.portion ? ' <span style="color:var(--text-muted)">(' + escapeHtml(f.portion) + ')</span>' : '') + '</span><span class="health-analysis-food-cal">' + f.calories + ' kcal</span></div>';
-        }).join('');
-        var totalP = (r.foods || []).reduce(function(s,f) { return s + (f.protein||0); }, 0);
-        var totalC = (r.foods || []).reduce(function(s,f) { return s + (f.carbs||0); }, 0);
-        var totalF = (r.foods || []).reduce(function(s,f) { return s + (f.fat||0); }, 0);
-        var adviceHtml = r.advice ? '<div class="health-analysis-advice"><div class="health-analysis-advice-text">' + escapeHtml(r.advice) + '</div>' + (r.reasoning ? '<div class="health-analysis-advice-reason">' + escapeHtml(r.reasoning) + '</div>' : '') + '</div>' : '';
-        var nutriscoreHtml = r.nutriscore ? '<div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:6px">Nutri-Score: <strong style="text-transform:uppercase;color:var(--accent)">' + escapeHtml(r.nutriscore) + '</strong></div>' : '';
-        return '<div class="health-analysis-card">' +
-          '<div class="health-analysis-header"><div class="health-analysis-title">' + titleIcon + '</div><button class="health-analysis-close" onclick="dismissPhotoResult()">&times;</button></div>' +
-          '<div style="font-size:0.78rem;color:var(--text);margin-bottom:6px">' + escapeHtml(r.summary || '') + '</div>' +
-          nutriscoreHtml +
-          '<div class="health-analysis-foods">' + foodsHtml + '</div>' +
-          '<div class="health-nutrition-grid">' +
-            '<div class="health-nutrition-item"><div class="health-nutrition-value">' + (r.totalCalories||0) + '</div><div class="health-nutrition-label">Calories</div></div>' +
-            '<div class="health-nutrition-item"><div class="health-nutrition-value">' + totalP + 'g</div><div class="health-nutrition-label">Protein</div></div>' +
-            '<div class="health-nutrition-item"><div class="health-nutrition-value">' + totalC + 'g</div><div class="health-nutrition-label">Carbs</div></div>' +
-            '<div class="health-nutrition-item"><div class="health-nutrition-value">' + totalF + 'g</div><div class="health-nutrition-label">Fat</div></div>' +
-          '</div>' +
-          adviceHtml +
-          '<div class="health-analysis-actions"><button class="health-analysis-btn primary" onclick="addPhotoMeals()">Add to Meal Log</button><button class="health-analysis-btn secondary" onclick="dismissPhotoResult()">Dismiss</button></div>' +
-        '</div>';
-      }
-
-      // Meal advice card builder
-      function buildMealAdviceHtml() {
-        if (healthMealAdviceLoading) return '<div class="health-analyzing" style="margin-top:8px"><div class="health-analyzing-spinner"></div>Getting coaching advice...</div>';
-        if (!healthMealAdvice || !healthMealAdvice.recommendation) return '';
-        return '<div class="health-meal-advice">' +
-          '<div class="health-meal-advice-header">&#9889; Coach Says</div>' +
-          '<div class="health-meal-advice-rec">' + escapeHtml(healthMealAdvice.recommendation) + '</div>' +
-          (healthMealAdvice.reasoning ? '<div class="health-meal-advice-why">' + escapeHtml(healthMealAdvice.reasoning) + '</div>' : '') +
-          (healthMealAdvice.tip ? '<div class="health-meal-advice-tip">&#128161; ' + escapeHtml(healthMealAdvice.tip) + '</div>' : '') +
-        '</div>';
-      }
-
-      // Chat messages
-      let chatHtml = '';
-      for (const msg of healthChatMessages) {
-        if (msg.role === 'user') {
-          chatHtml += `<div class="hc-msg user">${escapeHtml(msg.text)}</div>`;
-        } else {
-          let coachContent = '';
-          if (msg.recommendation) coachContent += `<div class="hc-recommendation">${escapeHtml(msg.recommendation)}</div>`;
-          if (msg.reasoning) coachContent += `<div class="hc-reasoning">${escapeHtml(msg.reasoning)}</div>`;
-          if (msg.tips && msg.tips.length > 0) {
-            coachContent += `<ul class="hc-tips">${msg.tips.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>`;
-          }
-          if (msg.trackerNudge) {
-            coachContent += `<div class="hc-nudge">
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1L1 9h8L5 1z" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M5 4v2M5 7.5v.01" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
-              ${escapeHtml(msg.trackerNudge)}
-            </div>`;
-          }
-          chatHtml += `<div class="hc-msg coach">${coachContent}</div>`;
-        }
-      }
-      if (healthChatLoading) {
-        chatHtml += `<div class="hc-msg loading">Thinking...</div>`;
-      }
-
-      app.innerHTML = `
-        <div class="health-dashboard">
-          <!-- Header -->
-          <div class="health-header">
-            <div class="health-header-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 21s-8-5-8-11a5 5 0 0110 0 5 5 0 0110 0c0 6-8 11-8 11z" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="rgba(255,255,255,0.2)"/></svg>
-            </div>
-            <div>
-              <h2>Health Coach</h2>
-              <p>Your personal wellness companion</p>
-            </div>
-          </div>
-
-          <!-- Contextual Nudge -->
-          ${nudgeHtml}
-
-          <!-- Trackers Grid -->
-          <div class="health-trackers">
-            <!-- Water -->
-            <div class="health-tracker-card">
-              <div class="ht-icon" style="background:rgba(59,130,246,0.1)">&#128167;</div>
-              <div class="ht-label">Hydration</div>
-              <div class="ht-value" style="color:${waterColor}">${h.water}<span style="font-size:0.75rem;font-weight:500;color:var(--text-muted)">/${h.waterGoal}</span></div>
-              <div class="ht-sub">glasses of water</div>
-              <div class="ht-progress"><div class="ht-progress-fill" style="width:${waterPct}%;background:${waterColor}"></div></div>
-              <div class="ht-actions">
-                <button class="ht-btn" onclick="adjustWater(-1)" title="Remove glass">-</button>
-                <button class="ht-btn" onclick="adjustWater(1)" title="Add glass">+</button>
-              </div>
-            </div>
-
-            <!-- Sleep -->
-            <div class="health-tracker-card interactive" onclick="promptSleepHours()">
-              <div class="ht-icon" style="background:rgba(139,92,246,0.1)">&#128564;</div>
-              <div class="ht-label">Sleep</div>
-              <div class="ht-value" style="color:${h.sleep !== null ? (h.sleep >= 7 ? 'var(--low)' : h.sleep >= 5 ? 'var(--medium)' : 'var(--high)') : 'var(--text-muted)'}">${h.sleep !== null ? h.sleep : '--'}<span style="font-size:0.75rem;font-weight:500;color:var(--text-muted)"> hrs</span></div>
-              <div class="ht-sub">${h.sleep !== null ? (h.sleep >= 7 ? 'Well rested' : h.sleep >= 5 ? 'Could be better' : 'Sleep deprived') : 'Tap to log'}</div>
-              ${h.sleep !== null ? `<div class="ht-progress"><div class="ht-progress-fill" style="width:${Math.min(100, Math.round(h.sleep / 9 * 100))}%;background:${h.sleep >= 7 ? 'var(--low)' : h.sleep >= 5 ? 'var(--medium)' : 'var(--high)'}"></div></div>` : ''}
-            </div>
-
-            <!-- Steps -->
-            <div class="health-tracker-card">
-              <div class="ht-icon" style="background:rgba(34,197,94,0.1)">&#128694;</div>
-              <div class="ht-label">Steps</div>
-              <div class="ht-value" style="color:${stepsColor}">${h.steps.toLocaleString()}</div>
-              <div class="ht-sub">goal: ${h.stepsGoal.toLocaleString()}</div>
-              <div class="ht-progress"><div class="ht-progress-fill" style="width:${stepsPct}%;background:${stepsColor}"></div></div>
-              <div class="ht-actions">
-                <button class="ht-btn" onclick="adjustSteps(-500)" title="-500 steps">-</button>
-                <button class="ht-btn" onclick="adjustSteps(500)" title="+500 steps">+</button>
-                <button class="ht-btn" onclick="adjustSteps(1000)" title="+1000 steps" style="font-size:0.6rem">1K</button>
-              </div>
-            </div>
-
-            <!-- Mood -->
-            <div class="health-tracker-card">
-              <div class="ht-icon" style="background:rgba(245,158,11,0.1)">&#128522;</div>
-              <div class="ht-label">Mood</div>
-              <div class="ht-value">${h.mood ? MOODS.find(m => m.key === h.mood)?.emoji || '--' : '--'}</div>
-              <div class="ht-sub">${h.mood ? MOODS.find(m => m.key === h.mood)?.label || 'Set mood' : 'How are you feeling?'}</div>
-              <div class="mood-selector">${moodHtml}</div>
-            </div>
-
-            <!-- Meals -->
-            <div class="health-tracker-card" style="grid-column: span 2">
-              <div class="ht-icon" style="background:rgba(249,115,22,0.1)">&#127860;</div>
-              <div class="ht-label">Meals</div>
-              <div class="ht-value">${h.meals.length}<span style="font-size:0.75rem;font-weight:500;color:var(--text-muted)"> logged</span></div>
-              <div class="health-input-methods">
-                <button class="health-input-method-btn" onclick="triggerMealPhoto()" title="Take a photo of your meal">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2v11z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="2"/></svg>
-                  Camera
-                </button>
-                <button class="health-input-method-btn" onclick="startBarcodeScan()" title="Scan food barcode">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M2 4h3M2 20h3M19 4h3M19 20h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M7 4v16M11 4v16M15 4v16" stroke="currentColor" stroke-width="2"/></svg>
-                  Barcode
-                </button>
-                <button class="health-input-method-btn${healthVoiceActive ? ' voice-active' : ''}" onclick="startVoiceMealInput()" title="${healthVoiceActive ? 'Listening...' : 'Voice input'}">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" stroke="currentColor" stroke-width="2"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                  ${healthVoiceActive ? 'Listening...' : 'Voice'}
-                </button>
-              </div>
-              ${mealsHtml ? `<div class="health-log-tags">${mealsHtml}</div>` : '<div class="ht-sub">Log what you eat today</div>'}
-              <div class="health-log-input">
-                <input type="text" id="healthMealInput" placeholder="e.g. Oatmeal, Chicken salad" onkeydown="healthLogKeydown(event,'meal')" autocomplete="off">
-                <button onclick="healthLogBtn('meal')">Add</button>
-              </div>
-              ${buildAnalysisHtml()}
-              ${buildMealAdviceHtml()}
-            </div>
-
-            <!-- Exercise -->
-            <div class="health-tracker-card" style="grid-column: span 2">
-              <div class="ht-icon" style="background:rgba(239,68,68,0.1)">&#127939;</div>
-              <div class="ht-label">Exercise</div>
-              <div class="ht-value">${h.exercise.length}<span style="font-size:0.75rem;font-weight:500;color:var(--text-muted)"> activities</span></div>
-              ${exerciseHtml ? `<div class="health-log-tags">${exerciseHtml}</div>` : '<div class="ht-sub">Log your workouts</div>'}
-              <div class="health-log-input">
-                <input type="text" id="healthExerciseInput" placeholder="e.g. 30min walk, Yoga, Push-ups" onkeydown="healthLogKeydown(event,'exercise')" autocomplete="off">
-                <button onclick="healthLogBtn('exercise')">Add</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Patterns / Insights -->
-          ${patternsHtml}
-
-          <!-- Wearable Sync -->
-          <div class="health-wearable-card">
-            <div class="health-wearable-icon">&#9201;</div>
-            <div class="health-wearable-info">
-              <div class="health-wearable-title">Wearable Sync</div>
-              <div class="health-wearable-desc">Connect Fitbit, Apple Watch, or Garmin for auto-tracking heart rate, steps, sleep &amp; hydration</div>
-            </div>
-            <button class="health-wearable-btn" onclick="alert('Wearable sync requires the mobile app. Coming soon!')">Connect</button>
-          </div>
-
-          <!-- Quick action chips -->
-          <div class="health-quick-actions">
-            <button class="health-quick-btn" onclick="sendHealthQuick('What should I eat for a healthy lunch?')">&#127869; Lunch ideas</button>
-            <button class="health-quick-btn" onclick="sendHealthQuick('Give me a quick 10-minute workout I can do at home')">&#128170; Quick workout</button>
-            <button class="health-quick-btn" onclick="sendHealthQuick('I\\'m feeling stressed. Help me relax.')">&#129526; Stress relief</button>
-            <button class="health-quick-btn" onclick="sendHealthQuick('How can I sleep better tonight?')">&#128164; Sleep tips</button>
-            <button class="health-quick-btn" onclick="sendHealthQuick('Am I drinking enough water today?')">&#128167; Hydration check</button>
-            <button class="health-quick-btn" onclick="sendHealthQuick('Suggest a healthy snack for 4pm energy boost')">&#127822; Snack ideas</button>
-          </div>
-
-          <!-- Chat with Health Coach -->
-          <div class="health-chat-section">
-            <div class="health-chat-header">
-              <div class="health-chat-header-title">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 13s-5.5-3-5.5-7A3 3 0 017 3.5 3 3 0 0112.5 6c0 4-5.5 7-5.5 7z" stroke="var(--high)" stroke-width="1.3" fill="rgba(239,68,68,0.1)"/></svg>
-                Ask Your Health Coach
-              </div>
-              ${healthChatMessages.length > 0 ? `<button class="briefing-refresh" onclick="healthChatMessages=[];render()">Clear chat</button>` : ''}
-            </div>
-            <div class="health-chat-messages" id="healthChatMessages">
-              ${chatHtml}
-            </div>
-            <div class="health-chat-input-wrap">
-              <input type="text" class="health-chat-input" id="healthChatInput" placeholder="Ask about nutrition, fitness, sleep, stress..." onkeydown="healthChatKeydown(event)" autocomplete="off"${healthChatLoading ? ' disabled' : ''}>
-              <button class="health-chat-send" onclick="healthChatSendBtn()"${healthChatLoading ? ' disabled' : ''}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M14 2L7 9M14 2l-4 12-3-5-5-3 12-4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </button>
-            </div>
-          </div>
-        </div>`;
-    }
-
-    function renderExpenseView(app) {
-      app.innerHTML = `
-        <div class="coming-soon-page">
-          <div class="coming-soon-icon" style="background:rgba(16,185,129,0.1)">
-            <svg viewBox="0 0 36 36" fill="none">
-              <circle cx="18" cy="18" r="13" stroke="#10b981" stroke-width="2.5" fill="rgba(16,185,129,0.06)"/>
-              <path d="M18 10v16M13.5 14C13.5 12.1 15.5 10.5 18 10.5s4.5 1.6 4.5 3.5-2 3.5-4.5 3.5-4.5 1.6-4.5 3.5 2 3.5 4.5 3.5 4.5-1.6 4.5-3.5" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <h2>Expense Tracker</h2>
-          <p>Track your daily spending, set budgets, categorise expenses, and see where your money goes.</p>
-
-          <div class="coming-soon-features">
-            <div class="cs-feature">
-              <div class="cs-feature-icon" style="background:rgba(16,185,129,0.08)">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 14l3-4 3 2 4-6 4 5" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
-              <h4>Spending trends</h4>
-              <p>Visualise your expenses with charts and analytics</p>
-            </div>
-            <div class="cs-feature">
-              <div class="cs-feature-icon" style="background:rgba(245,158,11,0.08)">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="2" stroke="#f59e0b" stroke-width="1.5" fill="none"/><path d="M2 8h14" stroke="#f59e0b" stroke-width="1.5"/></svg>
-              </div>
-              <h4>Budget limits</h4>
-              <p>Set monthly budgets and get alerts before overspending</p>
-            </div>
-            <div class="cs-feature">
-              <div class="cs-feature-icon" style="background:rgba(59,130,246,0.08)">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 4h12M3 9h8M3 14h5" stroke="var(--status-in-progress)" stroke-width="1.5" stroke-linecap="round"/></svg>
-              </div>
-              <h4>Categorise</h4>
-              <p>Auto-categorise expenses into food, travel, bills and more</p>
-            </div>
-            <div class="cs-feature">
-              <div class="cs-feature-icon" style="background:rgba(139,92,246,0.08)">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2l2.3 4.6L16 7.4l-3.5 3.4.8 4.7L9 13.3 4.7 15.5l.8-4.7L2 7.4l4.7-.8L9 2z" stroke="#8b5cf6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-              </div>
-              <h4>Smart insights</h4>
-              <p>AI-powered tips to help you save more each month</p>
-            </div>
-          </div>
-
-          <div style="margin-top:28px;padding:14px 20px;background:rgba(16,185,129,0.08);border-radius:var(--radius-sm);font-size:0.8125rem;color:#10b981;font-weight:600">
-            We're working on this feature. Stay tuned!
-          </div>
-        </div>`;
-    }
-
-    // ── All tasks view ──
-    function setAllSort(sort) {
-      allSort = sort;
-      if (sort === 'themes' && themeCache.hash !== getTasksHash()) {
-        fetchThemeGroups();
-        return;
-      }
-      render();
-    }
-
+    // ── All Tasks View ──
     function renderAllView(app) {
-      const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
-      const filtered = tasks.filter(matchesFilters);
-      const active = filtered.filter(t => t.status !== 'completed');
-      const completed = filtered.filter(t => t.status === 'completed');
+      const today   = todayStr();
+      const active  = applyFilters(tasks.filter(t => t.status !== 'completed'));
+      const overdue = active.filter(t => t.date && t.date < today).sort((a,b) => a.date.localeCompare(b.date));
+      const dueToday  = active.filter(t => t.date === today);
+      const upcoming  = active.filter(t => t.date && t.date > today).sort((a,b) => a.date.localeCompare(b.date));
+      const noDate    = active.filter(t => !t.date);
+      const inProg    = active.filter(t => t.status === 'in_progress').length;
+      const hiPri     = active.filter(t => t.priority === 'high').length;
 
-      // Stats
-      const totalAll = tasks.length;
-      const totalActive = tasks.filter(t => t.status !== 'completed').length;
-      const totalCompleted = tasks.filter(t => t.status === 'completed').length;
-      const highActive = tasks.filter(t => t.status !== 'completed' && t.priority === 'high').length;
-      const personalCount = tasks.filter(t => t.status !== 'completed' && t.category === 'personal').length;
-      const professionalCount = tasks.filter(t => t.status !== 'completed' && t.category === 'professional').length;
-
-      // Sort active tasks
-      const sorted = [...active].sort((a, b) => {
-        if (allSort === 'date') return a.date.localeCompare(b.date);
-        if (allSort === 'priority') return PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
-        if (allSort === 'category') return a.category.localeCompare(b.category);
-        if (allSort === 'location') {
-          const aLoc = (a.locationText || '').toLowerCase();
-          const bLoc = (b.locationText || '').toLowerCase();
-          if (!aLoc && !bLoc) return 0;
-          if (!aLoc) return 1;
-          if (!bLoc) return -1;
-          return aLoc.localeCompare(bLoc);
-        }
-        return 0;
-      });
-
-      const completedSorted = [...completed].sort((a, b) => a.date.localeCompare(b.date));
-
-      // Group helper for date sort: insert date dividers
-      function buildGroupedHtml(list) {
-        if (list.length === 0) return '';
-        if (allSort === 'themes') {
-          // Theme grouping mode
-          if (themeCache.loading) {
-            return `<div class="theme-loading"><div class="spinner"></div><br>Grouping tasks by theme...</div>`;
-          }
-          if (themeCache.groups.length === 0) {
-            // Not enough tasks or no groups - show ungrouped
-            return `<div class="day-section"><ul class="task-list">${list.map(t => taskHtml(t, true)).join('')}</ul></div>`;
-          }
-          let html = '';
-          const assigned = new Set();
-          for (const group of themeCache.groups) {
-            const groupTasks = list.filter(t => group.taskIds.includes(t.id));
-            if (groupTasks.length === 0) continue;
-            groupTasks.forEach(t => assigned.add(t.id));
-            html += `<div class="theme-group-header">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 3h3v3H2zM9 3h3v3H9zM2 8h3v3H2zM9 8h3v3H9z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/></svg>
-              ${escapeHtml(group.theme)}
-              <span class="theme-count">${groupTasks.length} task${groupTasks.length !== 1 ? 's' : ''}</span>
-            </div>`;
-            html += `<ul class="task-list">${groupTasks.map(t => taskHtml(t, true)).join('')}</ul>`;
-          }
-          // Any unassigned tasks
-          const unassigned = list.filter(t => !assigned.has(t.id));
-          if (unassigned.length > 0) {
-            html += `<div class="theme-group-header">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M7 5v4M5 7h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-              Other
-              <span class="theme-count">${unassigned.length} task${unassigned.length !== 1 ? 's' : ''}</span>
-            </div>`;
-            html += `<ul class="task-list">${unassigned.map(t => taskHtml(t, true)).join('')}</ul>`;
-          }
-          return `<div class="day-section">${html}</div>`;
-        }
-        if (allSort === 'date') {
-          let html = '';
-          let lastDate = '';
-          for (const t of list) {
-            if (t.date !== lastDate) {
-              lastDate = t.date;
-              const dayInfo = DAYS.find(d => d.key === dayKeyFromDate(t.date));
-              const isWeekend = dayInfo && dayInfo.weekend;
-              const dateLabel = parseDateNice(t.date);
-              html += `<div class="all-section-label" style="margin-top:${html ? '20px' : '0'}">${dateLabel}${isWeekend ? ' <span class="weekend-badge" style="margin-left:6px">Weekend</span>' : ''}</div>`;
-            }
-            html += taskHtml(t, false);
-          }
-          return `<div class="day-section"><ul class="task-list">${html}</ul></div>`;
-        }
-        if (allSort === 'priority') {
-          let html = '';
-          let lastPri = '';
-          for (const t of list) {
-            if (t.priority !== lastPri) {
-              lastPri = t.priority;
-              html += `<div class="all-section-label" style="margin-top:${html ? '20px' : '0'}">${lastPri} priority</div>`;
-            }
-            html += taskHtml(t, true);
-          }
-          return `<div class="day-section"><ul class="task-list">${html}</ul></div>`;
-        }
-        if (allSort === 'category') {
-          let html = '';
-          let lastCat = '';
-          for (const t of list) {
-            if (t.category !== lastCat) {
-              lastCat = t.category;
-              html += `<div class="all-section-label" style="margin-top:${html ? '20px' : '0'}">${lastCat}</div>`;
-            }
-            html += taskHtml(t, true);
-          }
-          return `<div class="day-section"><ul class="task-list">${html}</ul></div>`;
-        }
-        if (allSort === 'location') {
-          let html = '';
-          let lastLoc = '\x00';
-          for (const t of list) {
-            const loc = t.locationText || '';
-            if (loc !== lastLoc) {
-              lastLoc = loc;
-              const label = loc || 'No location';
-              html += `<div class="all-section-label" style="margin-top:${html ? '20px' : '0'}">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="vertical-align:-1px;margin-right:4px"><path d="M6 1C4.3 1 3 2.3 3 4c0 2.5 3 5 3 5s3-2.5 3-5c0-1.7-1.3-3-3-3z" stroke="currentColor" stroke-width="1.2" fill="none"/><circle cx="6" cy="4" r="1" fill="currentColor"/></svg>${escapeHtml(label)}</div>`;
-            }
-            html += taskHtml(t, true);
-          }
-          return `<div class="day-section"><ul class="task-list">${html}</ul></div>`;
-        }
-        return `<div class="day-section"><ul class="task-list">${list.map(t => taskHtml(t, true)).join('')}</ul></div>`;
-      }
-
-      const activeHtml = sorted.length > 0
-        ? buildGroupedHtml(sorted)
-        : `<div class="day-section"><div class="empty-state"><p>No active tasks \u2014 everything is done, or add a new one</p><button class="btn btn-sm btn-primary" onclick="openAddModal()">Add task</button></div></div>`;
-
-      const completedHtml = completedSorted.length > 0
-        ? `<div class="all-section-label completed-label">Completed (${completedSorted.length})</div>
-           <div class="day-section"><ul class="task-list">${completedSorted.map(t => taskHtml(t, true)).join('')}</ul></div>`
-        : '';
+      const section = (label, color, icon, list) => list.length === 0 ? '' : `
+        <div class="all-section-label" style="color:${color}">${icon} ${label} (${list.length})</div>
+        <div class="day-section"><ul class="task-list">${list.map(t=>taskHtml(t,true)).join('')}</ul></div>`;
 
       app.innerHTML = `
         <div class="all-stats all-stats--inline">
-          <div class="stat-card">
-            <div class="stat-value accent">${totalAll}</div>
-            <div class="stat-label">Total tasks</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">${totalActive}</div>
-            <div class="stat-label">Active</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value done-color">${totalCompleted}</div>
-            <div class="stat-label">Completed</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value high-color">${highActive}</div>
-            <div class="stat-label">High priority</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" style="color:var(--personal)">${personalCount}</div>
-            <div class="stat-label">Personal</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" style="color:var(--professional)">${professionalCount}</div>
-            <div class="stat-label">Professional</div>
-          </div>
+          <div class="stat-card"><div class="stat-value accent">${active.length}</div><div class="stat-label">Active</div></div>
+          <div class="stat-card"><div class="stat-value" style="color:var(--status-in-progress)">${inProg}</div><div class="stat-label">In Progress</div></div>
+          <div class="stat-card"><div class="stat-value high-color">${overdue.length}</div><div class="stat-label">Overdue</div></div>
+          <div class="stat-card"><div class="stat-value medium-color">${dueToday.length}</div><div class="stat-label">Due Today</div></div>
+          <div class="stat-card"><div class="stat-value high-color">${hiPri}</div><div class="stat-label">High Pri</div></div>
         </div>
+        ${section('Overdue','var(--danger)','⚠',overdue)}
+        ${section('Today','var(--text)','📅',dueToday)}
+        ${section('Upcoming','var(--text)','🗓',upcoming)}
+        ${section('No date','var(--text-muted)','–',noDate)}
+        ${active.length === 0 ? '<div class="empty-state"><p>🎉 No active tasks!</p><button class="btn btn-primary" onclick="openAddModal()">+ Add task</button></div>' : ''}`;
 
-        ${renderBriefingHtml()}
-
-        <div class="all-sort-bar">
-          <span>Sort by</span>
-          <button class="sort-chip${allSort==='date'?' active':''}" onclick="setAllSort('date')">Date</button>
-          <button class="sort-chip${allSort==='priority'?' active':''}" onclick="setAllSort('priority')">Priority</button>
-          <button class="sort-chip${allSort==='category'?' active':''}" onclick="setAllSort('category')">Category</button>
-          <button class="sort-chip${allSort==='location'?' active':''}" onclick="setAllSort('location')">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="vertical-align:-1px"><path d="M6 1C4.3 1 3 2.3 3 4c0 2.5 3 5 3 5s3-2.5 3-5c0-1.7-1.3-3-3-3z" stroke="currentColor" stroke-width="1.2" fill="none"/><circle cx="6" cy="4" r="1" fill="currentColor"/></svg>
-            Location
-          </button>
-          <button class="sort-chip${allSort==='themes'?' active':''}" onclick="setAllSort('themes')">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="vertical-align:-1px"><path d="M1.5 2.5h3v3h-3zM7.5 2.5h3v3h-3zM1.5 6.5h3v3h-3zM7.5 6.5h3v3h-3z" stroke="currentColor" stroke-width="1" stroke-linecap="round" fill="none"/></svg>
-            Themes
-          </button>
-        </div>
-
-        <div class="all-section-label">Active (${active.length})</div>
-        ${activeHtml}
-        ${completedHtml}`;
+      const sb = document.getElementById('statsSidebar');
+      if (sb) sb.innerHTML = `
+        <div class="stat-card"><div class="stat-value accent">${active.length}</div><div class="stat-label">Active Tasks</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--status-in-progress)">${inProg}</div><div class="stat-label">In Progress</div></div>
+        <div class="stat-card"><div class="stat-value high-color">${overdue.length}</div><div class="stat-label">Overdue</div></div>
+        <div class="stat-card"><div class="stat-value done-color">${tasks.filter(t=>t.status==='completed').length}</div><div class="stat-label">Completed</div></div>`;
     }
 
-    // ── Task HTML ──
-    function taskHtml(task, showDate) {
-      const dateInfo = showDate ? `<span class="date-label">${formatShort(task.date)}</span>` : '';
-      const statusLabel = STATUS_LABELS[task.status] || 'Not started';
+    // ── Week View ──
+    function renderWeekView(app) {
+      const today = todayStr();
+      const d = new Date();
+      d.setDate(d.getDate() + weekOffset * 7);
+      const dow = d.getDay();
+      const mon = new Date(d);
+      mon.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
+      const days = Array.from({length:7},(_,i)=>{ const dt=new Date(mon); dt.setDate(mon.getDate()+i); return toDateStr(dt); });
+      const active  = applyFilters(tasks.filter(t => t.status !== 'completed'));
+      const dayMap  = ['sun','mon','tue','wed','thu','fri','sat'];
 
-      // Assignee chips
-      const assignees = (task.assignedTo || []).map(uid => getUserById(uid)).filter(Boolean);
-      const creator = getUserById(task.createdBy);
-      let assigneeHtml = '';
-      if (assignees.length > 0) {
-        assigneeHtml = `<span class="task-assignees">${assignees.map(u =>
-          `<span class="assignee-chip"><span class="user-avatar sm" style="background:${u.color};width:16px;height:16px;font-size:0.5rem">${getUserInitials(u)}</span>${escapeHtml(u.name.split(' ')[0])}</span>`
-        ).join('')}</span>`;
-      }
+      let html = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:8px">
+        <button class="btn btn-sm" onclick="weekOffset--;render()">← Prev</button>
+        <div style="text-align:center"><div style="font-weight:700">${formatShort(days[0])} – ${formatShort(days[6])}</div>${weekOffset===0?'<div style="font-size:0.75rem;color:var(--accent)">This week</div>':''}</div>
+        <button class="btn btn-sm" onclick="weekOffset++;render()">Next →</button>
+      </div>`;
 
-      // Creator label
-      const creatorLabel = creator && creator.id !== currentUser?.id
-        ? `<span class="date-label">by ${escapeHtml(creator.name.split(' ')[0])}</span>` : '';
-
-      return `
-        <li class="task-item status-${task.status}" data-id="${task.id}">
-          <span class="priority-dot ${task.priority}" title="${task.priority} priority"></span>
-          <button class="status-badge ${task.status}" onclick="cycleStatus('${task.id}')" title="Click to change status">
-            <span class="status-badge-dot"></span>
-            ${statusLabel}
-          </button>
-          <div class="task-body">
-            <div class="task-text">${escapeHtml(task.text)}</div>
-            <div class="task-meta">
-              <span class="tag ${task.category}">${task.category}</span>
-              <span class="priority-label">${task.priority}</span>
-              ${dateInfo}
-              ${task.locationText ? `<span class="location-badge"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1C3.3 1 2 2.3 2 4c0 2.5 3 5 3 5s3-2.5 3-5c0-1.7-1.3-3-3-3z" stroke="currentColor" stroke-width="1" fill="none"/><circle cx="5" cy="4" r="1" fill="currentColor"/></svg>${escapeHtml(task.locationText)}${task.locationLat != null ? ' <span title="GPS pinned" style="color:var(--accent);font-size:0.6rem">&#x1F4CD;</span>' : ''}</span>` : ''}
-              ${creatorLabel}
-              ${assigneeHtml}
+      for (let i = 0; i < 7; i++) {
+        const ds    = days[i];
+        const jsDay = new Date(ds+'T00:00:00').getDay();
+        const isWknd  = jsDay === 0 || jsDay === 6;
+        const isToday = ds === today;
+        if (activeFilters.day !== 'all' && activeFilters.day !== dayMap[jsDay]) continue;
+        const dayTasks = active.filter(t => t.date === ds);
+        const doneCnt  = tasks.filter(t => t.date === ds && t.status === 'completed').length;
+        html += `<div class="day-section${isWknd?' weekend':''}">
+          <div class="day-header">
+            <div class="day-title">${DAY_NAMES[jsDay]}${isToday?'<span style="background:var(--accent);color:#fff;font-size:0.5625rem;padding:2px 6px;border-radius:4px;margin-left:6px">TODAY</span>':''}${isWknd?'<span class="weekend-badge">Weekend</span>':''}</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              ${doneCnt>0?`<span class="day-summary">✅ ${doneCnt} done</span>`:''}
+              <span class="day-summary">${formatShort(ds)}</span>
+              <button class="btn btn-sm" onclick="openAddModalForDate('${ds}')">+ Add</button>
             </div>
           </div>
-          <div class="task-actions">
-            <button class="btn-icon" onclick="openShareModal('${task.id}')" aria-label="Share task" title="Share / Assign">
-              <svg width="16" height="16" viewBox="0 0 16 16"><path d="M4 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM12 5c.8 0 1.5-.7 1.5-1.5S12.8 2 12 2s-1.5.7-1.5 1.5S11.2 5 12 5zM12 11c-.8 0-1.5.7-1.5 1.5s.7 1.5 1.5 1.5 1.5-.7 1.5-1.5-.7-1.5-1.5-1.5zM5.7 6.8l4.6-2.6M5.7 9.2l4.6 2.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
-            </button>
-            <button class="btn-icon" onclick="openEditModal('${task.id}')" aria-label="Edit task" title="Edit task">
-              <svg width="16" height="16" viewBox="0 0 16 16"><path d="M11.5 1.5l3 3-9 9H2.5v-3l9-9z" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-            <button class="btn-icon btn-danger" onclick="requestDelete('${task.id}')" aria-label="Delete task" title="Delete task" style="${isAdmin() ? '' : 'display:none'}">
-              <svg width="16" height="16" viewBox="0 0 16 16"><path d="M3 4h10M6 4V3a1 1 0 011-1h2a1 1 0 011 1v1M5 4v9a1 1 0 001 1h4a1 1 0 001-1V4" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
+          ${dayTasks.length>0
+            ?`<ul class="task-list">${dayTasks.map(t=>taskHtml(t,false)).join('')}</ul>`
+            :`<div class="empty-state" style="padding:16px"><button class="btn btn-sm" onclick="openAddModalForDate('${ds}')">+ Add task</button></div>`}
+        </div>`;
+      }
+      app.innerHTML = html;
+    }
+
+    // ── Calendar View ──
+    function renderCalendarView(app) {
+      const today = todayStr();
+      const now   = new Date();
+      if (calendarYear === undefined) { calendarYear = now.getFullYear(); calendarMonth = now.getMonth(); }
+      const firstDay = new Date(calendarYear, calendarMonth, 1);
+      const lastDay  = new Date(calendarYear, calendarMonth + 1, 0);
+      const startDow = firstDay.getDay();
+      const active   = applyFilters(tasks.filter(t => t.status !== 'completed'));
+      const selDate  = localStorage.getItem('calSelDate') || today;
+
+      let html = `<div class="calendar-wrapper">
+        <div class="calendar-nav">
+          <button class="calendar-nav-btn" onclick="if(calendarMonth--<1){calendarMonth=11;calendarYear--;}render()">‹</button>
+          <div class="calendar-nav-center">
+            <button class="calendar-today-btn" onclick="calendarYear=new Date().getFullYear();calendarMonth=new Date().getMonth();render()">Today</button>
+            <span class="calendar-nav-title">${MONTH_NAMES[calendarMonth]} ${calendarYear}</span>
           </div>
-        </li>`;
+          <button class="calendar-nav-btn" onclick="if(calendarMonth++>10){calendarMonth=0;calendarYear++;}render()">›</button>
+        </div>
+        <div class="calendar-grid">
+          ${['Su','Mo','Tu','We','Th','Fr','Sa'].map((d,i)=>`<div class="calendar-day-label${i===0||i===6?' weekend-label':''}">${d}</div>`).join('')}`;
+
+      for (let i = 0; i < startDow; i++) html += '<div class="calendar-cell outside"></div>';
+      for (let day = 1; day <= lastDay.getDate(); day++) {
+        const ds    = `${calendarYear}-${String(calendarMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const jsDay = new Date(ds+'T00:00:00').getDay();
+        const isWknd  = jsDay === 0 || jsDay === 6;
+        const isToday = ds === today;
+        const isSel   = ds === selDate;
+        const dt      = active.filter(t => t.date === ds);
+        html += `<div class="calendar-cell${isWknd?' weekend-cell':''}${isToday?' today':''}${isSel?' selected':''}" onclick="localStorage.setItem('calSelDate','${ds}');render()">
+          <div class="cal-date">${day}</div>
+          <div class="cal-dots">${dt.slice(0,4).map(t=>`<div class="cal-dot ${t.priority}${t.routineType&&t.routineType!=='none'?' cal-dot-routine':''}"></div>`).join('')}</div>
+          ${dt.length>0?`<div class="cal-task-count">${dt.length}</div>`:''}
+        </div>`;
+      }
+      html += '</div></div>';
+
+      const selTasks = active.filter(t => t.date === selDate);
+      html += `<div class="selected-date-panel">
+        <div class="selected-date-header">
+          <div class="selected-date-title">${formatFull(selDate)}${selDate===today?'<span style="background:var(--accent);color:#fff;font-size:0.625rem;padding:2px 6px;border-radius:4px;margin-left:8px">Today</span>':''}</div>
+          <button class="btn btn-sm btn-primary" onclick="openAddModalForDate('${selDate}')">+ Add</button>
+        </div>
+        ${selTasks.length>0
+          ?`<div class="day-section"><ul class="task-list">${selTasks.map(t=>taskHtml(t,false)).join('')}</ul></div>`
+          :`<div class="empty-state"><p>No tasks on this day.</p><button class="btn btn-sm" onclick="openAddModalForDate('${selDate}')">+ Add task</button></div>`}
+      </div>`;
+      app.innerHTML = html;
     }
 
-    function escapeHtml(str) {
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
+    // ── Progress View ──
+    function renderProgressView(app) {
+      const today  = todayStr();
+      const total  = tasks.length;
+      const done   = tasks.filter(t=>t.status==='completed').length;
+      const inProg = tasks.filter(t=>t.status==='in_progress');
+      const pct    = total > 0 ? Math.round(done/total*100) : 0;
+      const C      = 2*Math.PI*40;
+      const overdue = tasks.filter(t=>t.status!=='completed'&&t.date&&t.date<today).length;
+
+      const d = new Date(); d.setDate(d.getDate()-(d.getDay()===0?6:d.getDay()-1));
+      const weekDays = Array.from({length:7},(_,i)=>{ const dt=new Date(d); dt.setDate(d.getDate()+i); return toDateStr(dt); });
+      const maxT = Math.max(...weekDays.map(ds=>tasks.filter(t=>t.date===ds).length),1);
+
+      const ipCards = inProg.length > 0 ? inProg.map(t=>`
+        <div style="margin-bottom:12px;padding:14px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:0.875rem;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(t.text)}</span>
+            <span style="font-size:1.125rem;font-weight:800;color:var(--accent);margin-left:8px;flex-shrink:0">${t.progress||0}%</span>
+          </div>
+          <div class="task-progress-wrap"><div class="task-progress-bar task-progress-bar--lg"><div class="task-progress-fill" style="width:${t.progress||0}%"></div></div></div>
+          <div style="margin-top:10px;display:flex;align-items:center;gap:8px">
+            <input type="range" min="0" max="100" value="${t.progress||0}" style="flex:1" oninput="updateProgress(${t.id},+this.value)">
+            ${etaBadgeHtml(t)}
+            <button class="btn btn-sm" onclick="openEditModal(${t.id})">Edit</button>
+          </div>
+          ${t.etaDate?`<div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">ETA: ${formatShort(t.etaDate)}</div>`:''}
+        </div>`).join('') : '<div class="empty-state" style="padding:20px"><p>No tasks in progress.</p></div>';
+
+      app.innerHTML = `
+        <div class="progress-section">
+          <div class="progress-section-title">Overall Completion</div>
+          <div class="ring-row">
+            <div class="ring-wrap">
+              <svg class="ring-svg" width="100" height="100" viewBox="0 0 100 100">
+                <circle class="ring-bg" cx="50" cy="50" r="40"/>
+                <circle class="ring-fill" cx="50" cy="50" r="40" stroke="${pct>70?'var(--low)':pct>40?'var(--medium)':'var(--accent)'}" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C-(pct/100)*C).toFixed(1)}"/>
+              </svg>
+              <div class="ring-label"><div class="ring-pct">${pct}%</div><div class="ring-sub">Done</div></div>
+            </div>
+            <div class="ring-stats">
+              <div class="ring-stat-row"><span class="ring-stat-label">Total</span><span class="ring-stat-value">${total}</span></div>
+              <div class="ring-stat-row"><span class="ring-stat-label">Completed</span><span class="ring-stat-value" style="color:var(--low)">${done}</span></div>
+              <div class="ring-stat-row"><span class="ring-stat-label">In Progress</span><span class="ring-stat-value" style="color:var(--status-in-progress)">${inProg.length}</span></div>
+              <div class="ring-stat-row"><span class="ring-stat-label">Overdue</span><span class="ring-stat-value" style="color:var(--danger)">${overdue}</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="progress-section">
+          <div class="progress-section-title">🔄 In-Progress Work Updates</div>
+          ${ipCards}
+        </div>
+        <div class="progress-section">
+          <div class="progress-section-title">📊 This Week Activity</div>
+          <div class="bar-chart">${weekDays.map((ds,i)=>{
+            const dt=tasks.filter(t=>t.date===ds).length;
+            const dc=tasks.filter(t=>t.date===ds&&t.status==='completed').length;
+            const bH=dt>0?Math.max(10,Math.round(dt/maxT*100)):4;
+            const isWknd=i===5||i===6;
+            const isToday=ds===today;
+            return `<div class="bar-col${isToday?' today-col':''}">
+              <div class="bar-count">${dt||''}</div>
+              <div class="bar-stack">${dc>0?`<div class="bar-segment completed-bar" style="height:${Math.round(dc/dt*bH)}%"></div>`:''}${dt-dc>0?`<div class="bar-segment pending-bar" style="height:${Math.round((dt-dc)/dt*bH)}%"></div>`:''}</div>
+              <div class="bar-day-label${isWknd?' weekend-bar':''}">${DAY_SHORT[new Date(ds+'T00:00:00').getDay()]}</div>
+            </div>`;}).join('')}</div>
+        </div>
+        <div class="progress-section">
+          <div class="progress-section-title">🔁 Routine Tasks Overview</div>
+          ${['daily','weekly','monthly'].map(rt=>{
+            const rt2 = tasks.filter(t=>t.routineType===rt&&t.status!=='completed');
+            return `<div class="breakdown-row">
+              <div class="breakdown-header"><span class="breakdown-label"><span class="routine-badge">🔁 ${rt.charAt(0).toUpperCase()+rt.slice(1)}</span></span><span class="breakdown-value">${rt2.length} active</span></div>
+              ${rt2.length>0?`<div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">${rt2.slice(0,3).map(t=>escapeHtml(t.text)).join(' · ')}${rt2.length>3?' +more':''}</div>`:''}
+            </div>`;}).join('')}
+        </div>`;
     }
 
-    // ── Task CRUD ──
-    const STATUS_CYCLE = ['not_started', 'in_progress', 'on_hold', 'completed'];
+    async function updateProgress(taskId, value) {
+      const task = tasks.find(t => t.id == taskId);
+      if (!task) return;
+      task.progress = value;
+      clearTimeout(task._pt);
+      task._pt = setTimeout(async () => {
+        try {
+          await api('/tasks/'+taskId, {method:'PUT', body:JSON.stringify({
+            text:task.text, date:task.date, priority:task.priority,
+            category:task.category, status:task.status, routineType:task.routineType,
+            progress:value, etaDate:task.etaDate,
+            locationText:task.locationText, locationLat:task.locationLat, locationLng:task.locationLng
+          })});
+          toast('Progress updated ✓');
+        } catch(e) { console.error('Progress update error', e); }
+      }, 1000);
+    }
+
+    // ── Health View ──
+    function renderHealthView(app) {
+      app.innerHTML = `<div class="coming-soon-page">
+        <div class="coming-soon-icon"><svg width="36" height="36" viewBox="0 0 36 36" fill="none"><path d="M18 32s-14-9-14-20A9 9 0 0118 6a9 9 0 0114 6c0 11-14 20-14 20z" stroke="var(--status-in-progress)" stroke-width="2" fill="none"/></svg></div>
+        <h2>Health Coach</h2><p>Advanced wellness tracking features are in development.</p>
+        <div class="coming-soon-features">
+          <div class="cs-feature"><h4>💊 Medications</h4><p>Track meds & supplements</p></div>
+          <div class="cs-feature"><h4>🏃 Exercise</h4><p>Log workouts</p></div>
+          <div class="cs-feature"><h4>😴 Sleep</h4><p>Monitor sleep patterns</p></div>
+          <div class="cs-feature"><h4>🍎 Nutrition</h4><p>Track meals & calories</p></div>
+        </div></div>`;
+    }
+
+    // ── Expense View ──
+    function renderExpenseView(app) {
+      app.innerHTML = `<div class="coming-soon-page"><div class="coming-soon-icon"><svg width="36" height="36" viewBox="0 0 36 36" fill="none"><path d="M18 3v30M10 10c0-4 3-7 8-7s8 3 8 7-3 7-8 7-8 3-8 7 3 7 8 7 8-3 8-7" stroke="var(--status-in-progress)" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div><h2>Expense Tracking</h2><p>Budget & expense tracking coming soon.</p></div>`;
+    }
+
+    // ── Completed View ──
+    function renderCompletedView(app) {
+      const list = applyFilters(tasks.filter(t => t.status === 'completed'))
+        .sort((a,b) => (b.updatedAt||'').localeCompare(a.updatedAt||''));
+      if (list.length === 0) {
+        app.innerHTML = '<div class="empty-state"><p>No completed tasks yet.</p></div>';
+        return;
+      }
+      app.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <h3 style="font-weight:700">✅ Completed (${list.length})</h3>
+      </div><div class="day-section"><ul class="task-list">${list.map(t=>taskHtml(t,true,{showRestore:true})).join('')}</ul></div>`;
+    }
+
+    // ── Status actions ──
     async function cycleStatus(id) {
       id = Number(id);
       const task = tasks.find(t => t.id == id);
       if (!task) return;
-      const idx = STATUS_CYCLE.indexOf(task.status);
+      const idx       = STATUS_CYCLE.indexOf(task.status);
       const newStatus = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
       try {
-        await api('/tasks/' + task.id + '/status', {
-          method: 'PUT',
-          body: JSON.stringify({ status: newStatus })
-        });
-        task.status = newStatus;
+        const res = await api('/tasks/'+id+'/status', {method:'PUT', body:JSON.stringify({status:newStatus})});
+        task.status = res.status;
+        if (res.newDate) task.date = res.newDate;
+        if (newStatus === 'completed' && task.routineType && task.routineType !== 'none') {
+          toast(`✅ Done! Next occurrence: ${formatShort(res.newDate)}`);
+        } else if (newStatus === 'completed') { toast('✅ Task completed!'); }
         render();
-        toast('Status: ' + STATUS_LABELS[newStatus]);
-        scheduleThemeRefresh();
-      } catch (err) {
-        toast(err.message || 'Failed to update status');
-      }
+      } catch(e) { toast('Failed to update status'); }
     }
 
-    function requestDelete(id) {
-      id = Number(id);
-      pendingConfirm = async () => {
-        try {
-          await api('/tasks/' + id, { method: 'DELETE' });
-          tasks = tasks.filter(t => t.id !== id);
-          render();
-          toast('Task deleted');
-          scheduleThemeRefresh();
-        } catch (err) {
-          toast(err.message || 'Failed to delete task');
+    async function restoreTask(id) {
+      const task = tasks.find(t => t.id == id);
+      if (!task) return;
+      try {
+        await api('/tasks/'+id+'/status', {method:'PUT', body:JSON.stringify({status:'not_started'})});
+        task.status = 'not_started';
+        toast('↩ Task restored to active');
+        render();
+      } catch(e) { toast('Failed to restore task'); }
+    }
+
+    async function deleteTask(id) {
+      if (!confirm('Delete this task permanently?')) return;
+      try {
+        await api('/tasks/'+id, {method:'DELETE'});
+        tasks = tasks.filter(t => t.id != id);
+        toast('Task deleted');
+        render();
+      } catch(e) { toast('Failed to delete task'); }
+    }
+
+    // ── Logs modal (timeline) ──
+    async function viewLogs(taskId) {
+      const modal = document.getElementById('logsModal');
+      const task  = tasks.find(t => t.id == taskId);
+      const titleEl = modal.querySelector('h2');
+      if (titleEl && task) titleEl.textContent = '📋 History: ' + task.text.slice(0,50) + (task.text.length>50?'…':'');
+      modal.classList.add('open');
+      const list = document.getElementById('logsList');
+      list.innerHTML = '<li style="color:var(--text-muted);padding:12px 0">Loading…</li>';
+      try {
+        const logs = await api('/tasks/'+taskId+'/logs');
+        let infoHtml = '';
+        if (task) {
+          const drift = task.originalStartDate && task.originalStartDate !== task.date
+            ? Math.abs(daysFromToday(task.originalStartDate) - daysFromToday(task.date)) : 0;
+          infoHtml = `<li class="log-task-info">
+            <div><strong>Status:</strong> <span class="status-badge ${task.status}" style="font-size:0.7rem">${STATUS_LABELS[task.status]}</span></div>
+            ${task.originalStartDate?`<div><strong>Original start:</strong> ${formatShort(task.originalStartDate)}</div>`:''}
+            ${task.etaDate?`<div><strong>ETA:</strong> ${formatShort(task.etaDate)} ${etaBadgeHtml(task)}</div>`:''}
+            ${drift>0?`<div style="color:var(--medium)">📅 Schedule drifted by ${drift} day(s)</div>`:''}
+          </li>`;
         }
-      };
-      document.getElementById('confirmMessage').textContent = 'Delete this task? This cannot be undone.';
-      document.getElementById('confirmBtn').textContent = 'Delete';
-      document.getElementById('confirmModal').classList.add('open');
+        if (logs.length === 0) {
+          list.innerHTML = infoHtml + '<li style="color:var(--text-muted);padding:8px 0">No history entries yet.</li>';
+          return;
+        }
+        list.innerHTML = infoHtml + logs.map(l => {
+          const msg = l.LOG_MESSAGE || l.log_message || '';
+          const ts  = l.CREATED_AT || l.created_at || '';
+          const fmt = ts ? new Date(ts).toLocaleString() : '';
+          const icon= msg.includes('rolled over')?'🔁':msg.includes('date')||msg.includes('Date')?'📅':msg.includes('ETA')?'⏳':msg.includes('created')?'🆕':'📝';
+          return `<li class="log-timeline-item">
+            <div class="log-timeline-dot">${icon}</div>
+            <div class="log-timeline-content"><div class="log-message">${escapeHtml(msg)}</div>${fmt?`<div class="log-time">${fmt}</div>`:''}</div>
+          </li>`;
+        }).join('');
+      } catch(e) { list.innerHTML = '<li style="color:var(--danger)">Failed to load history.</li>'; }
     }
 
-    function confirmAction() {
-      if (pendingConfirm) pendingConfirm();
-      pendingConfirm = null;
-      closeConfirm();
-    }
+    // ── Add / Edit modal ──
+    function openAddModal() { openAddModalForDate(todayStr()); }
 
-    function closeConfirm() {
-      document.getElementById('confirmModal').classList.remove('open');
-    }
-
-    function renderAssignPicker(selectedIds) {
-      const picker = document.getElementById('assignPicker');
-      const sel = new Set(selectedIds || []);
-      picker.innerHTML = users.map(u => {
-        const isSelected = sel.has(u.id);
-        return `<div class="assign-option${isSelected ? ' selected' : ''}" data-user-id="${u.id}" onclick="toggleAssignOption(this)">
-          <span class="user-avatar sm" style="background:${u.color};width:18px;height:18px;font-size:0.5rem">${getUserInitials(u)}</span>
-          ${escapeHtml(u.name.split(' ')[0])}
-        </div>`;
-      }).join('') || '<span style="color:var(--text-muted);font-size:0.8125rem">No users yet</span>';
-    }
-    function toggleAssignOption(el) {
-      el.classList.toggle('selected');
-    }
-
-    // ── Modal ──
-    function openAddModal(presetDayKey, presetDate) {
+    function openAddModalForDate(date) {
       editingId = null;
       document.getElementById('modalTitle').textContent = 'Add task';
       document.getElementById('modalSubmitBtn').textContent = 'Add task';
       document.getElementById('taskForm').reset();
-
-      // Set date
-      if (presetDate) {
-        document.getElementById('taskDate').value = presetDate;
-      } else if (presetDayKey) {
-        document.getElementById('taskDate').value = getNextDateForDay(presetDayKey);
-      } else {
-        document.getElementById('taskDate').value = todayStr();
-      }
-
-      // Reset segmented controls
-      document.querySelector('input[name="priority"][value="medium"]').checked = true;
-      document.querySelector('input[name="category"][value="personal"]').checked = true;
-      document.querySelector('input[name="status"][value="not_started"]').checked = true;
+      document.getElementById('taskDate').value = date;
+      document.getElementById('progressGroup').style.display = 'none';
+      document.getElementById('progressVal').textContent = '0';
       renderAssignPicker([]);
-      document.getElementById('taskLocation').value = '';
-      document.getElementById('taskLocationLat').value = '';
-      document.getElementById('taskLocationLng').value = '';
-      document.getElementById('locationPinWrap').style.display = (isNativeApp() || navigator.geolocation) ? '' : 'none';
-
       document.getElementById('taskModal').classList.add('open');
-      setTimeout(() => document.getElementById('taskText').focus(), 100);
     }
 
     function openEditModal(id) {
-      id = Number(id);
       const task = tasks.find(t => t.id == id);
       if (!task) return;
-      editingId = id;
+      editingId = task.id;
       document.getElementById('modalTitle').textContent = 'Edit task';
       document.getElementById('modalSubmitBtn').textContent = 'Save changes';
-      document.getElementById('taskText').value = task.text;
-      document.getElementById('taskDate').value = task.date;
-      document.querySelector(`input[name="priority"][value="${task.priority}"]`).checked = true;
-      document.querySelector(`input[name="category"][value="${task.category}"]`).checked = true;
-      document.querySelector(`input[name="status"][value="${task.status || 'not_started'}"]`).checked = true;
+      document.getElementById('taskText').value  = task.text;
+      document.getElementById('taskDate').value  = task.date || '';
+      const pr = document.querySelector(`input[name="priority"][value="${task.priority}"]`); if (pr) pr.checked = true;
+      const ca = document.querySelector(`input[name="category"][value="${task.category}"]`); if (ca) ca.checked = true;
+      const st = document.querySelector(`input[name="status"][value="${task.status}"]`);     if (st) st.checked = true;
+      const pv = task.progress || 0;
+      document.getElementById('taskProgress').value  = pv;
+      document.getElementById('progressVal').textContent = pv;
+      document.getElementById('progressGroup').style.display = task.status === 'in_progress' ? '' : 'none';
+      document.getElementById('taskEta').value      = task.etaDate || '';
+      document.getElementById('taskRoutine').value  = task.routineType || 'none';
+      const loc = document.getElementById('taskLocation');     if (loc) loc.value = task.locationText || '';
+      const lat = document.getElementById('taskLocationLat');  if (lat) lat.value = task.locationLat  || '';
+      const lng = document.getElementById('taskLocationLng');  if (lng) lng.value = task.locationLng  || '';
       renderAssignPicker(task.assignedTo || []);
-      document.getElementById('taskLocation').value = task.locationText || '';
-      document.getElementById('taskLocationLat').value = task.locationLat || '';
-      document.getElementById('taskLocationLng').value = task.locationLng || '';
-      document.getElementById('locationPinWrap').style.display = (isNativeApp() || navigator.geolocation) ? '' : 'none';
       document.getElementById('taskModal').classList.add('open');
-      setTimeout(() => document.getElementById('taskText').focus(), 100);
+    }
+
+    function renderAssignPicker(sel) {
+      const p = document.getElementById('assignPicker');
+      if (!p) return;
+      const others = users.filter(u => u.id !== currentUser?.id);
+      p.innerHTML = others.length === 0
+        ? '<span style="color:var(--text-muted);font-size:0.8125rem">No other users</span>'
+        : others.map(u=>`<label class="assign-option${sel.includes(u.id)?' selected':''}">
+            <input type="checkbox" name="assignee" value="${u.id}"${sel.includes(u.id)?' checked':''} onchange="this.closest('.assign-option').classList.toggle('selected',this.checked)">
+            <span class="user-avatar sm" style="background:${avatarColor(u.name)}">${initials(u.name)}</span>
+            ${escapeHtml(u.name)}
+          </label>`).join('');
     }
 
     function closeModal() {
-      document.getElementById('taskModal').classList.remove('open');
       editingId = null;
+      document.getElementById('taskModal').classList.remove('open');
     }
 
     async function handleSubmit(e) {
       e.preventDefault();
-      const text = document.getElementById('taskText').value.trim();
-      if (!text) return;
-
-      const date = document.getElementById('taskDate').value || todayStr();
-      const priority = document.querySelector('input[name="priority"]:checked').value;
-      const category = document.querySelector('input[name="category"]:checked').value;
-      const status = document.querySelector('input[name="status"]:checked').value;
-      const locationText = document.getElementById('taskLocation').value.trim() || null;
-      let locationLat = document.getElementById('taskLocationLat').value ? parseFloat(document.getElementById('taskLocationLat').value) : null;
-      let locationLng = document.getElementById('taskLocationLng').value ? parseFloat(document.getElementById('taskLocationLng').value) : null;
-
-      // Auto-geocode if location text exists but no coordinates
-      if (locationText && locationLat == null && locationLng == null) {
-        try {
-          const coords = await geocodeLocationText(locationText);
-          if (coords) {
-            locationLat = coords.lat;
-            locationLng = coords.lng;
-          }
-        } catch (e) {}
-      }
-
-      // Collect assigned users from picker
-      const assignedTo = [];
-      document.querySelectorAll('#assignPicker .assign-option.selected').forEach(el => {
-        assignedTo.push(Number(el.dataset.userId));
-      });
-
+      const status     = document.querySelector('input[name="status"]:checked')?.value || 'not_started';
+      const assignedTo = [...document.querySelectorAll('input[name="assignee"]:checked')].map(el=>parseInt(el.value));
+      const loc = document.getElementById('taskLocation');
+      const lat = document.getElementById('taskLocationLat');
+      const lng = document.getElementById('taskLocationLng');
+      const body = {
+        text:       document.getElementById('taskText').value.trim(),
+        date:       document.getElementById('taskDate').value,
+        priority:   document.querySelector('input[name="priority"]:checked')?.value || 'medium',
+        category:   document.querySelector('input[name="category"]:checked')?.value || 'personal',
+        status, assignedTo,
+        routineType: document.getElementById('taskRoutine').value || 'none',
+        progress:    status === 'in_progress' ? parseInt(document.getElementById('taskProgress').value) : 0,
+        etaDate:     document.getElementById('taskEta').value || null,
+        locationText: loc?.value || null,
+        locationLat:  parseFloat(lat?.value) || null,
+        locationLng:  parseFloat(lng?.value) || null
+      };
+      const btn = document.getElementById('modalSubmitBtn');
+      btn.disabled = true; btn.textContent = editingId ? 'Saving…' : 'Adding…';
       try {
         if (editingId) {
-          const updated = await api('/tasks/' + editingId, {
-            method: 'PUT',
-            body: JSON.stringify({ text, date, priority, category, status, assignedTo, locationText, locationLat, locationLng })
-          });
+          const updated = await api('/tasks/'+editingId, {method:'PUT', body:JSON.stringify(body)});
           const idx = tasks.findIndex(t => t.id == editingId);
           if (idx >= 0) tasks[idx] = updated;
-          toast('Task updated');
+          toast('Task updated ✓');
         } else {
-          const created = await api('/tasks', {
-            method: 'POST',
-            body: JSON.stringify({ text, date, priority, category, status, assignedTo, locationText, locationLat, locationLng })
-          });
-          tasks.push(created);
-          toast('Task added');
+          const newTask = await api('/tasks', {method:'POST', body:JSON.stringify(body)});
+          tasks.push(newTask);
+          toast('Task added ✓');
         }
-        closeModal();
-        render();
-        scheduleThemeRefresh();
-        // Clear notified set so updated task locations are re-evaluated immediately
-        notifiedLocationTasks.clear();
-        // Trigger a fresh nearby check so newly added/edited location tasks fire quickly
-        if (isNativeApp()) {
-          const Geolocation = getCapPlugin('Geolocation');
-          const LocalNotifications = getCapPlugin('LocalNotifications');
-          if (Geolocation && LocalNotifications) {
-            setTimeout(function() { checkNearbyTasks(Geolocation, LocalNotifications); }, 1000);
-          }
-        } else if (navigator.geolocation) {
-          setTimeout(checkNearbyTasksWeb, 1000);
-        }
-      } catch (err) {
-        toast(err.message || 'Failed to save task');
-      }
+        closeModal(); render();
+      } catch { toast('Failed to save task'); }
+      finally { btn.disabled = false; btn.textContent = editingId ? 'Save changes' : 'Add task'; }
     }
 
-    // Close modals
-    document.getElementById('taskModal').addEventListener('click', (e) => {
-      if (e.target === e.currentTarget) closeModal();
-    });
-    document.getElementById('confirmModal').addEventListener('click', (e) => {
-      if (e.target === e.currentTarget) closeConfirm();
-    });
-    document.getElementById('shareModal').addEventListener('click', (e) => {
-      if (e.target === e.currentTarget) closeShareModal();
-    });
-    document.getElementById('manageUsersModal').addEventListener('click', (e) => {
-      if (e.target === e.currentTarget) closeManageUsers();
-    });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') { closeModal(); closeConfirm(); closeShareModal(); closeManageUsers(); closeNotificationPanel(); }
+    // ── Auth handlers ──
+    async function handleAuth(e) {
+      e.preventDefault();
+      const isLogin = document.getElementById('authTitle').textContent === 'Log in';
+      const email = document.getElementById('authEmail').value;
+      const password = document.getElementById('authPassword').value;
+      const name = document.getElementById('authName').value;
+      const btn = document.getElementById('authSubmitBtn');
+      btn.disabled = true;
+      try {
+        const path    = isLogin ? '/auth/login' : '/auth/register';
+        const reqBody = isLogin ? {email,password} : {name,email,password};
+        const res = await api(path, {method:'POST', body:JSON.stringify(reqBody)});
+        authToken = res.token;
+        localStorage.setItem('reminder_app_token', authToken);
+        currentUser = res.user;
+        [tasks, users] = await Promise.all([api('/tasks'), api('/users')]);
+        showApp();
+      } catch { toast('Auth failed. Check your credentials.'); }
+      finally { btn.disabled = false; }
+    }
+
+    function toggleAuthMode() {
+      const isLogin = document.getElementById('authTitle').textContent === 'Log in';
+      document.getElementById('authTitle').textContent = isLogin ? 'Sign up' : 'Log in';
+      document.getElementById('authSub').textContent   = isLogin ? 'Create an account to get started' : 'Welcome back!';
+      document.getElementById('authSubmitBtn').textContent = isLogin ? 'Create account' : 'Log in';
+      document.getElementById('authToggle').innerHTML = isLogin
+        ? 'Already have an account? <a onclick="toggleAuthMode()">Log in</a>'
+        : "Don't have an account? <a onclick=\"toggleAuthMode()\">Sign up</a>";
+      const ng = document.getElementById('authName')?.closest('.form-group');
+      if (ng) ng.style.display = isLogin ? '' : 'none';
+    }
+
+    function logout() {
+      authToken = null; currentUser = null; tasks = []; users = [];
+      localStorage.removeItem('reminder_app_token');
+      showAuth();
+    }
+
+    // ── User dropdown ──
+    function toggleUserDropdown(e) { e.stopPropagation(); document.getElementById('userDropdown').classList.toggle('open'); }
+    function closeUserDropdown()   { document.getElementById('userDropdown')?.classList.remove('open'); }
+
+    async function openManageUsers() {
+      closeUserDropdown();
+      try {
+        const all = await api('/users');
+        const modal = document.getElementById('logsModal');
+        modal.querySelector('h2').textContent = 'Manage Users';
+        document.getElementById('logsList').innerHTML = all.map(u=>`<li class="log-task-info" style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <span class="user-avatar" style="background:${avatarColor(u.name)}">${initials(u.name)}</span>
+          <div><div style="font-weight:600">${escapeHtml(u.name)}</div><div style="font-size:0.75rem;color:var(--text-muted)">${escapeHtml(u.email)} · ${u.role}</div></div>
+        </li>`).join('');
+        modal.classList.add('open');
+      } catch { toast('Failed to load users'); }
+    }
+
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('#userMenu')) closeUserDropdown();
+      if (!e.target.closest('.notif-wrap')) closeNotificationPanel();
     });
 
-    // ── Toast ──
     function toast(message) {
       const container = document.getElementById('toasts');
       const el = document.createElement('div');
