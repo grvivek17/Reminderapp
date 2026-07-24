@@ -3116,12 +3116,33 @@
           <div class="form-group">
             <label>Status</label>
             <div class="segmented status">
-              <label><input type="radio" name="status" value="not_started" checked><span>Not started</span></label>
-              <label><input type="radio" name="status" value="in_progress"><span>In progress</span></label>
-              <label><input type="radio" name="status" value="on_hold"><span>On hold</span></label>
-              <label><input type="radio" name="status" value="completed"><span>Completed</span></label>
+              <label><input type="radio" name="status" value="not_started" checked onchange="document.getElementById('progressGroup').style.display='none'"><span>Not started</span></label>
+              <label><input type="radio" name="status" value="in_progress" onchange="document.getElementById('progressGroup').style.display=''"><span>In progress</span></label>
+              <label><input type="radio" name="status" value="on_hold" onchange="document.getElementById('progressGroup').style.display='none'"><span>On hold</span></label>
+              <label><input type="radio" name="status" value="completed" onchange="document.getElementById('progressGroup').style.display='none'"><span>Completed</span></label>
             </div>
           </div>
+           <div class="form-group" id="progressGroup" style="display:none">
+             <label for="taskProgress">Progress: <strong><span id="progressVal">0</span>%</strong></label>
+             <input type="range" id="taskProgress" min="0" max="100" value="0" style="width:100%" oninput="document.getElementById('progressVal').innerText = this.value">
+           </div>
+          
+          <div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div>
+              <label for="taskRoutine">Repeat Routine</label>
+              <select id="taskRoutine" style="width:100%;padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);color:var(--text);">
+                <option value="none">None</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+            <div>
+              <label for="taskEta">Target ETA Date</label>
+              <input type="date" id="taskEta" style="width:100%;padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);color:var(--text);">
+            </div>
+          </div>
+
           <div class="form-group">
             <label>Assign to</label>
             <div class="assign-picker" id="assignPicker"></div>
@@ -6021,6 +6042,17 @@
       document.querySelector(`input[name="category"][value="${task.category}"]`).checked = true;
       document.querySelector(`input[name="status"][value="${task.status || 'not_started'}"]`).checked = true;
       renderAssignPicker(task.assignedTo || []);
+      
+      const pv = task.progress || 0;
+      const progEl = document.getElementById('taskProgress');
+      if (progEl) { progEl.value = pv; document.getElementById('progressVal').textContent = pv; }
+      const progGrp = document.getElementById('progressGroup');
+      if (progGrp) progGrp.style.display = task.status === 'in_progress' ? '' : 'none';
+      const etaEl = document.getElementById('taskEta');
+      if (etaEl) etaEl.value = task.etaDate || '';
+      const routEl = document.getElementById('taskRoutine');
+      if (routEl) routEl.value = task.routineType || 'none';
+
       document.getElementById('taskLocation').value = task.locationText || '';
       document.getElementById('taskLocationLat').value = task.locationLat || '';
       document.getElementById('taskLocationLng').value = task.locationLng || '';
@@ -6043,6 +6075,9 @@
       const priority = document.querySelector('input[name="priority"]:checked').value;
       const category = document.querySelector('input[name="category"]:checked').value;
       const status = document.querySelector('input[name="status"]:checked').value;
+      const routineType = document.getElementById('taskRoutine') ? (document.getElementById('taskRoutine').value || 'none') : 'none';
+      const progress = status === 'in_progress' && document.getElementById('taskProgress') ? parseInt(document.getElementById('taskProgress').value) : 0;
+      const etaDate = document.getElementById('taskEta') ? (document.getElementById('taskEta').value || null) : null;
       const locationText = document.getElementById('taskLocation').value.trim() || null;
       let locationLat = document.getElementById('taskLocationLat').value ? parseFloat(document.getElementById('taskLocationLat').value) : null;
       let locationLng = document.getElementById('taskLocationLng').value ? parseFloat(document.getElementById('taskLocationLng').value) : null;
@@ -6068,7 +6103,7 @@
         if (editingId) {
           const updated = await api('/tasks/' + editingId, {
             method: 'PUT',
-            body: JSON.stringify({ text, date, priority, category, status, assignedTo, locationText, locationLat, locationLng })
+            body: JSON.stringify({ text, date, priority, category, status, assignedTo, routineType, progress, etaDate, locationText, locationLat, locationLng })
           });
           const idx = tasks.findIndex(t => t.id == editingId);
           if (idx >= 0) tasks[idx] = updated;
@@ -6076,7 +6111,7 @@
         } else {
           const created = await api('/tasks', {
             method: 'POST',
-            body: JSON.stringify({ text, date, priority, category, status, assignedTo, locationText, locationLat, locationLng })
+            body: JSON.stringify({ text, date, priority, category, status, assignedTo, routineType, progress, etaDate, locationText, locationLat, locationLng })
           });
           tasks.push(created);
           toast('Task added');
