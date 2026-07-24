@@ -6,7 +6,9 @@ import TaskList from '../components/TaskList';
 import TaskModal from '../components/TaskModal';
 import CalendarView from '../components/CalendarView';
 import MapLocation from '../components/MapLocation';
-import AIFeatures from '../components/AIFeatures';
+import DailyBriefing from '../components/DailyBriefing';
+import HealthCoach from '../components/HealthCoach';
+import Expenses from '../components/Expenses';
 import Sidebar from '../components/Sidebar';
 
 export default function Dashboard() {
@@ -70,13 +72,15 @@ export default function Dashboard() {
         logout={logout}
       />
 
-      <AIFeatures />
-
+      {/* AI Features removed from dashboard view, now in sidebar */}
       {/* Main Content Area */}
       <div style={{ paddingBottom: '80px' }}>
         {activeTab === 'list' && <TaskList />}
         {activeTab === 'calendar' && <CalendarView />}
         {activeTab === 'map' && <MapLocation />}
+        {activeTab === 'briefing' && <DailyBriefing />}
+        {activeTab === 'health' && <HealthCoach />}
+        {activeTab === 'expenses' && <Expenses />}
       </div>
 
       {/* Floating Action Button */}

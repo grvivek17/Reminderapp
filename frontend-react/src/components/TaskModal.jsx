@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import ReactDOM from 'react-dom';
 import { X, Search } from 'lucide-react';
 import { TasksContext } from '../context/TasksContext';
 
@@ -86,7 +87,7 @@ export default function TaskModal({ isOpen, onClose, editingTask }) {
     }
   };
 
-  return (
+  const modalContent = (
     <div className="modal-overlay" style={{ display: 'flex', zIndex: 1000, position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' }}>
       <div className="modal-content" style={{ background: 'var(--surface)', width: '90%', maxWidth: '500px', borderRadius: '12px', maxHeight: '90vh', overflowY: 'auto', padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -157,4 +158,6 @@ export default function TaskModal({ isOpen, onClose, editingTask }) {
       </div>
     </div>
   );
+
+  return ReactDOM.createPortal(modalContent, document.body);
 }
