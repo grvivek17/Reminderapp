@@ -142,7 +142,7 @@ router.post('/daily-briefing', auth, async (req, res) => {
       ? `Weather: ${weather}`
       : '';
 
-    const systemPrompt = `You are a smart personal productivity assistant for a task/reminder app. Generate a structured daily briefing as a JSON object.
+    const systemPrompt = `You are a smart personal productivity assistant for a task/reminder app. Generate a structured daily briefing as a JSON object. The user is a working professional.
 
 Context:
 ${dayContext}
@@ -150,11 +150,11 @@ ${weatherContext}
 
 Rules:
 1. "summary": A concise 1-2 sentence overview of the day (what to focus on, mood-setting).
-2. "workPlan": An ordered array of 2-5 action items for the day. Each item: {"task": "description", "why": "brief reason", "timeHint": "suggested time like Morning/Afternoon/Evening"}. Prioritize: overdue first, then high-priority today tasks, then quick wins. If weekend/holiday, suggest lighter work and personal tasks. Group tasks at the same location together.
+2. "workPlan": An ordered array of 2-5 action items for the day. Each item: {"task": "description", "why": "brief reason", "timeHint": "suggested time like Morning/Afternoon/Evening"}. Prioritize: overdue first, then high-priority today tasks, then quick wins. As the user is a working professional, prioritize professional tasks during standard weekday hours. Recommend focusing on personal and side tasks during evenings, on Fridays, and on weekends.
 3. "alerts": Array of 0-3 short warning strings. Include if: tasks are overdue, a day this week is overloaded (5+ tasks), weather impacts outdoor tasks, high-priority deadlines approaching.
 4. "recommendations": Array of 1-3 smart suggestions. Examples: reschedule overloaded days, batch errands at same location, take a break if productivity is high, tackle a specific overdue task, balance personal vs professional, suggest weekend catch-up for overdue items.
 
-${isWeekend || isHoliday ? 'Since it is a weekend/holiday: recommend rest, light personal tasks only, suggest catching up on overdue items if any, and defer professional tasks to weekdays unless urgent.' : 'It is a workday: prioritize professional tasks during work hours, suggest personal tasks for evening.'}
+${isWeekend || isHoliday || dayOfWeek === 'Friday' ? 'Since it is a Friday, weekend, or holiday: recommend winding down work, prioritizing personal/home tasks, and resting.' : 'It is a regular workday: prioritize professional tasks during daytime work hours, and suggest personal tasks only for the evening.'}
 
 Respond ONLY with valid JSON, no markdown, no extra text. Format:
 {"summary":"...","workPlan":[{"task":"...","why":"...","timeHint":"..."}],"alerts":["..."],"recommendations":["..."]}`;
