@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react';
 import ReactDOM from 'react-dom';
-import { X, Search } from 'lucide-react';
+import { X, Search, MapPin } from 'lucide-react';
 import { TasksContext } from '../context/TasksContext';
+import { getCurrentPosition } from '../utils/capacitor';
 
 export default function TaskModal({ isOpen, onClose, editingTask }) {
   const { addTask, updateTask } = useContext(TasksContext);
@@ -20,6 +21,20 @@ export default function TaskModal({ isOpen, onClose, editingTask }) {
   const [locationLng, setLocationLng] = useState('');
   
   const [loading, setLoading] = useState(false);
+  const [gettingLocation, setGettingLocation] = useState(false);
+
+  const handleGetLocation = async () => {
+    setGettingLocation(true);
+    const coords = await getCurrentPosition();
+    if (coords) {
+      setLocationLat(coords.lat);
+      setLocationLng(coords.lng);
+      setLocationText(`Pinned Location (${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)})`);
+    } else {
+      alert("Could not get location. Ensure GPS is enabled and permissions are granted.");
+    }
+    setGettingLocation(false);
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -131,6 +146,29 @@ export default function TaskModal({ isOpen, onClose, editingTask }) {
               <input type="range" min="0" max="100" value={progress} onChange={e => setProgress(e.target.value)} style={{ width: '100%' }} />
             </div>
           )}
+
+          <div className="form-group" style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Location</label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input 
+                type="text" 
+                value={locationText} 
+                onChange={e => setLocationText(e.target.value)} 
+                style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid var(--border)' }} 
+                placeholder="Where?" 
+              />
+              <button 
+                type="button" 
+                onClick={handleGetLocation} 
+                disabled={gettingLocation}
+                style={{ padding: '0 12px', background: locationLat ? 'var(--status-completed-bg)' : 'var(--bg)', color: locationLat ? 'var(--status-completed)' : 'var(--text)', border: `1px solid ${locationLat ? 'var(--status-completed)' : 'var(--border)'}`, borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                title="Pin Current Location"
+              >
+                <MapPin size={18} />
+                {gettingLocation ? '...' : (locationLat ? 'Pinned' : 'Pin')}
+              </button>
+            </div>
+          </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
             <div>
