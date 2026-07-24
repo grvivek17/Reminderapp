@@ -17,10 +17,12 @@ export default function HealthCoach() {
         body: JSON.stringify({ 
           message: "Analyze my tasks and give health advice.",
           tasks: activeTasks,
-          userHealth: {
-            sleep: 7,
-            stress: 'moderate'
-          }
+          trackers: {
+            sleep: { duration: 7, quality: 'good' },
+            stress: { level: 5 },
+            water: { amount: 1.5 }
+          },
+          weather: 'Sunny'
         })
       });
       setHealthInsight(res);

@@ -11,16 +11,27 @@ export default function DailyBriefing() {
   const getBriefing = async () => {
     setLoading(true);
     try {
+      const today = new Date().toISOString().slice(0, 10);
       const activeTasks = tasks.filter(t => t.status !== 'completed');
+      const overdueTasks = activeTasks.filter(t => t.date < today);
+      const completedCount = tasks.filter(t => t.date === today && t.status === 'completed').length;
+      const totalCount = tasks.filter(t => t.date === today).length;
+      
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const dayOfWeek = days[new Date().getDay()];
+      const isWeekend = new Date().getDay() === 0 || new Date().getDay() === 6;
+
       const res = await api('/ai/daily-briefing', {
         method: 'POST',
         body: JSON.stringify({ 
           tasks: activeTasks, 
-          userContext: {
-            time: new Date().toLocaleTimeString(),
-            weather: 'Sunny',
-            location: 'Home'
-          }
+          today,
+          weather: 'Sunny',
+          overdueTasks,
+          completedCount,
+          totalCount,
+          dayOfWeek,
+          isWeekend
         })
       });
       // The backend /ai/daily-briefing actually returns JSON with summary, workPlan, etc.
