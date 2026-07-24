@@ -12,7 +12,7 @@ export default function DailyBriefing() {
     setLoading(true);
     try {
       const activeTasks = tasks.filter(t => t.status !== 'completed');
-      const res = await api('/ai/briefing', {
+      const res = await api('/ai/daily-briefing', {
         method: 'POST',
         body: JSON.stringify({ 
           tasks: activeTasks, 

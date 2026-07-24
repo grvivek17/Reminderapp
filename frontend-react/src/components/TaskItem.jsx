@@ -35,7 +35,7 @@ export default function TaskItem({ task, isCompleted }) {
           )}
         </button>
         
-        <div style={{ flex: 1 }} onClick={() => { setEditingTask(task); setIsModalOpen(true); }} style={{ cursor: 'pointer', flex: 1 }}>
+        <div onClick={() => { setEditingTask(task); setIsModalOpen(true); }} style={{ cursor: 'pointer', flex: 1 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
             <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text)', textDecoration: isCompleted ? 'line-through' : 'none' }}>
               {task.text}
