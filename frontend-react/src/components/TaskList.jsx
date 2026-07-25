@@ -8,7 +8,6 @@ export default function TaskList() {
   const [activeFilter, setActiveFilter] = useState('all');
 
   const activeTasks = tasks.filter(t => t.status !== 'completed');
-  const completedTasks = tasks.filter(t => t.status === 'completed');
 
   const filteredTasks = activeTasks.filter(t => {
     const matchesSearch = t.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -53,19 +52,6 @@ export default function TaskList() {
         ) : (
           <div className="empty-state">
             <p>No active tasks found.</p>
-          </div>
-        )}
-      </div>
-
-      <div style={{ marginTop: '32px' }}>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <CheckCircle size={18} color="var(--low)" /> Completed
-        </h2>
-        {completedTasks.length > 0 ? (
-          completedTasks.map(task => <TaskItem key={task.id} task={task} isCompleted />)
-        ) : (
-          <div className="empty-state">
-            <p>No completed tasks yet.</p>
           </div>
         )}
       </div>

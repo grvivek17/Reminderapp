@@ -6,6 +6,7 @@ import TaskList from '../components/TaskList';
 import TaskModal from '../components/TaskModal';
 import CalendarView from '../components/CalendarView';
 import MapLocation from '../components/MapLocation';
+import ProgressView from '../components/ProgressView';
 import DailyBriefing from '../components/DailyBriefing';
 import HealthCoach from '../components/HealthCoach';
 import Expenses from '../components/Expenses';
@@ -78,6 +79,7 @@ export default function Dashboard() {
         {activeTab === 'list' && <TaskList />}
         {activeTab === 'calendar' && <CalendarView />}
         {activeTab === 'map' && <MapLocation />}
+        {activeTab === 'progress' && <ProgressView />}
         {activeTab === 'briefing' && <DailyBriefing />}
         {activeTab === 'health' && <HealthCoach />}
         {activeTab === 'expenses' && <Expenses />}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LogOut, Calendar, List, Map as MapIcon, X } from 'lucide-react';
+import { LogOut, Calendar, List, Map as MapIcon, X, CheckCircle } from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose, activeTab, setActiveTab, currentUser, logout }) {
   const handleTabClick = (tab) => {
@@ -59,6 +59,14 @@ export default function Sidebar({ isOpen, onClose, activeTab, setActiveTab, curr
           >
             <MapIcon size={20} />
             <span>Map</span>
+          </div>
+
+          <div 
+            className={`sidebar-item ${activeTab === 'progress' ? 'active' : ''}`} 
+            onClick={() => handleTabClick('progress')}
+          >
+            <CheckCircle size={20} />
+            <span>Progress</span>
           </div>
 
           <div style={{ margin: '16px 0', borderTop: '1px solid var(--border)' }} />
