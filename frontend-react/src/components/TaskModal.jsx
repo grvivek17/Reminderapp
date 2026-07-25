@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { X, Search, MapPin } from 'lucide-react';
 import { TasksContext } from '../context/TasksContext';
 import { getCurrentPosition } from '../utils/capacitor';
+import MapPickerModal from './MapPickerModal';
 
 export default function TaskModal({ isOpen, onClose, editingTask }) {
   const { addTask, updateTask } = useContext(TasksContext);
@@ -22,6 +23,7 @@ export default function TaskModal({ isOpen, onClose, editingTask }) {
   
   const [loading, setLoading] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
+  const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
 
   const handleGetLocation = async () => {
     setGettingLocation(true);
@@ -34,6 +36,12 @@ export default function TaskModal({ isOpen, onClose, editingTask }) {
       alert("Could not get location. Ensure GPS is enabled and permissions are granted.");
     }
     setGettingLocation(false);
+  };
+
+  const handleMapSelect = (lat, lng) => {
+    setLocationLat(lat);
+    setLocationLng(lng);
+    setLocationText(`Selected Map Pin (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
   };
 
   useEffect(() => {
@@ -161,11 +169,19 @@ export default function TaskModal({ isOpen, onClose, editingTask }) {
                 type="button" 
                 onClick={handleGetLocation} 
                 disabled={gettingLocation}
+                style={{ padding: '0 12px', background: 'var(--bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                title="Use Current GPS Location"
+              >
+                {gettingLocation ? '...' : 'GPS'}
+              </button>
+              <button 
+                type="button" 
+                onClick={() => setIsMapPickerOpen(true)} 
                 style={{ padding: '0 12px', background: locationLat ? 'var(--status-completed-bg)' : 'var(--bg)', color: locationLat ? 'var(--status-completed)' : 'var(--text)', border: `1px solid ${locationLat ? 'var(--status-completed)' : 'var(--border)'}`, borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-                title="Pin Current Location"
+                title="Pick on Map"
               >
                 <MapPin size={18} />
-                {gettingLocation ? '...' : (locationLat ? 'Pinned' : 'Pin')}
+                {locationLat ? 'Pinned' : 'Map'}
               </button>
             </div>
           </div>
@@ -194,6 +210,14 @@ export default function TaskModal({ isOpen, onClose, editingTask }) {
           </div>
         </form>
       </div>
+      
+      <MapPickerModal 
+        isOpen={isMapPickerOpen} 
+        onClose={() => setIsMapPickerOpen(false)} 
+        onSelectLocation={handleMapSelect}
+        initialLat={locationLat ? parseFloat(locationLat) : null}
+        initialLng={locationLng ? parseFloat(locationLng) : null}
+      />
     </div>
   );
 
