@@ -30,7 +30,7 @@ echo "=== Rebuilding frontend Docker ==="
 docker stop reminder-frontend 2>/dev/null || true
 docker rm reminder-frontend 2>/dev/null || true
 docker build -t reminder-frontend .
-docker run -d --name reminder-frontend -p 8080:80 --restart unless-stopped reminder-frontend
+docker run -d --name reminder-frontend -p 80:80 -p 443:443 -p 8080:80 --restart unless-stopped reminder-frontend
 sleep 3
 docker ps
 echo "=== DONE ==="
