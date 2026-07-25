@@ -23,6 +23,9 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/healt
 echo "Backend health check: $HTTP_STATUS"
 cd ~/Reminderapp
 
+echo "=== Starting Keycloak ==="
+docker-compose up -d keycloak
+
 echo "=== Rebuilding frontend Docker ==="
 docker stop reminder-frontend 2>/dev/null || true
 docker rm reminder-frontend 2>/dev/null || true

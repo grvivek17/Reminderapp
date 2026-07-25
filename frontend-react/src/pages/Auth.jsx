@@ -1,33 +1,9 @@
-import React, { useState, useContext } from 'react';
+import React, { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { Mail, Lock, User, Target, Bell, Users } from 'lucide-react';
+import { Target, Bell, Users, LogIn } from 'lucide-react';
 
 export default function Auth() {
-  const { login, signup } = useContext(AuthContext);
-  const [isLogin, setIsLogin] = useState(true);
-  
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      if (isLogin) {
-        await login(email, password);
-      } else {
-        await signup(name, email, password);
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { login } = useContext(AuthContext);
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg)' }}>
@@ -83,93 +59,40 @@ export default function Auth() {
         </div>
       </div>
 
-      {/* Right side: Form */}
+      {/* Right side: SSO Login */}
       <div style={{ flex: 1, padding: '40px', display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative' }}>
-        <div style={{ maxWidth: '360px', width: '100%', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+        <div style={{ maxWidth: '360px', width: '100%', margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ marginBottom: '32px' }}>
             <h2 style={{ fontSize: '1.75rem', fontWeight: 'bold', color: 'var(--text)', marginBottom: '8px' }}>
-              {isLogin ? 'Welcome back' : 'Create an account'}
+              Welcome to ReminderApp
             </h2>
             <p style={{ color: 'var(--text-secondary)' }}>
-              {isLogin ? 'Enter your details to access your tasks.' : 'Sign up to start organizing your life.'}
+              Sign in with your organization account to access your tasks.
             </p>
           </div>
 
-          {error && (
-            <div style={{ background: '#fef2f2', color: 'var(--danger)', padding: '12px 16px', borderRadius: '8px', marginBottom: '24px', fontSize: '0.9rem', border: '1px solid #fee2e2' }}>
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit}>
-            {!isLogin && (
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, color: 'var(--text)', marginBottom: '8px' }}>Full Name</label>
-                <div style={{ position: 'relative' }}>
-                  <User size={18} style={{ position: 'absolute', left: '12px', top: '13px', color: 'var(--text-muted)' }} />
-                  <input 
-                    type="text" 
-                    required 
-                    placeholder="John Doe" 
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    style={{ width: '100%', padding: '12px 12px 12px 40px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '0.95rem', background: 'var(--surface)', color: 'var(--text)' }} 
-                  />
-                </div>
-              </div>
-            )}
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, color: 'var(--text)', marginBottom: '8px' }}>Email Address</label>
-              <div style={{ position: 'relative' }}>
-                <Mail size={18} style={{ position: 'absolute', left: '12px', top: '13px', color: 'var(--text-muted)' }} />
-                <input 
-                  type="email" 
-                  required 
-                  placeholder="name@example.com" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  style={{ width: '100%', padding: '12px 12px 12px 40px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '0.95rem', background: 'var(--surface)', color: 'var(--text)' }} 
-                />
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, color: 'var(--text)', marginBottom: '8px' }}>Password</label>
-              <div style={{ position: 'relative' }}>
-                <Lock size={18} style={{ position: 'absolute', left: '12px', top: '13px', color: 'var(--text-muted)' }} />
-                <input 
-                  type="password" 
-                  required 
-                  placeholder="••••••••" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  style={{ width: '100%', padding: '12px 12px 12px 40px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '0.95rem', background: 'var(--surface)', color: 'var(--text)' }} 
-                />
-              </div>
-            </div>
-
-            <button 
-              type="submit" 
-              disabled={loading}
-              style={{ width: '100%', padding: '12px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: 500, cursor: loading ? 'not-allowed' : 'pointer', transition: 'background 0.2s', opacity: loading ? 0.7 : 1 }}
-            >
-              {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
-            </button>
-          </form>
-
-          <div style={{ textAlign: 'center', marginTop: '24px' }}>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-              {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
-              <button 
-                type="button" 
-                onClick={() => { setIsLogin(!isLogin); setError(''); }} 
-                style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 600, cursor: 'pointer', fontSize: '0.95rem' }}
-              >
-                {isLogin ? 'Sign up' : 'Sign in'}
-              </button>
-            </p>
-          </div>
+          <button 
+            onClick={login}
+            style={{ 
+              width: '100%', 
+              padding: '14px', 
+              background: 'var(--accent)', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '8px', 
+              fontSize: '1.05rem', 
+              fontWeight: 500, 
+              cursor: 'pointer', 
+              transition: 'background 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '12px'
+            }}
+          >
+            <LogIn size={20} />
+            Sign in with SSO
+          </button>
         </div>
       </div>
     </div>

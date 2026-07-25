@@ -1,58 +1,69 @@
-import React, { createContext, useState, useEffect } from 'react';
-import { api } from '../utils/api';
+import React, { createContext, useState, useEffect, useRef } from 'react';
+import Keycloak from 'keycloak-js';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [keycloak, setKeycloak] = useState(null);
+  const isInitialized = useRef(false);
 
   useEffect(() => {
-    // Check local storage for existing session
-    const storedUser = localStorage.getItem('reminder_app_user');
-    const token = localStorage.getItem('reminder_app_token');
-    
-    if (storedUser && token) {
-      try {
-        setCurrentUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error('Failed to parse user from local storage');
-      }
-    }
-    setLoading(false);
+    if (isInitialized.current) return;
+    isInitialized.current = true;
 
+    const kc = new Keycloak({
+      url: import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8081',
+      realm: import.meta.env.VITE_KEYCLOAK_REALM || 'master',
+      clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'reminder-app',
+    });
+
+    kc.init({ onLoad: 'check-sso', checkLoginIframe: false }).then((authenticated) => {
+      setKeycloak(kc);
+      if (authenticated) {
+        localStorage.setItem('reminder_app_token', kc.token);
+        setCurrentUser({
+          id: kc.tokenParsed.sub,
+          email: kc.tokenParsed.email || kc.tokenParsed.preferred_username,
+          name: kc.tokenParsed.name || kc.tokenParsed.given_name || 'User',
+        });
+        
+        // Setup token refresh
+        kc.onTokenExpired = () => {
+          kc.updateToken(30).then((refreshed) => {
+            if (refreshed) {
+              localStorage.setItem('reminder_app_token', kc.token);
+            }
+          }).catch(() => {
+            kc.logout();
+          });
+        };
+      }
+      setLoading(false);
+    }).catch(console.error);
+    
     // Listen for unauthorized events from api.js
     const handleAuthExpired = () => {
+      kc.logout();
       setCurrentUser(null);
     };
     window.addEventListener('auth-expired', handleAuthExpired);
     return () => window.removeEventListener('auth-expired', handleAuthExpired);
   }, []);
 
-  const login = async (email, password) => {
-    const res = await api('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password })
-    });
-    localStorage.setItem('reminder_app_token', res.token);
-    localStorage.setItem('reminder_app_user', JSON.stringify(res.user));
-    setCurrentUser(res.user);
+  const login = () => {
+    if (keycloak) keycloak.login();
   };
 
-  const signup = async (name, email, password) => {
-    const res = await api('/auth/signup', {
-      method: 'POST',
-      body: JSON.stringify({ name, email, password })
-    });
-    localStorage.setItem('reminder_app_token', res.token);
-    localStorage.setItem('reminder_app_user', JSON.stringify(res.user));
-    setCurrentUser(res.user);
+  const signup = () => {
+    if (keycloak) keycloak.register();
   };
 
   const logout = () => {
     localStorage.removeItem('reminder_app_token');
-    localStorage.removeItem('reminder_app_user');
     setCurrentUser(null);
+    if (keycloak) keycloak.logout();
   };
 
   return (
