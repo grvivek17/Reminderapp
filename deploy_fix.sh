@@ -24,7 +24,7 @@ echo "Backend health check: $HTTP_STATUS"
 cd ~/Reminderapp
 
 echo "=== Starting Keycloak ==="
-docker-compose up -d keycloak
+docker start keycloak || true
 
 echo "=== Rebuilding frontend Docker ==="
 docker stop reminder-frontend 2>/dev/null || true
