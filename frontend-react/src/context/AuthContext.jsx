@@ -13,10 +13,8 @@ export const AuthProvider = ({ children }) => {
     if (isInitialized.current) return;
     isInitialized.current = true;
 
-    // Guess Keycloak URL based on current host if env variable is missing
-    const defaultKcUrl = window.location.hostname === 'localhost' 
-      ? 'http://localhost:8081' 
-      : `http://${window.location.hostname}:8081`;
+    // Use Nginx host (same origin) for Keycloak since it proxies /realms, /resources, etc.
+    const defaultKcUrl = window.location.origin;
 
     const kc = new Keycloak({
       url: import.meta.env.VITE_KEYCLOAK_URL || defaultKcUrl,
