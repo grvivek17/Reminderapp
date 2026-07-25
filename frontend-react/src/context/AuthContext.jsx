@@ -60,8 +60,25 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener('auth-expired', handleAuthExpired);
   }, []);
 
-  const login = () => {
-    if (keycloak) keycloak.login();
+  const login = async () => {
+    try {
+      if (keycloak) {
+        await keycloak.login();
+      } else {
+        alert("Keycloak is still loading, please wait a second and try again.");
+      }
+    } catch (err) {
+      console.error("Login failed:", err);
+      alert("Error starting login redirect. Creating a fresh instance to redirect... " + err);
+      // Fallback: manually trigger a redirect if the instance is dead
+      const defaultKcUrl = window.location.origin;
+      const kc = new Keycloak({
+        url: import.meta.env.VITE_KEYCLOAK_URL || defaultKcUrl,
+        realm: import.meta.env.VITE_KEYCLOAK_REALM || 'master',
+        clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'reminder-app',
+      });
+      kc.login();
+    }
   };
 
   const signup = () => {
