@@ -21,9 +21,11 @@ export const AuthProvider = ({ children }) => {
       realm: import.meta.env.VITE_KEYCLOAK_REALM || 'master',
       clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'reminder-app',
     });
+    
+    // Always set the instance so the login button works (and shows Keycloak errors if misconfigured)
+    setKeycloak(kc);
 
     kc.init({ onLoad: 'check-sso', checkLoginIframe: false }).then((authenticated) => {
-      setKeycloak(kc);
       if (authenticated) {
         localStorage.setItem('reminder_app_token', kc.token);
         setCurrentUser({
