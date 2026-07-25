@@ -38,7 +38,7 @@ export default function DashboardWidgets({ user }) {
         lng = coords.lng;
       }
       
-      const res = await api.get(`/widgets/weather?lat=${lat}&lng=${lng}`);
+      const res = await api(`/widgets/weather?lat=${lat}&lng=${lng}`);
       setWeather(res);
     } catch (err) {
       console.error('Failed to fetch weather', err);
@@ -50,7 +50,7 @@ export default function DashboardWidgets({ user }) {
   const fetchMarket = async () => {
     setLoadingMarket(true);
     try {
-      const res = await api.get('/widgets/market');
+      const res = await api('/widgets/market');
       setMarket(res);
     } catch (err) {
       console.error('Failed to fetch market data', err);

@@ -60,4 +60,19 @@ router.get('/market', async (req, res) => {
   }
 });
 
+// Get Random Motivational Quote
+router.get('/quote', (req, res) => {
+  const quotes = [
+    { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+    { text: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+    { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+    { text: "Quality is not an act, it is a habit.", author: "Aristotle" },
+    { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
+    { text: "What you do today can improve all your tomorrows.", author: "Ralph Marston" }
+  ];
+  
+  const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+  res.json(randomQuote);
+});
+
 module.exports = router;
