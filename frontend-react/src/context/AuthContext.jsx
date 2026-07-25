@@ -13,8 +13,13 @@ export const AuthProvider = ({ children }) => {
     if (isInitialized.current) return;
     isInitialized.current = true;
 
+    // Guess Keycloak URL based on current host if env variable is missing
+    const defaultKcUrl = window.location.hostname === 'localhost' 
+      ? 'http://localhost:8081' 
+      : `http://${window.location.hostname}:8081`;
+
     const kc = new Keycloak({
-      url: import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8081',
+      url: import.meta.env.VITE_KEYCLOAK_URL || defaultKcUrl,
       realm: import.meta.env.VITE_KEYCLOAK_REALM || 'master',
       clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'reminder-app',
     });
@@ -40,8 +45,11 @@ export const AuthProvider = ({ children }) => {
           });
         };
       }
+    }).catch((err) => {
+      console.error('Keycloak initialization error:', err);
+    }).finally(() => {
       setLoading(false);
-    }).catch(console.error);
+    });
     
     // Listen for unauthorized events from api.js
     const handleAuthExpired = () => {
