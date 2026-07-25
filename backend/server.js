@@ -6,6 +6,7 @@ const db = require('./db');
 const authRoutes = require('./routes/auth');
 const taskRoutes = require('./routes/tasks');
 const aiRoutes = require('./routes/ai');
+const widgetRoutes = require('./routes/widgets');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -19,6 +20,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api', authRoutes);     // /api/users endpoint lives in auth routes
 app.use('/api/tasks', taskRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/widgets', widgetRoutes);
 
 // Health check
 app.get('/healthz', (req, res) => res.json({ status: 'ok' }));
