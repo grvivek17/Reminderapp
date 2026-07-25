@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
     // Always set the instance so the login button works (and shows Keycloak errors if misconfigured)
     setKeycloak(kc);
 
-    kc.init({ onLoad: 'check-sso', checkLoginIframe: false }).then((authenticated) => {
+    kc.init({ onLoad: 'check-sso', checkLoginIframe: false, pkceMethod: false }).then((authenticated) => {
       if (authenticated) {
         localStorage.setItem('reminder_app_token', kc.token);
         setCurrentUser({
@@ -69,7 +69,6 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (err) {
       console.error("Login failed:", err);
-      alert("Error starting login redirect. Creating a fresh instance to redirect... " + err);
       // Fallback: manually trigger a redirect if the instance is dead
       const defaultKcUrl = window.location.origin;
       const kc = new Keycloak({
@@ -77,7 +76,11 @@ export const AuthProvider = ({ children }) => {
         realm: import.meta.env.VITE_KEYCLOAK_REALM || 'master',
         clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'reminder-app',
       });
-      kc.login();
+      kc.init({ pkceMethod: false }).then(() => {
+        kc.login();
+      }).catch(e => {
+        alert("Error starting login redirect: " + e);
+      });
     }
   };
 
