@@ -1,4 +1,4 @@
-const CACHE_NAME = 'reminders-v1';
+const CACHE_NAME = 'reminders-v2';
 const ASSETS = [
   './',
   './index.html',
