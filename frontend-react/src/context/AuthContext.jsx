@@ -17,9 +17,9 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('reminder_app_token');
     if (token) {
       setCurrentUser({
-        id: 'mock-user-123',
-        email: 'mockuser@example.com',
-        name: 'Mock User',
+        id: 'mock-' + token,
+        email: token,
+        name: token.split('@')[0],
       });
     }
     
@@ -32,11 +32,14 @@ export const AuthProvider = ({ children }) => {
 
   const login = async () => {
     // TEMPORARY: Mock login
-    localStorage.setItem('reminder_app_token', 'mock_token_123');
+    const email = window.prompt("Enter email to sign in as (e.g. user1@example.com):", "mockuser@example.com");
+    if (!email) return; // user cancelled
+
+    localStorage.setItem('reminder_app_token', email);
     setCurrentUser({
-      id: 'mock-user-123',
-      email: 'mockuser@example.com',
-      name: 'Mock User',
+      id: 'mock-' + email,
+      email: email,
+      name: email.split('@')[0],
     });
   };
 

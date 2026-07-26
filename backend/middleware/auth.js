@@ -49,8 +49,9 @@ async function auth(req, res, next) {
   */
     try {
       // TEMPORARY MOCK FOR BYPASSING KEYCLOAK
-      const email = 'mockuser@example.com';
-      const name = 'Mock User';
+      // The token from the frontend is just the email address now
+      const email = (token || 'mockuser@example.com').toLowerCase();
+      const name = email.split('@')[0];
 
       const existing = await db.execute(
         'SELECT id, name, email, color FROM reminder_users WHERE LOWER(email) = :email',
