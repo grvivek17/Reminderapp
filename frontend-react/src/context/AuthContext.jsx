@@ -36,10 +36,9 @@ export const AuthProvider = ({ children }) => {
     */
   }, []);
 
-  const login = async () => {
+  const login = async (email, password) => {
     // TEMPORARY: Mock login
-    const email = window.prompt("Enter email to sign in as (e.g. user1@example.com):", "mockuser@example.com");
-    if (!email) return; // user cancelled
+    if (!email) return;
 
     localStorage.setItem('reminder_app_token', email);
     setCurrentUser({
@@ -49,8 +48,8 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  const signup = () => {
-    login();
+  const signup = async (email, password) => {
+    return login(email, password);
   };
 
   const logout = () => {
