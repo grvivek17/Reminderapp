@@ -16,11 +16,17 @@ export const AuthProvider = ({ children }) => {
     // Check if user is already logged in (mock)
     const token = localStorage.getItem('reminder_app_token');
     if (token) {
-      setCurrentUser({
-        id: 'mock-' + token,
-        email: token,
-        name: token.split('@')[0],
-      });
+      // If the token is a giant JWT from the old Keycloak setup, clear it
+      if (token.length > 100) {
+        localStorage.removeItem('reminder_app_token');
+        setCurrentUser(null);
+      } else {
+        setCurrentUser({
+          id: 'mock-' + token,
+          email: token,
+          name: token.split('@')[0],
+        });
+      }
     }
     
     /* 
