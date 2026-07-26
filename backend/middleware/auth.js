@@ -1,29 +1,5 @@
 const jwt = require('jsonwebtoken');
-const jwksClient = require('jwks-rsa');
 const db = require('../db');
-
-const KEYCLOAK_URL = process.env.KEYCLOAK_URL || 'http://localhost:8081';
-const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM || 'master';
-
-/*
-const client = jwksClient({
-  jwksUri: `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs`,
-  cache: true,
-  rateLimit: true,
-  jwksRequestsPerMinute: 10
-});
-
-function getKey(header, callback) {
-  client.getSigningKey(header.kid, function(err, key) {
-    if (err) {
-      console.error('Failed to get signing key:', err.message);
-      return callback(err);
-    }
-    const signingKey = key.publicKey || key.rsaPublicKey;
-    callback(null, signingKey);
-  });
-}
-*/
 
 const AVATAR_COLORS = [
   '#4f6ef7','#e74c8b','#22c55e','#f59e0b','#8b5cf6',
