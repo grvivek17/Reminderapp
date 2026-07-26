@@ -10,88 +10,43 @@ export const AuthProvider = ({ children }) => {
   const isInitialized = useRef(false);
 
   useEffect(() => {
+    // TEMPORARY: Bypassing Keycloak auth
+    setLoading(false);
+    
+    // Check if user is already logged in (mock)
+    const token = localStorage.getItem('reminder_app_token');
+    if (token) {
+      setCurrentUser({
+        id: 'mock-user-123',
+        email: 'mockuser@example.com',
+        name: 'Mock User',
+      });
+    }
+    
+    /* 
     if (isInitialized.current) return;
     isInitialized.current = true;
-
-    // Use Nginx host (same origin) for Keycloak since it proxies /realms, /resources, etc.
-    const defaultKcUrl = window.location.origin;
-
-    const kc = new Keycloak({
-      url: import.meta.env.VITE_KEYCLOAK_URL || defaultKcUrl,
-      realm: import.meta.env.VITE_KEYCLOAK_REALM || 'master',
-      clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'reminder-app',
-    });
-    
-    // Always set the instance so the login button works (and shows Keycloak errors if misconfigured)
-    setKeycloak(kc);
-
-    kc.init({ onLoad: 'check-sso', checkLoginIframe: false, pkceMethod: false }).then((authenticated) => {
-      if (authenticated) {
-        localStorage.setItem('reminder_app_token', kc.token);
-        setCurrentUser({
-          id: kc.tokenParsed.sub,
-          email: kc.tokenParsed.email || kc.tokenParsed.preferred_username,
-          name: kc.tokenParsed.name || kc.tokenParsed.given_name || 'User',
-        });
-        
-        // Setup token refresh
-        kc.onTokenExpired = () => {
-          kc.updateToken(30).then((refreshed) => {
-            if (refreshed) {
-              localStorage.setItem('reminder_app_token', kc.token);
-            }
-          }).catch(() => {
-            kc.logout();
-          });
-        };
-      }
-    }).catch((err) => {
-      console.error('Keycloak initialization error:', err);
-    }).finally(() => {
-      setLoading(false);
-    });
-    
-    // Listen for unauthorized events from api.js
-    const handleAuthExpired = () => {
-      kc.logout();
-      setCurrentUser(null);
-    };
-    window.addEventListener('auth-expired', handleAuthExpired);
-    return () => window.removeEventListener('auth-expired', handleAuthExpired);
+    ...
+    */
   }, []);
 
   const login = async () => {
-    try {
-      if (keycloak) {
-        await keycloak.login();
-      } else {
-        alert("Keycloak is still loading, please wait a second and try again.");
-      }
-    } catch (err) {
-      console.error("Login failed:", err);
-      // Fallback: manually trigger a redirect if the instance is dead
-      const defaultKcUrl = window.location.origin;
-      const kc = new Keycloak({
-        url: import.meta.env.VITE_KEYCLOAK_URL || defaultKcUrl,
-        realm: import.meta.env.VITE_KEYCLOAK_REALM || 'master',
-        clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'reminder-app',
-      });
-      kc.init({ pkceMethod: false }).then(() => {
-        kc.login();
-      }).catch(e => {
-        alert("Error starting login redirect: " + e);
-      });
-    }
+    // TEMPORARY: Mock login
+    localStorage.setItem('reminder_app_token', 'mock_token_123');
+    setCurrentUser({
+      id: 'mock-user-123',
+      email: 'mockuser@example.com',
+      name: 'Mock User',
+    });
   };
 
   const signup = () => {
-    if (keycloak) keycloak.register();
+    login();
   };
 
   const logout = () => {
     localStorage.removeItem('reminder_app_token');
     setCurrentUser(null);
-    if (keycloak) keycloak.logout();
   };
 
   return (

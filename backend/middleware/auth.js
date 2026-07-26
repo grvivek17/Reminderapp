@@ -5,6 +5,7 @@ const db = require('../db');
 const KEYCLOAK_URL = process.env.KEYCLOAK_URL || 'http://localhost:8081';
 const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM || 'master';
 
+/*
 const client = jwksClient({
   jwksUri: `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs`,
   cache: true,
@@ -22,6 +23,7 @@ function getKey(header, callback) {
     callback(null, signingKey);
   });
 }
+*/
 
 const AVATAR_COLORS = [
   '#4f6ef7','#e74c8b','#22c55e','#f59e0b','#8b5cf6',
@@ -29,6 +31,7 @@ const AVATAR_COLORS = [
 ];
 
 async function auth(req, res, next) {
+  /*
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'No token provided' });
@@ -43,14 +46,11 @@ async function auth(req, res, next) {
       console.error('JWT Verification error:', err.message);
       return res.status(401).json({ error: 'Invalid token' });
     }
-
+  */
     try {
-      const email = (decoded.email || decoded.preferred_username || '').toLowerCase();
-      if (!email) {
-         return res.status(400).json({ error: 'Token missing email' });
-      }
-      
-      const name = decoded.name || decoded.given_name || 'User';
+      // TEMPORARY MOCK FOR BYPASSING KEYCLOAK
+      const email = 'mockuser@example.com';
+      const name = 'Mock User';
 
       const existing = await db.execute(
         'SELECT id, name, email, color FROM reminder_users WHERE LOWER(email) = :email',
@@ -96,7 +96,9 @@ async function auth(req, res, next) {
       console.error('DB Sync Error in Auth Middleware:', dbErr);
       return res.status(500).json({ error: 'Internal server error' });
     }
+  /*
   });
+  */
 }
 
 module.exports = auth;
