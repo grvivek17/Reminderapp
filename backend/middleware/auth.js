@@ -31,7 +31,6 @@ const AVATAR_COLORS = [
 ];
 
 async function auth(req, res, next) {
-  /*
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'No token provided' });
@@ -39,6 +38,7 @@ async function auth(req, res, next) {
 
   const token = header.split(' ')[1];
 
+  /*
   jwt.verify(token, getKey, {
     algorithms: ['RS256']
   }, async (err, decoded) => {
