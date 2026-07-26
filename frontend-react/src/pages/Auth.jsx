@@ -5,6 +5,7 @@ import { Target, Bell, Users, LogIn, UserPlus } from 'lucide-react';
 export default function Auth() {
   const { login, signup } = useContext(AuthContext);
   const [isLogin, setIsLogin] = useState(true);
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -13,7 +14,7 @@ export default function Auth() {
     if (isLogin) {
       await login(email, password);
     } else {
-      await signup(email, password);
+      await signup(name, email, password);
     }
   };
 
@@ -84,6 +85,20 @@ export default function Auth() {
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {!isLogin && (
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', fontWeight: 500 }}>Name</label>
+                <input 
+                  type="text" 
+                  required={!isLogin}
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}
+                  placeholder="John Doe"
+                />
+              </div>
+            )}
+            
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', fontWeight: 500 }}>Email</label>
               <input 

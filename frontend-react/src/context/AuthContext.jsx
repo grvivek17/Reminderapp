@@ -1,55 +1,58 @@
-import React, { createContext, useState, useEffect, useRef } from 'react';
-import Keycloak from 'keycloak-js';
+import React, { createContext, useState, useEffect } from 'react';
+import { api } from '../utils/api';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [keycloak, setKeycloak] = useState(null);
-  const isInitialized = useRef(false);
 
   useEffect(() => {
-    // TEMPORARY: Bypassing Keycloak auth
-    setLoading(false);
-    
-    // Check if user is already logged in (mock)
-    const token = localStorage.getItem('reminder_app_token');
-    if (token) {
-      // If the token is a giant JWT from the old Keycloak setup, clear it
-      if (token.length > 100) {
-        localStorage.removeItem('reminder_app_token');
-        setCurrentUser(null);
-      } else {
-        setCurrentUser({
-          id: 'mock-' + token,
-          email: token,
-          name: token.split('@')[0],
-        });
+    const initAuth = async () => {
+      const token = localStorage.getItem('reminder_app_token');
+      if (token) {
+        try {
+          // Verify token by fetching user profile
+          const user = await api('/auth/me');
+          setCurrentUser(user);
+        } catch (err) {
+          console.error("Token verification failed", err);
+          localStorage.removeItem('reminder_app_token');
+          setCurrentUser(null);
+        }
       }
-    }
-    
-    /* 
-    if (isInitialized.current) return;
-    isInitialized.current = true;
-    ...
-    */
+      setLoading(false);
+    };
+
+    initAuth();
   }, []);
 
   const login = async (email, password) => {
-    // TEMPORARY: Mock login
-    if (!email) return;
-
-    localStorage.setItem('reminder_app_token', email);
-    setCurrentUser({
-      id: 'mock-' + email,
-      email: email,
-      name: email.split('@')[0],
-    });
+    try {
+      const res = await api('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password })
+      });
+      localStorage.setItem('reminder_app_token', res.token);
+      setCurrentUser(res.user);
+    } catch (err) {
+      alert(err.message || 'Login failed');
+      throw err;
+    }
   };
 
-  const signup = async (email, password) => {
-    return login(email, password);
+  const signup = async (name, email, password) => {
+    try {
+      const res = await api('/auth/signup', {
+        method: 'POST',
+        body: JSON.stringify({ name, email, password })
+      });
+      localStorage.setItem('reminder_app_token', res.token);
+      setCurrentUser(res.user);
+    } catch (err) {
+      alert(err.message || 'Signup failed');
+      throw err;
+    }
   };
 
   const logout = () => {
@@ -63,3 +66,4 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+

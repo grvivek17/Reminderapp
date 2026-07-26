@@ -36,70 +36,32 @@ async function auth(req, res, next) {
     return res.status(401).json({ error: 'No token provided' });
   }
 
-  const token = header.split(' ')[1];
+  try {
+    const token = header.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const existing = await db.execute(
+      'SELECT id, name, email, color FROM reminder_users WHERE id = :id',
+      { id: decoded.id }
+    );
 
-  /*
-  jwt.verify(token, getKey, {
-    algorithms: ['RS256']
-  }, async (err, decoded) => {
-    if (err) {
-      console.error('JWT Verification error:', err.message);
-      return res.status(401).json({ error: 'Invalid token' });
+    if (existing.rows.length === 0) {
+      return res.status(401).json({ error: 'User no longer exists' });
     }
-  */
-    try {
-      // TEMPORARY MOCK FOR BYPASSING KEYCLOAK
-      // The token from the frontend is just the email address now
-      const email = (token || 'mockuser@example.com').toLowerCase();
-      const name = email.split('@')[0];
 
-      const existing = await db.execute(
-        'SELECT id, name, email, color FROM reminder_users WHERE LOWER(email) = :email',
-        { email }
-      );
-
-      let user;
-      if (existing.rows.length > 0) {
-        user = {
-          id: existing.rows[0].ID,
-          name: existing.rows[0].NAME,
-          email: existing.rows[0].EMAIL,
-          color: existing.rows[0].COLOR
-        };
-      } else {
-        const countResult = await db.execute('SELECT COUNT(*) AS cnt FROM reminder_users');
-        const userCount = countResult.rows[0].CNT || 0;
-        const color = AVATAR_COLORS[userCount % AVATAR_COLORS.length];
-
-        const result = await db.execute(
-          `INSERT INTO reminder_users (name, email, password_hash, color)
-           VALUES (:name, :email, :passwordHash, :color)
-           RETURNING id INTO :id`,
-          {
-            name,
-            email,
-            passwordHash: 'SSO_USER',
-            color,
-            id: { dir: require('oracledb').BIND_OUT, type: require('oracledb').NUMBER },
-          }
-        );
-        user = {
-          id: result.outBinds.id[0],
-          name,
-          email,
-          color
-        };
-      }
-
-      req.user = user;
-      next();
-    } catch (dbErr) {
-      console.error('DB Sync Error in Auth Middleware:', dbErr);
-      return res.status(500).json({ error: 'Internal server error' });
+    req.user = {
+      id: existing.rows[0].ID,
+      name: existing.rows[0].NAME,
+      email: existing.rows[0].EMAIL,
+      color: existing.rows[0].COLOR
+    };
+    next();
+  } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Token expired' });
     }
-  /*
-  });
-  */
+    console.error('JWT Verification error:', err.message);
+    return res.status(401).json({ error: 'Invalid token' });
+  }
 }
 
 module.exports = auth;
